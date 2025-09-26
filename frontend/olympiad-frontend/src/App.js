@@ -4,6 +4,7 @@ import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Login from "./Login";
 import Feed from "./Feed";
+import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
   return (
@@ -12,7 +13,13 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/feed" element={<Feed />} />
+        <Route 
+        path="/feed" 
+        element={
+          <ProtectedRoute>
+        <Feed />
+        </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );
