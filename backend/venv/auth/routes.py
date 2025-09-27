@@ -5,7 +5,7 @@ from models import User, Problem, Comment, Vote
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
-from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse
+from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse
 from typing import List
 router = APIRouter()
 
@@ -153,3 +153,97 @@ def get_votes(problem_id: int, db: Session = Depends(get_db)):
     votes = db.query(Vote).filter(Vote.problem_id == problem_id).all()
     return votes
 
+@router.get("/problems/{problem_id}/vote-status", response_model=VoteStatusResponse)
+def get_vote_status(
+    problem_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Get user's current vote
+    user_vote = db.query(Vote).filter(
+        Vote.user_id == current_user.id,
+        Vote.problem_id == problem_id
+    ).first()
+    
+    # Count total likes and dislikes
+    like_count = db.query(Vote).filter(
+        Vote.problem_id == problem_id,
+        Vote.vote_type == "like"
+    ).count()
+    
+    dislike_count = db.query(Vote).filter(
+        Vote.problem_id == problem_id,
+        Vote.vote_type == "dislike"
+    ).count()
+    
+    return {
+        "user_vote": user_vote.vote_type if user_vote else None,
+        "like_count": like_count,
+        "dislike_count": dislike_count
+    }
+
+@router.post("/problems/{problem_id}/vote", response_model=VoteStatusResponse)
+def vote_problem(
+    problem_id: int,
+    vote_data: dict,  # Will receive {"vote_type": "like"} or {"vote_type": "dislike"}
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Get user's existing vote
+    existing_vote = db.query(Vote).filter(
+        Vote.user_id == current_user.id,
+        Vote.problem_id == problem_id
+    ).first()
+    
+    vote_type = vote_data.get("vote_type")
+    
+    if existing_vote:
+        if existing_vote.vote_type == vote_type:
+            # User clicked same vote again - remove it
+            db.delete(existing_vote)
+            db.commit()
+        else:
+            # User switched vote - update it
+            existing_vote.vote_type = vote_type
+            db.commit()
+    else:
+        # User hasn't voted before - create new vote
+        new_vote = Vote(
+            user_id=current_user.id,
+            problem_id=problem_id,
+            vote_type=vote_type
+        )
+        db.add(new_vote)
+        db.commit()
+    
+    # Get updated vote status
+    user_vote = db.query(Vote).filter(
+        Vote.user_id == current_user.id,
+        Vote.problem_id == problem_id
+    ).first()
+    
+    like_count = db.query(Vote).filter(
+        Vote.problem_id == problem_id,
+        Vote.vote_type == "like"
+    ).count()
+    
+    dislike_count = db.query(Vote).filter(
+        Vote.problem_id == problem_id,
+        Vote.vote_type == "dislike"
+    ).count()
+    
+    return {
+        "user_vote": user_vote.vote_type if user_vote else None,
+        "like_count": like_count,
+        "dislike_count": dislike_count
+    }

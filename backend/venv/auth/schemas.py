@@ -65,3 +65,8 @@ class VoteResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class VoteStatusResponse(BaseModel):
+    user_vote: Optional[str] = None
+    like_count: int
+    dislike_count: int
