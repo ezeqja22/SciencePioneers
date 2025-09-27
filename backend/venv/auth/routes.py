@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, Problem
+from models import User, Problem, Comment, Vote
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
-from auth.schemas import ProblemCreate, ProblemResponse
+from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse
 from typing import List
 router = APIRouter()
 
@@ -69,4 +69,87 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     return problem
+
+# Comment endpoints
+@router.post("/problems/{problem_id}/comments", response_model=CommentResponse)
+def create_comment(
+    problem_id: int,
+    comment: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Create comment
+    db_comment = Comment(
+        text=comment.text,
+        author_id=current_user.id,
+        problem_id=problem_id
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@router.get("/problems/{problem_id}/comments", response_model=List[CommentResponse])
+def get_comments(problem_id: int, db: Session = Depends(get_db)):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    comments = db.query(Comment).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
+    return comments
+
+# Vote endpoints
+@router.post("/problems/{problem_id}/vote", response_model=VoteResponse)
+def vote_problem(
+    problem_id: int,
+    vote: VoteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if user already voted
+    existing_vote = db.query(Vote).filter(
+        Vote.user_id == current_user.id,
+        Vote.problem_id == problem_id
+    ).first()
+    
+    if existing_vote:
+        # Update existing vote
+        existing_vote.vote_type = vote.vote_type
+    else:
+        # Create new vote
+        db_vote = Vote(
+            user_id=current_user.id,
+            problem_id=problem_id,
+            vote_type=vote.vote_type
+        )
+        db.add(db_vote)
+    
+    db.commit()
+    if existing_vote:
+        db.refresh(existing_vote)
+        return existing_vote
+    else:
+        db.refresh(db_vote)
+        return db_vote
+
+@router.get("/problems/{problem_id}/votes", response_model=List[VoteResponse])
+def get_votes(problem_id: int, db: Session = Depends(get_db)):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    votes = db.query(Vote).filter(Vote.problem_id == problem_id).all()
+    return votes
 

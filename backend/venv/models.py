@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -15,6 +15,8 @@ class User(Base):
     bio = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     problems = relationship("Problem", back_populates="author")
+    comments = relationship("Comment", back_populates="author")
+    votes = relationship("Vote", back_populates="user")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -26,3 +28,26 @@ class Problem(Base):
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="problems")
+    comments = relationship("Comment", back_populates="problem")
+    votes = relationship("Vote", back_populates="problem")
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(String, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    author = relationship("User", back_populates="comments")
+    problem = relationship("Problem", back_populates="comments")
+
+class Vote(Base):
+    __tablename__ = "votes"
+    __table_args__ = (UniqueConstraint("user_id", "problem_id", name="uix_user_problem"),)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    vote_type = Column(String, nullable=False)
+    user = relationship("User", back_populates="votes")
+    problem = relationship("Problem", back_populates="votes")
