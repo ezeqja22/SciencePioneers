@@ -4,6 +4,7 @@ import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Login from "./Login";
 import Feed from "./Feed";
+import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -18,6 +19,13 @@ function App() {
         element={
           <ProtectedRoute>
         <Feed />
+        </ProtectedRoute>
+        } />
+        <Route 
+        path="/create-problem" 
+        element={
+          <ProtectedRoute>
+        <CreateProblem />
         </ProtectedRoute>
         } />
       </Routes>

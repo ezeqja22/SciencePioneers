@@ -19,7 +19,7 @@ class UserOut(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProblemCreate(BaseModel):
     title: str
@@ -36,4 +36,4 @@ class ProblemResponse(BaseModel):
     author_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
