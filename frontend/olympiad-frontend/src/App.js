@@ -6,6 +6,7 @@ import Login from "./Login";
 import Feed from "./Feed";
 import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
+import ProblemDetail from "./ProblemDetail";
 
 function App() {
   return (
@@ -26,6 +27,13 @@ function App() {
         element={
           <ProtectedRoute>
         <CreateProblem />
+        </ProtectedRoute>
+        } />
+        <Route 
+        path="/problem/:id" 
+        element={
+          <ProtectedRoute>
+        <ProblemDetail />
         </ProtectedRoute>
         } />
       </Routes>

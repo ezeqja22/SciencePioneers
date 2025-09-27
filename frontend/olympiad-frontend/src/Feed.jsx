@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Feed() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProblems();
@@ -68,13 +70,18 @@ function Feed() {
       ) : (
         <div>
           {problems.map((problem) => (
-            <div key={problem.id} style={{
+            <div 
+            key={problem.id} 
+            onClick={() => navigate(`/problem/${problem.id}`)}
+            style={{
               border: "1px solid #ddd",
               borderRadius: "8px",
               padding: "20px",
               marginBottom: "20px",
-              backgroundColor: "#f9f9f9"
-            }}>
+              backgroundColor: "#f9f9f9",
+              cursor: "pointer"  // Add this to show it's clickable
+            }}
+          >
               <h3 style={{ marginTop: 0, color: "#333" }}>{problem.title}</h3>
               <p style={{ color: "#666", lineHeight: "1.5" }}>{problem.description}</p>
               <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
