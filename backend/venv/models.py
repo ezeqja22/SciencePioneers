@@ -27,6 +27,7 @@ class Problem(Base):
     subject = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="problems")
     comments = relationship("Comment", back_populates="problem")
     votes = relationship("Vote", back_populates="problem")
@@ -38,6 +39,7 @@ class Comment(Base):
     author_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("problems.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="comments")
     problem = relationship("Problem", back_populates="comments")
 

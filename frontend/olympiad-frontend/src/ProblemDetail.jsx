@@ -18,6 +18,13 @@ function ProblemDetail() {
     const [currentUser, setCurrentUser] = useState(null);
     const [editingComment, setEditingComment] = useState(null);
     const [editText, setEditText] = useState("");
+    const [editingProblem, setEditingProblem] = useState(false);
+    const [editProblemData, setEditProblemData] = useState({
+        title: "",
+        description: "",
+        tags: "",
+        subject: ""
+    });
 
 
 
@@ -162,6 +169,68 @@ function ProblemDetail() {
         }
     }
 
+    const handleEditProblem = () => {
+        setEditingProblem(true);
+        setEditProblemData({
+            title: problem.title,
+            description: problem.description,
+            tags: problem.tags || "",
+            subject: problem.subject
+        });
+    };
+
+    const handleSaveProblem = async () => {
+        if (!editProblemData.title.trim() || !editProblemData.description.trim()) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}`,
+                editProblemData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            
+            setProblem(response.data);
+            setEditingProblem(false);
+        } catch (error) {
+            console.error("Error updating problem:", error);
+        }
+    };
+
+    const handleCancelProblemEdit = () => {
+        setEditingProblem(false);
+        setEditProblemData({
+            title: "",
+            description: "",
+            tags: "",
+            subject: ""
+        });
+    };
+
+    const handleDeleteProblem = async () => {
+        if (!window.confirm("Are you sure you want to delete this problem? This will also delete all comments and votes.")) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            await axios.delete(`http://127.0.0.1:8000/auth/problems/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            // Redirect to feed after deletion
+            window.location.href = "/";
+        } catch (error) {
+            console.error("Error deleting problem:", error);
+        }
+    };
+
+    
+
     useEffect(() => {
         fetchProblem();
         fetchComments();
@@ -175,40 +244,163 @@ function ProblemDetail() {
 
     return (
         <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-            <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+            {editingProblem ? (
+                <div>
+                    <input
+                        type="text"
+                        value={editProblemData.title}
+                        onChange={(e) => setEditProblemData({...editProblemData, title: e.target.value})}
+                        placeholder="Problem title"
+                        style={{ 
+                            width: "100%", 
+                            padding: "10px", 
+                            marginBottom: "10px", 
+                            border: "1px solid #ddd", 
+                            borderRadius: "4px",
+                            fontSize: "24px",
+                            fontWeight: "bold"
+                        }}
+                    />
+                    <div style={{ marginBottom: "20px" }}>
+                        <input
+                            type="text"
+                            value={editProblemData.subject}
+                            onChange={(e) => setEditProblemData({...editProblemData, subject: e.target.value})}
+                            placeholder="Subject"
+                            style={{ 
+                                padding: "4px 8px", 
+                                marginRight: "10px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "4px",
+                                fontSize: "12px"
+                            }}
+                        />
+                        <input
+                            type="text"
+                            value={editProblemData.tags}
+                            onChange={(e) => setEditProblemData({...editProblemData, tags: e.target.value})}
+                            placeholder="Tags (comma separated)"
+                            style={{ 
+                                padding: "4px 8px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "4px",
+                                fontSize: "12px"
+                            }}
+                        />
+                    </div>
+                    <textarea
+                        value={editProblemData.description}
+                        onChange={(e) => setEditProblemData({...editProblemData, description: e.target.value})}
+                        placeholder="Problem description"
+                        style={{ 
+                            width: "100%", 
+                            minHeight: "100px", 
+                            padding: "20px", 
+                            marginBottom: "20px", 
+                            border: "1px solid #ddd", 
+                            borderRadius: "8px",
+                            lineHeight: "1.6"
+                        }}
+                    />
+                    <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
+                        <button 
+                            onClick={handleSaveProblem} 
+                            style={{ 
+                                padding: "8px 16px", 
+                                backgroundColor: "#28a745", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "4px", 
+                                cursor: "pointer" 
+                            }}
+                        >
+                            Save Problem
+                        </button>
+                        <button 
+                            onClick={handleCancelProblemEdit} 
+                            style={{ 
+                                padding: "8px 16px", 
+                                backgroundColor: "#6c757d", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "4px", 
+                                cursor: "pointer" 
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+                        <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+                        {currentUser && currentUser.id === problem.author_id && (
+                            <div style={{ display: "flex", gap: "10px" }}>
+                                <button
+                                    onClick={handleEditProblem}
+                                    style={{
+                                        padding: "8px 16px",
+                                        backgroundColor: "#007bff",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    Edit Problem
+                                </button>
+                                <button
+                                    onClick={handleDeleteProblem}
+                                    style={{
+                                        padding: "8px 16px",
+                                        backgroundColor: "#dc3545",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    Delete Problem
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
-            <div style={{ marginBottom: "20px" }}>
-                <span style={{
-                    backgroundColor: "#e3f2fd",
-                    color: "#1976d2",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    marginRight: "10px"
-                }}>
-                    {problem.subject}
-                </span>
-                {problem.tags && (
-                    <span style={{
-                        backgroundColor: "#f3e5f5",
-                        color: "#7b1fa2",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px"
+                    <div style={{ marginBottom: "20px" }}>
+                        <span style={{
+                            backgroundColor: "#e3f2fd",
+                            color: "#1976d2",
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            marginRight: "10px"
+                        }}>
+                            {problem.subject}
+                        </span>
+                        {problem.tags && (
+                            <span style={{
+                                backgroundColor: "#f3e5f5",
+                                color: "#7b1fa2",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                fontSize: "12px"
+                            }}>
+                                {problem.tags}
+                            </span>
+                        )}
+                    </div>
+
+                    <div style={{
+                        backgroundColor: "#f9f9f9",
+                        padding: "20px",
+                        borderRadius: "8px",
+                        marginBottom: "30px"
                     }}>
-                        {problem.tags}
-                    </span>
-                )}
-            </div>
-
-            <div style={{
-                backgroundColor: "#f9f9f9",
-                padding: "20px",
-                borderRadius: "8px",
-                marginBottom: "30px"
-            }}>
-                <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
-            </div>
+                        <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
+                    </div>
+                </div>
+            )}
 
             <div style={{ marginBottom: "30px" }}>
                 <h3>Vote on this Problem</h3>
@@ -359,7 +551,9 @@ function ProblemDetail() {
                                 <p style={{ margin: "0 0 10px 0", color: "#333" }}>{comment.text}</p>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
-                                        By: {comment.author.username} • {new Date(comment.created_at).toLocaleDateString()}
+                                        By: {comment.author.username} 
+                                        {comment.updated_at && comment.updated_at !== comment.created_at && " (Edited)"}
+                                        • {new Date(comment.created_at).toLocaleDateString()}
                                     </div>
                                     {currentUser && currentUser.id === comment.author_id && (
                                         <div style={{ display: "flex", gap: "5px" }}>

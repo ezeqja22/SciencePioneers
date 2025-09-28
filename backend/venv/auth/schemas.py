@@ -36,6 +36,7 @@ class ProblemResponse(BaseModel):
     subject: str
     author_id: int
     comment_count: int
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -50,6 +51,8 @@ class CommentResponse(BaseModel):
     problem_id: int
     created_at: datetime
     author: UserOut
+    updated_at: Optional[datetime] = None
+
 
     class Config:
         from_attributes = True
