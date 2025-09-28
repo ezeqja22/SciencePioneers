@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from database import get_db
-from models import User, Problem, Comment, Vote
+from models import User, Problem, Comment, Vote, Bookmark
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
-from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse
+from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from typing import List
+from datetime import datetime
 router = APIRouter()
 
 @router.post("/register", response_model=UserOut)
@@ -47,6 +48,7 @@ def create_problem(
         description=problem.description,
         tags=problem.tags,
         subject=problem.subject,
+        level=problem.level,
         author_id=current_user.id
     )
     db.add(db_problem)
@@ -57,13 +59,13 @@ def create_problem(
 @router.get("/problems/", response_model=List[ProblemResponse])
 def get_problems(db: Session = Depends(get_db)):
     problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "author_id": p.author_id, "comment_count": comment_count} for p, comment_count in problems]
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at} for p, comment_count in problems]
 
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
     problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.subject == subject).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "author_id": p.author_id, "comment_count": comment_count} for p, comment_count in problems]
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at} for p, comment_count in problems]
 
 
 @router.get("/problems/id/{problem_id}", response_model=ProblemResponse)
@@ -73,7 +75,7 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Problem not found")
     problem, comment_count = result
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "author_id": problem.author_id, "comment_count": comment_count}
+    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at}
 
 @router.put("/problems/{problem_id}", response_model=ProblemResponse)
 def update_problem(
@@ -96,6 +98,8 @@ def update_problem(
     db_problem.description = problem.description
     db_problem.tags = problem.tags
     db_problem.subject = problem.subject
+    db_problem.level = problem.level
+    db_problem.updated_at = datetime.utcnow()
     
     db.commit()
     db.refresh(db_problem)
@@ -103,7 +107,7 @@ def update_problem(
     # Return with comment count
     result = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.id == problem_id).group_by(Problem.id).first()
     problem, comment_count = result
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "author_id": problem.author_id, "comment_count": comment_count}
+    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at}
 
 @router.delete("/problems/{problem_id}")
 def delete_problem(
@@ -241,6 +245,7 @@ def update_comment(
     
     # Update comment
     db_comment.text = comment.text
+    db_comment.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(db_comment)
     
@@ -379,4 +384,147 @@ def vote_problem(
         "user_vote": current_vote.vote_type if current_vote else None,
         "like_count": like_count,
         "dislike_count": dislike_count
+    }
+
+# Bookmark endpoints
+
+@router.post("/problems/{problem_id}/bookmark")
+def bookmark_problem(
+    problem_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if already bookmarked
+    existing_bookmark = db.query(Bookmark).filter(
+        Bookmark.user_id == current_user.id,
+        Bookmark.problem_id == problem_id
+    ).first()
+    
+    if existing_bookmark:
+        raise HTTPException(status_code=400, detail="Problem already bookmarked")
+    
+    # Create bookmark
+    bookmark = Bookmark(
+        user_id=current_user.id,
+        problem_id=problem_id
+    )
+    db.add(bookmark)
+    db.commit()
+    
+    return {"message": "Problem bookmarked successfully"}
+
+@router.delete("/problems/{problem_id}/bookmark")
+def unbookmark_problem(
+    problem_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if bookmark exists
+    bookmark = db.query(Bookmark).filter(
+        Bookmark.user_id == current_user.id,
+        Bookmark.problem_id == problem_id
+    ).first()
+    
+    if not bookmark:
+        raise HTTPException(status_code=404, detail="Bookmark not found")
+    
+    # Delete bookmark
+    db.delete(bookmark)
+    db.commit()
+    
+    return {"message": "Bookmark removed successfully"}
+
+@router.get("/user/profile", response_model=dict)
+def get_user_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Get user's problems with comment counts
+    user_problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.author_id == current_user.id).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    
+    # Get user's comments with problem info
+    user_comments = db.query(Comment).options(joinedload(Comment.problem)).filter(Comment.author_id == current_user.id).order_by(Comment.created_at.desc()).all()
+    
+    # Get user's bookmarks with problem info
+    user_bookmarks = db.query(Bookmark).options(joinedload(Bookmark.problem)).filter(Bookmark.user_id == current_user.id).order_by(Bookmark.created_at.desc()).all()
+    
+    # Serialize problems
+    problems_data = []
+    for problem, comment_count in user_problems:
+        problems_data.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "tags": problem.tags,
+            "subject": problem.subject,
+            "level": problem.level,
+            "author_id": problem.author_id,
+            "comment_count": comment_count,
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None
+        })
+    
+    # Serialize comments
+    comments_data = []
+    for comment in user_comments:
+        # Skip comments where the associated problem no longer exists
+        if comment.problem is None:
+            continue
+            
+        comments_data.append({
+            "id": comment.id,
+            "text": comment.text,
+            "author_id": comment.author_id,
+            "problem_id": comment.problem_id,
+            "created_at": comment.created_at.isoformat() if comment.created_at else None,
+            "updated_at": comment.updated_at.isoformat() if comment.updated_at else None,
+            "problem": {
+                "id": comment.problem.id,
+                "title": comment.problem.title,
+                "subject": comment.problem.subject,
+                "level": comment.problem.level
+            }
+        })
+    
+    # Serialize bookmarks
+    bookmarks_data = []
+    for bookmark in user_bookmarks:
+        # Skip bookmarks where the associated problem no longer exists
+        if bookmark.problem is None:
+            continue
+            
+        bookmarks_data.append({
+            "id": bookmark.id,
+            "user_id": bookmark.user_id,
+            "problem_id": bookmark.problem_id,
+            "created_at": bookmark.created_at.isoformat() if bookmark.created_at else None,
+            "problem": {
+                "id": bookmark.problem.id,
+                "title": bookmark.problem.title,
+                "description": bookmark.problem.description,
+                "tags": bookmark.problem.tags,
+                "subject": bookmark.problem.subject,
+                "level": bookmark.problem.level,
+                "author_id": bookmark.problem.author_id,
+                "created_at": bookmark.problem.created_at.isoformat() if bookmark.problem.created_at else None,
+                "updated_at": bookmark.problem.updated_at.isoformat() if bookmark.problem.updated_at else None
+            }
+        })
+    
+    return {
+        "user": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "bio": current_user.bio,
+            "profile_picture": current_user.profile_picture
+        },
+        "problems": problems_data,
+        "comments": comments_data,
+        "bookmarks": bookmarks_data
     }

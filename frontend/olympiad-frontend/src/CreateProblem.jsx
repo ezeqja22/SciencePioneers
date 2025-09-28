@@ -8,7 +8,8 @@ function CreateProblem() {
     title: "",
     description: "",
     tags: "",
-    subject: ""
+    subject: "",
+    level: "Any Level"
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -123,6 +124,29 @@ function CreateProblem() {
             <option value="Engineering">Engineering</option>
             <option value="Other">Other</option>
           </select>
+        </div>
+
+        <div>
+          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+            Level
+          </label>
+          <input
+            type="text"
+            name="level"
+            value={formData.level}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "16px"
+            }}
+            placeholder="e.g., National Albanian Olympiad 5th Class Phase 1, EGMO Phase 2, IMO, etc."
+          />
+          <small style={{ color: "#666", fontSize: "12px" }}>
+            Specify the competition level or difficulty (defaults to "Any Level" if left blank)
+          </small>
         </div>
 
         <div>

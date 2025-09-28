@@ -27,6 +27,7 @@ class ProblemCreate(BaseModel):
     description: str
     tags: Optional[str] = None
     subject: str
+    level: Optional[str] = "Any Level"
 
 class ProblemResponse(BaseModel):
     id: int
@@ -34,6 +35,7 @@ class ProblemResponse(BaseModel):
     description: str
     tags: Optional[str]
     subject: str
+    level: Optional[str]
     author_id: int
     comment_count: int
     updated_at: Optional[datetime] = None
@@ -74,3 +76,13 @@ class VoteStatusResponse(BaseModel):
     user_vote: Optional[str] = None
     like_count: int
     dislike_count: int
+
+class BookmarkResponse(BaseModel):
+    id: int
+    user_id: int
+    problem_id: int
+    created_at: datetime
+    problem: ProblemResponse
+
+    class Config:
+        from_attributes = True

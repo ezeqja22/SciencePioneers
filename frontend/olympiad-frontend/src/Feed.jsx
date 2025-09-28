@@ -60,6 +60,25 @@ function Feed() {
     }
   };
 
+  const handleBookmark = async (problemId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/bookmark`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      alert("Problem bookmarked successfully!");
+    } catch (error) {
+      if (error.response?.status === 400) {
+        alert("Problem already bookmarked!");
+      } else {
+        console.error("Error bookmarking problem:", error);
+        alert("Error bookmarking problem");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -72,18 +91,32 @@ function Feed() {
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
         <h2>Science Problems Feed</h2>
-        <Link to="/create-problem">
-          <button style={{ 
-            padding: "10px 20px", 
-            backgroundColor: "#007bff", 
-            color: "white", 
-            border: "none", 
-            borderRadius: "5px",
-            cursor: "pointer"
-          }}>
-            Create Problem
-          </button>
-        </Link>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Link to="/profile">
+            <button style={{ 
+              padding: "10px 20px", 
+              backgroundColor: "#28a745", 
+              color: "white", 
+              border: "none", 
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}>
+              My Profile
+            </button>
+          </Link>
+          <Link to="/create-problem">
+            <button style={{ 
+              padding: "10px 20px", 
+              backgroundColor: "#007bff", 
+              color: "white", 
+              border: "none", 
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}>
+              Create Problem
+            </button>
+          </Link>
+        </div>
       </div>
 
       {problems.length === 0 ? (
@@ -130,6 +163,15 @@ function Feed() {
                 }}>
                   {problem.subject}
                 </span>
+                <span style={{
+                  backgroundColor: "#fff3e0",
+                  color: "#f57c00",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  fontSize: "12px"
+                }}>
+                  {problem.level}
+                </span>
                 {problem.tags && (
                   <span style={{
                     backgroundColor: "#f3e5f5",
@@ -151,6 +193,23 @@ function Feed() {
                   <span style={{ fontSize: "12px", color: "#666" }}>
                     💬 {problem.comment_count || 0}
                   </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBookmark(problem.id);
+                    }}
+                    style={{
+                      padding: "4px 8px",
+                      backgroundColor: "#f57c00",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "3px",
+                      cursor: "pointer",
+                      fontSize: "11px"
+                    }}
+                  >
+                    🔖 Bookmark
+                  </button>
                 </div>
               </div>
             </div>

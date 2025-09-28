@@ -7,6 +7,7 @@ import Feed from "./Feed";
 import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
 import ProblemDetail from "./ProblemDetail";
+import UserProfile from "./UserProfile";
 
 function App() {
   return (
@@ -34,6 +35,13 @@ function App() {
         element={
           <ProtectedRoute>
         <ProblemDetail />
+        </ProtectedRoute>
+        } />
+        <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+        <UserProfile />
         </ProtectedRoute>
         } />
       </Routes>

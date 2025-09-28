@@ -23,7 +23,8 @@ function ProblemDetail() {
         title: "",
         description: "",
         tags: "",
-        subject: ""
+        subject: "",
+        level: ""
     });
 
 
@@ -175,7 +176,8 @@ function ProblemDetail() {
             title: problem.title,
             description: problem.description,
             tags: problem.tags || "",
-            subject: problem.subject
+            subject: problem.subject,
+            level: problem.level || "Any Level"
         });
     };
 
@@ -205,7 +207,8 @@ function ProblemDetail() {
             title: "",
             description: "",
             tags: "",
-            subject: ""
+            subject: "",
+            level: ""
         });
     };
 
@@ -277,6 +280,19 @@ function ProblemDetail() {
                         />
                         <input
                             type="text"
+                            value={editProblemData.level}
+                            onChange={(e) => setEditProblemData({...editProblemData, level: e.target.value})}
+                            placeholder="Level (e.g., IMO, EGMO Phase 2, etc.)"
+                            style={{ 
+                                padding: "4px 8px", 
+                                marginRight: "10px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "4px",
+                                fontSize: "12px"
+                            }}
+                        />
+                        <input
+                            type="text"
                             value={editProblemData.tags}
                             onChange={(e) => setEditProblemData({...editProblemData, tags: e.target.value})}
                             placeholder="Tags (comma separated)"
@@ -334,7 +350,14 @@ function ProblemDetail() {
             ) : (
                 <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
-                        <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+                        <div>
+                            <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+                            {problem.updated_at && new Date(problem.updated_at).getTime() > new Date(problem.created_at).getTime() && (
+                                <div style={{ fontSize: "12px", color: "#666", marginTop: "-15px", marginBottom: "15px" }}>
+                                    (Edited)
+                                </div>
+                            )}
+                        </div>
                         {currentUser && currentUser.id === problem.author_id && (
                             <div style={{ display: "flex", gap: "10px" }}>
                                 <button
@@ -377,6 +400,16 @@ function ProblemDetail() {
                             marginRight: "10px"
                         }}>
                             {problem.subject}
+                        </span>
+                        <span style={{
+                            backgroundColor: "#fff3e0",
+                            color: "#f57c00",
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            marginRight: "10px"
+                        }}>
+                            {problem.level}
                         </span>
                         {problem.tags && (
                             <span style={{
@@ -552,7 +585,7 @@ function ProblemDetail() {
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
                                         By: {comment.author.username} 
-                                        {comment.updated_at && comment.updated_at !== comment.created_at && " (Edited)"}
+                                        {comment.updated_at && new Date(comment.updated_at).getTime() > new Date(comment.created_at).getTime() && " (Edited)"}
                                         • {new Date(comment.created_at).toLocaleDateString()}
                                     </div>
                                     {currentUser && currentUser.id === comment.author_id && (
