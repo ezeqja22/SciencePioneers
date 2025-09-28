@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef,useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
@@ -7,6 +7,9 @@ function UserProfile() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks
     const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
     const [editFormData, setEditFormData] = useState({
         bio: "",
         profile_picture: ""
@@ -108,6 +111,50 @@ function UserProfile() {
         }
     };
 
+    const handleFileUpload = async (file) => {
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const token = localStorage.getItem("token");
+            const response = await axios.post(
+                "http://127.0.0.1:8000/auth/user/profile-picture",
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            
+            // Update profile data with new picture
+            setProfileData(prev => ({
+                ...prev,
+                user: {
+                    ...prev.user,
+                    profile_picture: response.data.file_path
+                }
+            }));
+            
+            alert("Profile picture updated successfully!");
+        } catch (error) {
+            console.error("Error uploading file:", error);
+            alert("Error uploading file. Please try again.");
+        } finally {
+            setUploading(false);
+        }
+    };
+    
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            handleFileUpload(file);
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -128,6 +175,16 @@ function UserProfile() {
 
     return (
         <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
+            {/* Hidden file input */}
+            <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileSelect}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+            />
+            
             {/* User Header */}
             <div style={{
                 backgroundColor: "#f8f9fa",
@@ -148,10 +205,31 @@ function UserProfile() {
                         justifyContent: "center",
                         color: "white",
                         fontSize: "32px",
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        backgroundImage: user.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center"
                     }}>
-                        {user.username.charAt(0).toUpperCase()}
+                        {!user.profile_picture && user.username.charAt(0).toUpperCase()}
                     </div>
+                    
+                    {/* Change Profile Picture Button */}
+                    <button
+                        onClick={() => fileInputRef.current.click()}
+                        disabled={uploading}
+                        style={{
+                            padding: "8px 16px",
+                            backgroundColor: uploading ? "#ccc" : "#007bff",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "5px",
+                            cursor: uploading ? "not-allowed" : "pointer",
+                            fontSize: "12px",
+                            marginTop: "10px"
+                        }}
+                    >
+                        {uploading ? "Uploading..." : "📷 Change Profile Picture"}
+                    </button>
                     
                     <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

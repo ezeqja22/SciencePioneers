@@ -9,6 +9,11 @@ from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, 
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from typing import List
 from datetime import datetime
+from fastapi import UploadFile, File
+import os
+import uuid
+from PIL import Image
+
 router = APIRouter()
 
 @router.post("/register", response_model=UserOut)
@@ -516,13 +521,23 @@ def get_user_profile(
             }
         })
     
+    # Handle both old and new profile picture paths
+    profile_picture_url = None
+    if current_user.profile_picture:
+        if current_user.profile_picture.startswith('uploads/'):
+            # Old format: remove 'uploads/' prefix
+            profile_picture_url = current_user.profile_picture.replace('uploads/', '')
+        else:
+            # New format: use as is
+            profile_picture_url = current_user.profile_picture
+    
     return {
         "user": {
             "id": current_user.id,
             "username": current_user.username,
             "email": current_user.email,
             "bio": current_user.bio,
-            "profile_picture": current_user.profile_picture
+            "profile_picture": profile_picture_url
         },
         "problems": problems_data,
         "comments": comments_data,
@@ -548,3 +563,53 @@ def update_user_profile(
     db.refresh(current_user)
     
     return current_user
+
+@router.post("/user/profile-picture")
+async def upload_profile_picture(  # Add 'async' here
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Read file content first
+    content = await file.read()
+    
+    # Check file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File is not an image")
+
+    # Check file size
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File is too large. Maximum size is 5MB")
+
+    # Generate unique filename
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"user_{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
+    file_path = f"uploads/profile_pictures/{unique_filename}"
+    stored_path = f"profile_pictures/{unique_filename}"
+
+    # Create directory if it doesn't exist
+    os.makedirs("uploads/profile_pictures", exist_ok=True)
+    
+    # Save the file
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
+        
+    # Update database
+    current_user.profile_picture = stored_path
+    db.commit()
+    db.refresh(current_user)
+    
+    return {"message": "Profile picture uploaded successfully", "file_path": stored_path}
+
+
+@router.get("/serve-image/{filename}")
+def serve_image(filename: str):
+    """Direct image serving endpoint for testing"""
+    from fastapi.responses import FileResponse
+    import os
+    
+    file_path = f"uploads/profile_pictures/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    else:
+        return {"error": "File not found", "path": file_path}
