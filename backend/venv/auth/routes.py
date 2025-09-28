@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 from database import get_db
 from models import User, Problem, Comment, Vote
 from auth.utils import hash_password, verify_password, create_jwt
@@ -55,20 +56,24 @@ def create_problem(
 
 @router.get("/problems/", response_model=List[ProblemResponse])
 def get_problems(db: Session = Depends(get_db)):
-    problems = db.query(Problem).order_by(Problem.created_at.desc()).all()
-    return problems
+    problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "author_id": p.author_id, "comment_count": comment_count} for p, comment_count in problems]
+
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
-    problems = db.query(Problem).filter(Problem.subject == subject).order_by(Problem.created_at.desc()).all()
-    return problems
+    problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.subject == subject).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "author_id": p.author_id, "comment_count": comment_count} for p, comment_count in problems]
+
 
 @router.get("/problems/id/{problem_id}", response_model=ProblemResponse)
 def get_problem(problem_id: int, db: Session = Depends(get_db)):
-    problem = db.query(Problem).filter(Problem.id == problem_id).first()
-    if not problem:
+    from sqlalchemy import func
+    result = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.id == problem_id).group_by(Problem.id).first()
+    if not result:
         raise HTTPException(status_code=404, detail="Problem not found")
-    return problem
+    problem, comment_count = result
+    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "author_id": problem.author_id, "comment_count": comment_count}
 
 # Comment endpoints
 @router.post("/problems/{problem_id}/comments", response_model=CommentResponse)
@@ -92,6 +97,9 @@ def create_comment(
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
+    
+    # Fetch the comment with author relationship
+    db_comment = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.id == db_comment.id).first()
     return db_comment
 
 @router.get("/problems/{problem_id}/comments", response_model=List[CommentResponse])
@@ -101,47 +109,10 @@ def get_comments(problem_id: int, db: Session = Depends(get_db)):
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    comments = db.query(Comment).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
+    comments = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
     return comments
 
 # Vote endpoints
-@router.post("/problems/{problem_id}/vote", response_model=VoteResponse)
-def vote_problem(
-    problem_id: int,
-    vote: VoteCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # Check if problem exists
-    problem = db.query(Problem).filter(Problem.id == problem_id).first()
-    if not problem:
-        raise HTTPException(status_code=404, detail="Problem not found")
-    
-    # Check if user already voted
-    existing_vote = db.query(Vote).filter(
-        Vote.user_id == current_user.id,
-        Vote.problem_id == problem_id
-    ).first()
-    
-    if existing_vote:
-        # Update existing vote
-        existing_vote.vote_type = vote.vote_type
-    else:
-        # Create new vote
-        db_vote = Vote(
-            user_id=current_user.id,
-            problem_id=problem_id,
-            vote_type=vote.vote_type
-        )
-        db.add(db_vote)
-    
-    db.commit()
-    if existing_vote:
-        db.refresh(existing_vote)
-        return existing_vote
-    else:
-        db.refresh(db_vote)
-        return db_vote
 
 @router.get("/problems/{problem_id}/votes", response_model=List[VoteResponse])
 def get_votes(problem_id: int, db: Session = Depends(get_db)):
@@ -207,17 +178,15 @@ def vote_problem(
     
     vote_type = vote_data.get("vote_type")
     
+    # STEP 1: Always delete any existing vote first
     if existing_vote:
-        if existing_vote.vote_type == vote_type:
-            # User clicked same vote again - remove it
-            db.delete(existing_vote)
-            db.commit()
-        else:
-            # User switched vote - update it
-            existing_vote.vote_type = vote_type
-            db.commit()
-    else:
-        # User hasn't voted before - create new vote
+        db.delete(existing_vote)
+        db.commit()
+    
+    # STEP 2: Check if user wants to vote or remove vote
+    should_create_vote = not existing_vote or existing_vote.vote_type != vote_type
+    
+    if should_create_vote:
         new_vote = Vote(
             user_id=current_user.id,
             problem_id=problem_id,
@@ -226,8 +195,8 @@ def vote_problem(
         db.add(new_vote)
         db.commit()
     
-    # Get updated vote status
-    user_vote = db.query(Vote).filter(
+    # STEP 3: Get the current state from database
+    current_vote = db.query(Vote).filter(
         Vote.user_id == current_user.id,
         Vote.problem_id == problem_id
     ).first()
@@ -243,7 +212,7 @@ def vote_problem(
     ).count()
     
     return {
-        "user_vote": user_vote.vote_type if user_vote else None,
+        "user_vote": current_vote.vote_type if current_vote else None,
         "like_count": like_count,
         "dislike_count": dislike_count
     }

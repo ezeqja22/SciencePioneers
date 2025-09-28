@@ -35,6 +35,7 @@ class ProblemResponse(BaseModel):
     tags: Optional[str]
     subject: str
     author_id: int
+    comment_count: int
 
     class Config:
         from_attributes = True

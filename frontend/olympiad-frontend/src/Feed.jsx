@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 function Feed() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [voteData, setVoteData] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,10 +18,45 @@ function Feed() {
     try {
       const response = await axios.get("http://127.0.0.1:8000/auth/problems/");
       setProblems(response.data);
+      
+      // Fetch vote data for all problems
+      const problemIds = response.data.map(problem => problem.id);
+      await fetchVoteData(problemIds);
     } catch (error) {
       console.error("Error fetching problems:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVoteData = async (problemIds) => {
+    try {
+      const token = localStorage.getItem("token");
+      const votePromises = problemIds.map(async (problemId) => {
+        try {
+          const response = await axios.get(
+            `http://127.0.0.1:8000/auth/problems/${problemId}/vote-status`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+          return { problemId, voteData: response.data };
+        } catch (error) {
+          console.error(`Error fetching vote data for problem ${problemId}:`, error);
+          return { problemId, voteData: { like_count: 0, dislike_count: 0, user_vote: null } };
+        }
+      });
+      
+      const voteResults = await Promise.all(votePromises);
+      const voteDataMap = {};
+      voteResults.forEach(({ problemId, voteData }) => {
+        voteDataMap[problemId] = voteData;
+      });
+      setVoteData(voteDataMap);
+    } catch (error) {
+      console.error("Error fetching vote data:", error);
     }
   };
 
@@ -84,7 +120,7 @@ function Feed() {
           >
               <h3 style={{ marginTop: 0, color: "#333" }}>{problem.title}</h3>
               <p style={{ color: "#666", lineHeight: "1.5" }}>{problem.description}</p>
-              <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+              <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
                 <span style={{
                   backgroundColor: "#e3f2fd",
                   color: "#1976d2",
@@ -105,6 +141,17 @@ function Feed() {
                     {problem.tags}
                   </span>
                 )}
+                <div style={{ marginLeft: "auto", display: "flex", gap: "10px", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", color: "#666" }}>
+                    👍 {voteData[problem.id]?.like_count || 0}
+                  </span>
+                  <span style={{ fontSize: "12px", color: "#666" }}>
+                    👎 {voteData[problem.id]?.dislike_count || 0}
+                  </span>
+                  <span style={{ fontSize: "12px", color: "#666" }}>
+                    💬 {problem.comment_count || 0}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
