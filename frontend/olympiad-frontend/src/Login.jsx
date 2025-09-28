@@ -19,7 +19,8 @@ function Login() {
       localStorage.setItem("token", response.data.token);
 
       alert("Login successful!");
-      navigate("/feed"); // redirect to homepage
+      // Replace history entry to prevent back navigation to login
+      navigate("/feed", { replace: true });
     } catch (err) {
       alert("Login failed: " + err.response?.data?.detail || err.message);
     }

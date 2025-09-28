@@ -11,13 +11,16 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
+      // Clear any existing token first
+      localStorage.removeItem("token");
+      
       await axios.post("http://127.0.0.1:8000/auth/register", { // Correct endpoint
         username,
         email, // Send email
         password,
       });
-      alert("Signup successful!");
-      navigate("/feed");
+      alert("Signup successful! Please login with your credentials.");
+      navigate("/login");
     } catch (err) {
       alert("Signup failed: " + (err.response?.data?.detail || err.message));
     }

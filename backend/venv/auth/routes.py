@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark
+from models import User, Problem, Comment, Vote, Bookmark, Follow
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
@@ -63,14 +63,27 @@ def create_problem(
 
 @router.get("/problems/", response_model=List[ProblemResponse])
 def get_problems(db: Session = Depends(get_db)):
-    problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at} for p, comment_count in problems]
+    # First get problems with comment counts
+    problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    
+    # Then fetch authors for all problems
+    problem_ids = [p.id for p, _ in problems_with_counts]
+    authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
+    author_dict = {author.id: author for author in authors}
+    
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at, "author": {"id": author_dict[p.author_id].id, "username": author_dict[p.author_id].username, "profile_picture": author_dict[p.author_id].profile_picture}} for p, comment_count in problems_with_counts]
 
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
-    problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.subject == subject).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at} for p, comment_count in problems]
+    # First get problems with comment counts
+    problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.subject == subject).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    
+    # Then fetch authors for all problems
+    authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
+    author_dict = {author.id: author for author in authors}
+    
+    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at, "author": {"id": author_dict[p.author_id].id, "username": author_dict[p.author_id].username, "profile_picture": author_dict[p.author_id].profile_picture}} for p, comment_count in problems_with_counts]
 
 
 @router.get("/problems/id/{problem_id}", response_model=ProblemResponse)
@@ -80,7 +93,11 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Problem not found")
     problem, comment_count = result
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at}
+    
+    # Fetch the author
+    author = db.query(User).filter(User.id == problem.author_id).first()
+    
+    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at, "author": {"id": author.id, "username": author.username, "profile_picture": author.profile_picture}}
 
 @router.put("/problems/{problem_id}", response_model=ProblemResponse)
 def update_problem(
@@ -471,7 +488,12 @@ def get_user_profile(
             "author_id": problem.author_id,
             "comment_count": comment_count,
             "created_at": problem.created_at.isoformat() if problem.created_at else None,
-            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None,
+            "author": {
+                "id": problem.author.id,
+                "username": problem.author.username,
+                "profile_picture": problem.author.profile_picture
+            }
         })
     
     # Serialize comments
@@ -565,7 +587,7 @@ def update_user_profile(
     return current_user
 
 @router.post("/user/profile-picture")
-async def upload_profile_picture(  # Add 'async' here
+async def upload_profile_picture(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -613,3 +635,119 @@ def serve_image(filename: str):
         return FileResponse(file_path)
     else:
         return {"error": "File not found", "path": file_path}
+
+@router.post("/follow/{user_id}")
+def follow_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Follow a user"""
+    # Can't follow yourself
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot follow yourself")
+    
+    # Check if user exists
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already following
+    existing_follow = db.query(Follow).filter(
+        Follow.follower_id == current_user.id,
+        Follow.following_id == user_id
+    ).first()
+    
+    if existing_follow:
+        raise HTTPException(status_code=400, detail="Already following this user")
+    
+    # Create follow relationship
+    follow = Follow(follower_id=current_user.id, following_id=user_id)
+    db.add(follow)
+    db.commit()
+    
+    return {"message": f"Now following {target_user.username}"}
+
+@router.delete("/follow/{user_id}")
+def unfollow_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Unfollow a user"""
+    # Find the follow relationship
+    follow = db.query(Follow).filter(
+        Follow.follower_id == current_user.id,
+        Follow.following_id == user_id
+    ).first()
+    
+    if not follow:
+        raise HTTPException(status_code=404, detail="Not following this user")
+    
+    # Delete the follow relationship
+    db.delete(follow)
+    db.commit()
+    
+    return {"message": f"Unfollowed user {user_id}"}
+
+@router.get("/feed/following")
+def get_following_feed(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get problems from users you follow"""
+    # Get list of user IDs that current user follows
+    following_ids = db.query(Follow.following_id).filter(
+        Follow.follower_id == current_user.id
+    ).all()
+    following_ids = [user_id[0] for user_id in following_ids]
+    
+    if not following_ids:
+        return {
+            "problems": [],
+            "message": "You don't follow anyone yet",
+            "following_count": 0
+        }
+    
+    # Get problems from followed users with comment counts
+    problems = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(
+        Problem.author_id.in_(following_ids)
+    ).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    
+    # Serialize problems
+    problems_data = []
+    for problem, comment_count in problems:
+        problems_data.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "tags": problem.tags,
+            "subject": problem.subject,
+            "level": problem.level,
+            "author_id": problem.author_id,
+            "comment_count": comment_count,
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None
+        })
+    
+    return {
+        "problems": problems_data,
+        "following_count": len(following_ids)
+    }
+
+@router.get("/follow/status/{user_id}")
+def get_follow_status(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Check if current user is following a specific user"""
+    follow = db.query(Follow).filter(
+        Follow.follower_id == current_user.id,
+        Follow.following_id == user_id
+    ).first()
+    
+    return {
+        "is_following": follow is not None,
+        "user_id": user_id
+    }

@@ -1,8 +1,9 @@
 import React, { useRef,useState, useEffect } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function UserProfile() {
+    const navigate = useNavigate();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks
@@ -16,6 +17,13 @@ function UserProfile() {
     });
 
     useEffect(() => {
+        // Validate authentication before fetching data
+        const token = localStorage.getItem("token");
+        if (!token) {
+            navigate("/login", { replace: true });
+            return;
+        }
+        
         fetchUserProfile();
     }, []);
 
@@ -155,6 +163,21 @@ function UserProfile() {
         }
     };
 
+    const handleLogout = () => {
+        // Clear all user data
+        localStorage.removeItem("token");
+        
+        // Clear any cached data
+        setProfileData(null);
+        setActiveTab("problems");
+        setIsEditingProfile(false);
+        setEditFormData({ bio: "", profile_picture: "" });
+        setSelectedFile(null);
+        
+        // Replace current history entry to prevent back navigation
+        navigate("/", { replace: true });
+    };
+
     if (loading) {
         return (
             <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -175,6 +198,37 @@ function UserProfile() {
 
     return (
         <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
+            {/* Navigation Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+                <h2>My Profile</h2>
+                <div style={{ display: "flex", gap: "10px" }}>
+                    <Link to="/feed">
+                        <button style={{ 
+                            padding: "10px 20px", 
+                            backgroundColor: "#28a745", 
+                            color: "white", 
+                            border: "none", 
+                            borderRadius: "5px",
+                            cursor: "pointer"
+                        }}>
+                            Back to Feed
+                        </button>
+                    </Link>
+                    <button 
+                        onClick={handleLogout}
+                        style={{ 
+                            padding: "10px 20px", 
+                            backgroundColor: "#dc3545", 
+                            color: "white", 
+                            border: "none", 
+                            borderRadius: "5px",
+                            cursor: "pointer"
+                        }}>
+                        Logout
+                    </button>
+                </div>
+            </div>
+            
             {/* Hidden file input */}
             <input
                 type="file"

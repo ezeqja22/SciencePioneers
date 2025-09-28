@@ -19,6 +19,8 @@ class User(Base):
     comments = relationship("Comment", back_populates="author")
     votes = relationship("Vote", back_populates="user")
     bookmarks = relationship("Bookmark", back_populates="user")
+    following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
+    followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -67,3 +69,13 @@ class Bookmark(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="bookmarks")
     problem = relationship("Problem", back_populates="bookmarks")
+
+class Follow(Base):
+    __tablename__ = "follows"
+    __table_args__ = (UniqueConstraint("follower_id", "following_id", name="uix_follower_following"),)
+    id = Column(Integer, primary_key=True, index=True)
+    follower_id = Column(Integer, ForeignKey("users.id"))  # User who is following
+    following_id = Column(Integer, ForeignKey("users.id"))  # User being followed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    follower = relationship("User", foreign_keys=[follower_id], back_populates="following")
+    following = relationship("User", foreign_keys=[following_id], back_populates="followers")

@@ -8,43 +8,46 @@ import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
 import ProblemDetail from "./ProblemDetail";
 import UserProfile from "./UserProfile";
+import AuthGuard from "./AuthGuard";
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route 
-        path="/feed" 
-        element={
-          <ProtectedRoute>
-        <Feed />
-        </ProtectedRoute>
-        } />
-        <Route 
-        path="/create-problem" 
-        element={
-          <ProtectedRoute>
-        <CreateProblem />
-        </ProtectedRoute>
-        } />
-        <Route 
-        path="/problem/:id" 
-        element={
-          <ProtectedRoute>
-        <ProblemDetail />
-        </ProtectedRoute>
-        } />
-        <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute>
-        <UserProfile />
-        </ProtectedRoute>
-        } />
-      </Routes>
+      <AuthGuard>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route 
+          path="/feed" 
+          element={
+            <ProtectedRoute>
+          <Feed />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/create-problem" 
+          element={
+            <ProtectedRoute>
+          <CreateProblem />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/problem/:id" 
+          element={
+            <ProtectedRoute>
+          <ProblemDetail />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+          <UserProfile />
+          </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthGuard>
     </Router>
   );
 }

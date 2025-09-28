@@ -8,11 +8,32 @@ function Feed() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [voteData, setVoteData] = useState({});
+  const [followStatus, setFollowStatus] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Validate authentication before fetching data
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    
     fetchProblems();
   }, []);
+
+  const handleLogout = () => {
+    // Clear all user data
+    localStorage.removeItem("token");
+    
+    // Clear any cached data
+    setProblems([]);
+    setVoteData({});
+    setFollowStatus({});
+    
+    // Replace current history entry to prevent back navigation
+    navigate("/", { replace: true });
+  };
 
   const fetchProblems = async () => {
     try {
@@ -22,10 +43,41 @@ function Feed() {
       // Fetch vote data for all problems
       const problemIds = response.data.map(problem => problem.id);
       await fetchVoteData(problemIds);
+      
+      // Fetch follow status for all authors
+      await fetchFollowStatus(response.data);
     } catch (error) {
       console.error("Error fetching problems:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowStatus = async (problems) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const followPromises = problems.map(async (problem) => {
+        if (!problem.author) return { authorId: null, isFollowing: false };
+        try {
+          const response = await axios.get(`http://127.0.0.1:8000/auth/follow/status/${problem.author.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          return { authorId: problem.author.id, isFollowing: response.data.is_following };
+        } catch (error) {
+          return { authorId: problem.author.id, isFollowing: false };
+        }
+      });
+      
+      const results = await Promise.all(followPromises);
+      const followStatusMap = {};
+      results.forEach(result => {
+        followStatusMap[result.authorId] = result.isFollowing;
+      });
+      setFollowStatus(followStatusMap);
+    } catch (error) {
+      console.error("Error fetching follow status:", error);
     }
   };
 
@@ -79,6 +131,33 @@ function Feed() {
     }
   };
 
+  const handleFollow = async (authorId, e) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to follow users");
+        return;
+      }
+
+      const isFollowing = followStatus[authorId];
+      
+      if (isFollowing) {
+        await axios.delete(`http://127.0.0.1:8000/auth/follow/${authorId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFollowStatus(prev => ({ ...prev, [authorId]: false }));
+      } else {
+        await axios.post(`http://127.0.0.1:8000/auth/follow/${authorId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFollowStatus(prev => ({ ...prev, [authorId]: true }));
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -116,6 +195,18 @@ function Feed() {
               Create Problem
             </button>
           </Link>
+          <button 
+            onClick={handleLogout}
+            style={{ 
+              padding: "10px 20px", 
+              backgroundColor: "#dc3545", 
+              color: "white", 
+              border: "none", 
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}>
+            Logout
+          </button>
         </div>
       </div>
 
@@ -151,6 +242,59 @@ function Feed() {
               cursor: "pointer"  // Add this to show it's clickable
             }}
           >
+              {/* Author Info Section - Twitter Style */}
+              {problem.author && (
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "15px", gap: "10px" }}>
+                  {/* Profile Picture */}
+                  <div style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    backgroundColor: "#007bff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    backgroundImage: problem.author.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center"
+                  }}>
+                    {!problem.author.profile_picture && problem.author.username.charAt(0).toUpperCase()}
+                  </div>
+                  
+                  {/* Author Name and Follow Button */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
+                    <div>
+                      <div style={{ fontWeight: "bold", fontSize: "14px", color: "#333" }}>
+                        {problem.author.username}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#666" }}>
+                        {new Date(problem.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    
+                    {/* Follow Button */}
+                    <button
+                      onClick={(e) => handleFollow(problem.author.id, e)}
+                      style={{
+                        padding: "4px 12px",
+                        backgroundColor: followStatus[problem.author.id] ? "#6c757d" : "#007bff",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "15px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        marginLeft: "auto"
+                      }}
+                    >
+                      {followStatus[problem.author.id] ? "Following" : "Follow"}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <h3 style={{ marginTop: 0, color: "#333" }}>{problem.title}</h3>
               <p style={{ color: "#666", lineHeight: "1.5" }}>{problem.description}</p>
               <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
