@@ -22,6 +22,10 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserUpdate(BaseModel):
+    bio: Optional[str] = None
+    profile_picture: Optional[str] = None
+
 class ProblemCreate(BaseModel):
     title: str
     description: str

@@ -5,7 +5,7 @@ from database import get_db
 from models import User, Problem, Comment, Vote, Bookmark
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user
-from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut
+from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from typing import List
 from datetime import datetime
@@ -528,3 +528,23 @@ def get_user_profile(
         "comments": comments_data,
         "bookmarks": bookmarks_data
     }
+
+@router.put("/user/profile", response_model=UserOut)
+def update_user_profile(
+    user_update: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user profile (bio and profile picture)"""
+    # Update bio if provided
+    if user_update.bio is not None:
+        current_user.bio = user_update.bio
+    
+    # Update profile picture if provided
+    if user_update.profile_picture is not None:
+        current_user.profile_picture = user_update.profile_picture
+    
+    db.commit()
+    db.refresh(current_user)
+    
+    return current_user

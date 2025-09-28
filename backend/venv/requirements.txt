@@ -9,3 +9,4 @@ passlib
 jwt
 pydantic[email]
 alembic
+python-multipart

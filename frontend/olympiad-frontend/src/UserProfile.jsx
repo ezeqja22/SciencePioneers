@@ -6,6 +6,11 @@ function UserProfile() {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        bio: "",
+        profile_picture: ""
+    });
 
     useEffect(() => {
         fetchUserProfile();
@@ -35,6 +40,49 @@ function UserProfile() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleEditProfile = () => {
+        setEditFormData({
+            bio: profileData?.user?.bio || "",
+            profile_picture: profileData?.user?.profile_picture || ""
+        });
+        setIsEditingProfile(true);
+    };
+
+    const handleSaveProfile = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.put("http://127.0.0.1:8000/auth/user/profile", editFormData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            // Update the profile data with the new information
+            setProfileData(prev => ({
+                ...prev,
+                user: {
+                    ...prev.user,
+                    bio: editFormData.bio,
+                    profile_picture: editFormData.profile_picture
+                }
+            }));
+            
+            setIsEditingProfile(false);
+            alert("Profile updated successfully!");
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            alert("Error updating profile. Please try again.");
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingProfile(false);
+        setEditFormData({
+            bio: "",
+            profile_picture: ""
+        });
     };
 
     const handleBookmark = async (problemId, isBookmarked) => {
@@ -106,7 +154,23 @@ function UserProfile() {
                     </div>
                     
                     <div style={{ flex: 1 }}>
-                        <h1 style={{ margin: "0 0 10px 0", color: "#333" }}>{user.username}</h1>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <h1 style={{ margin: "0 0 10px 0", color: "#333" }}>{user.username}</h1>
+                            <button
+                                onClick={handleEditProfile}
+                                style={{
+                                    padding: "5px 15px",
+                                    backgroundColor: "#007bff",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    fontSize: "12px"
+                                }}
+                            >
+                                Edit Profile
+                            </button>
+                        </div>
                         <p style={{ margin: "0 0 10px 0", color: "#666", fontSize: "14px" }}>{user.email}</p>
                         {user.bio && (
                             <p style={{ margin: "0", color: "#555", fontSize: "16px" }}>{user.bio}</p>
@@ -114,6 +178,96 @@ function UserProfile() {
                     </div>
                 </div>
             </div>
+
+            {/* Edit Profile Form */}
+            {isEditingProfile && (
+                <div style={{
+                    backgroundColor: "#f8f9fa",
+                    padding: "30px",
+                    borderRadius: "10px",
+                    marginBottom: "30px",
+                    border: "1px solid #e9ecef"
+                }}>
+                    <h3 style={{ margin: "0 0 20px 0", color: "#333" }}>Edit Profile</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                        <div>
+                            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+                                Bio:
+                            </label>
+                            <textarea
+                                value={editFormData.bio}
+                                onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
+                                placeholder="Tell us about yourself..."
+                                style={{
+                                    width: "100%",
+                                    padding: "10px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "5px",
+                                    fontSize: "14px",
+                                    minHeight: "80px",
+                                    resize: "vertical"
+                                }}
+                            />
+                        </div>
+                        
+                        <div>
+                            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+                                Profile Picture URL (Coming Soon):
+                            </label>
+                            <input
+                                type="text"
+                                value={editFormData.profile_picture}
+                                onChange={(e) => setEditFormData({...editFormData, profile_picture: e.target.value})}
+                                placeholder="Profile picture URL (feature coming soon)"
+                                disabled
+                                style={{
+                                    width: "100%",
+                                    padding: "10px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "5px",
+                                    fontSize: "14px",
+                                    backgroundColor: "#f5f5f5",
+                                    color: "#999"
+                                }}
+                            />
+                            <p style={{ fontSize: "12px", color: "#666", margin: "5px 0 0 0" }}>
+                                Profile picture upload will be available in a future update
+                            </p>
+                        </div>
+                        
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button
+                                onClick={handleSaveProfile}
+                                style={{
+                                    padding: "10px 20px",
+                                    backgroundColor: "#28a745",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    fontSize: "14px"
+                                }}
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                onClick={handleCancelEdit}
+                                style={{
+                                    padding: "10px 20px",
+                                    backgroundColor: "#6c757d",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    fontSize: "14px"
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Stats */}
             <div style={{
