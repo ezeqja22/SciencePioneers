@@ -112,6 +112,66 @@ def get_comments(problem_id: int, db: Session = Depends(get_db)):
     comments = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
     return comments
 
+@router.put("/problems/{problem_id}/comments/{comment_id}", response_model=CommentResponse)
+def update_comment(
+    problem_id: int,
+    comment_id: int,
+    comment: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if comment exists and belongs to current user
+    db_comment = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.problem_id == problem_id,
+        Comment.author_id == current_user.id
+    ).first()
+    
+    if not db_comment:
+        raise HTTPException(status_code=404, detail="Comment not found or you don't have permission to edit it")
+    
+    # Update comment
+    db_comment.text = comment.text
+    db.commit()
+    db.refresh(db_comment)
+    
+    # Fetch the comment with author relationship
+    db_comment = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.id == comment_id).first()
+    return db_comment
+
+@router.delete("/problems/{problem_id}/comments/{comment_id}")
+def delete_comment(
+    problem_id: int,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if comment exists and belongs to current user
+    db_comment = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.problem_id == problem_id,
+        Comment.author_id == current_user.id
+    ).first()
+    
+    if not db_comment:
+        raise HTTPException(status_code=404, detail="Comment not found or you don't have permission to delete it")
+    
+    # Delete comment
+    db.delete(db_comment)
+    db.commit()
+    
+    return {"message": "Comment deleted successfully"}
+
 # Vote endpoints
 
 @router.get("/problems/{problem_id}/votes", response_model=List[VoteResponse])

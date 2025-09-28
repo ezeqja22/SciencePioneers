@@ -15,6 +15,9 @@ function ProblemDetail() {
         dislike_count: 0
     });
     const [voteLoading, setVoteLoading] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [editingComment, setEditingComment] = useState(null);
+    const [editText, setEditText] = useState("");
 
 
 
@@ -49,6 +52,20 @@ function ProblemDetail() {
             setVoteStatus(response.data);
         } catch (error) {
             console.error("Error fetching vote status:", error);
+        }
+    }
+
+    const fetchCurrentUser = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setCurrentUser(response.data);
+        } catch (error) {
+            console.error("Error fetching current user:", error);
         }
     }
 
@@ -93,10 +110,63 @@ function ProblemDetail() {
         }
     }
 
+    const handleEditComment = (comment) => {
+        setEditingComment(comment.id);
+        setEditText(comment.text);
+    }
+
+    const handleSaveEdit = async (commentId) => {
+        if (!editText.trim()) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}`,
+                { text: editText },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            
+            setComments(comments.map(comment => 
+                comment.id === commentId ? response.data : comment
+            ));
+            setEditingComment(null);
+            setEditText("");
+        } catch (error) {
+            console.error("Error updating comment:", error);
+        }
+    }
+
+    const handleCancelEdit = () => {
+        setEditingComment(null);
+        setEditText("");
+    }
+
+    const handleDeleteComment = async (commentId) => {
+        if (!window.confirm("Are you sure you want to delete this comment?")) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            await axios.delete(`http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            setComments(comments.filter(comment => comment.id !== commentId));
+        } catch (error) {
+            console.error("Error deleting comment:", error);
+        }
+    }
+
     useEffect(() => {
         fetchProblem();
         fetchComments();
         fetchVoteStatus();
+        fetchCurrentUser();
     }, [id]);
 
     if (loading) {
@@ -236,10 +306,96 @@ function ProblemDetail() {
                         borderRadius: "5px",
                         border: "1px solid #ddd"
                     }}>
-                        <p style={{ margin: "0 0 10px 0", color: "#333" }}>{comment.text}</p>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                            By: {comment.author.username} • {new Date(comment.created_at).toLocaleDateString()}
-                        </div>
+                        {editingComment === comment.id ? (
+                            <div>
+                                <textarea
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    style={{
+                                        width: "100%",
+                                        minHeight: "60px",
+                                        padding: "8px",
+                                        border: "1px solid #ddd",
+                                        borderRadius: "4px",
+                                        resize: "vertical",
+                                        fontFamily: "inherit",
+                                        marginBottom: "10px"
+                                    }}
+                                />
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                    <button
+                                        onClick={() => handleSaveEdit(comment.id)}
+                                        disabled={!editText.trim()}
+                                        style={{
+                                            padding: "6px 12px",
+                                            backgroundColor: editText.trim() ? "#28a745" : "#ccc",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: editText.trim() ? "pointer" : "not-allowed",
+                                            fontSize: "12px"
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={handleCancelEdit}
+                                        style={{
+                                            padding: "6px 12px",
+                                            backgroundColor: "#6c757d",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: "pointer",
+                                            fontSize: "12px"
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <p style={{ margin: "0 0 10px 0", color: "#333" }}>{comment.text}</p>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ fontSize: "12px", color: "#666" }}>
+                                        By: {comment.author.username} • {new Date(comment.created_at).toLocaleDateString()}
+                                    </div>
+                                    {currentUser && currentUser.id === comment.author_id && (
+                                        <div style={{ display: "flex", gap: "5px" }}>
+                                            <button
+                                                onClick={() => handleEditComment(comment)}
+                                                style={{
+                                                    padding: "4px 8px",
+                                                    backgroundColor: "#007bff",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "3px",
+                                                    cursor: "pointer",
+                                                    fontSize: "11px"
+                                                }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteComment(comment.id)}
+                                                style={{
+                                                    padding: "4px 8px",
+                                                    backgroundColor: "#dc3545",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "3px",
+                                                    cursor: "pointer",
+                                                    fontSize: "11px"
+                                                }}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
