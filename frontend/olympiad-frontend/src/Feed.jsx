@@ -10,6 +10,9 @@ function Feed() {
   const [voteData, setVoteData] = useState({});
   const [followStatus, setFollowStatus] = useState({});
   const [activeTab, setActiveTab] = useState("all"); // "all", "following", "trending"
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -227,6 +230,32 @@ function Feed() {
     }
   };
 
+  const searchUsers = async (query) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`http://127.0.0.1:8000/auth/users/search?q=${encodeURIComponent(query)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSearchResults(response.data.users);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setSearchResults([]);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    searchUsers(query);
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -277,6 +306,86 @@ function Feed() {
             Logout
           </button>
         </div>
+      </div>
+
+      {/* Search Bar */}
+      <div style={{ marginBottom: "20px", position: "relative" }}>
+        <input
+          type="text"
+          placeholder="Search users..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          style={{
+            width: "100%",
+            padding: "10px",
+            border: "1px solid #ddd",
+            borderRadius: "5px",
+            fontSize: "16px"
+          }}
+        />
+        {showSearchResults && searchResults.length > 0 && (
+          <div style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            backgroundColor: "white",
+            border: "1px solid #ddd",
+            borderRadius: "5px",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            zIndex: 1000,
+            maxHeight: "300px",
+            overflowY: "auto"
+          }}>
+            {searchResults.map(user => (
+              <div
+                key={user.id}
+                style={{
+                  padding: "10px",
+                  borderBottom: "1px solid #eee",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px"
+                }}
+                onClick={() => {
+                  navigate(`/user/${user.username}`);
+                  setShowSearchResults(false);
+                  setSearchQuery("");
+                }}
+              >
+                <div style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  backgroundColor: "#007bff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontWeight: "bold",
+                  backgroundImage: user.profile_picture ? 
+                    `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : 
+                    'none',
+                  backgroundSize: "cover",
+                  backgroundPosition: "center"
+                }}>
+                  {!user.profile_picture && user.username.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: "bold" }}>{user.username}</div>
+                  {user.bio && <div style={{ fontSize: "12px", color: "#666" }}>{user.bio}</div>}
+                  <div style={{ fontSize: "12px", color: "#666" }}>
+                    {user.follower_count} followers
+                  </div>
+                </div>
+                {user.is_following && (
+                  <span style={{ color: "#28a745", fontSize: "12px" }}>✓ Following</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Tab Navigation */}
@@ -419,7 +528,19 @@ function Feed() {
                   {/* Author Name and Follow Button */}
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
                     <div>
-                      <div style={{ fontWeight: "bold", fontSize: "14px", color: "#333" }}>
+                      <div 
+                        style={{ 
+                          fontWeight: "bold", 
+                          fontSize: "14px", 
+                          color: "#007bff",
+                          cursor: "pointer",
+                          textDecoration: "underline"
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent bubbling to problem card
+                          navigate(`/user/${problem.author.username}`);
+                        }}
+                      >
                         {problem.author.username}
                       </div>
                       <div style={{ fontSize: "12px", color: "#666" }}>

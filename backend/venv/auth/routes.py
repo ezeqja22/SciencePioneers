@@ -699,11 +699,11 @@ async def upload_profile_picture(
     # Generate unique filename
     file_extension = file.filename.split(".")[-1]
     unique_filename = f"user_{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
-    file_path = f"uploads/profile_pictures/{unique_filename}"
+    file_path = f"../../uploads/profile_pictures/{unique_filename}"
     stored_path = f"profile_pictures/{unique_filename}"
 
     # Create directory if it doesn't exist
-    os.makedirs("uploads/profile_pictures", exist_ok=True)
+    os.makedirs("../../uploads/profile_pictures", exist_ok=True)
     
     # Save the file
     with open(file_path, "wb") as buffer:
@@ -723,7 +723,9 @@ def serve_image(filename: str):
     from fastapi.responses import FileResponse
     import os
     
-    file_path = f"uploads/profile_pictures/{filename}"
+    # Correct path: go up two levels from backend/venv/ to reach uploads/
+    file_path = f"../../uploads/profile_pictures/{filename}"
+    
     if os.path.exists(file_path):
         return FileResponse(file_path)
     else:
@@ -854,3 +856,105 @@ def get_follow_status(
         "is_following": follow is not None,
         "user_id": user_id
     }
+
+@router.get("/user/{username}")
+def get_public_user_profile(
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get public profile of any user by username"""
+    # Get the user
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get follower and following counts
+    follower_count = db.query(Follow).filter(Follow.following_id == user.id).count()
+    following_count = db.query(Follow).filter(Follow.follower_id == user.id).count()
+    
+    # Check if current user is following this user
+    is_following = False
+    if current_user.id != user.id:  # Don't follow yourself
+        follow = db.query(Follow).filter(
+            Follow.follower_id == current_user.id,
+            Follow.following_id == user.id
+        ).first()
+        is_following = follow is not None
+    
+    # Get user's problems with comment counts
+    problems = db.query(Problem).filter(Problem.author_id == user.id).order_by(Problem.created_at.desc()).all()
+    
+    problems_data = []
+    for problem in problems:
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        problems_data.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "tags": problem.tags,
+            "subject": problem.subject,
+            "level": problem.level,
+            "author_id": problem.author_id,
+            "comment_count": comment_count,
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None,
+            "author": {
+                "id": user.id,
+                "username": user.username,
+                "profile_picture": user.profile_picture
+            }
+        })
+    
+    return {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "bio": user.bio,
+            "profile_picture": user.profile_picture,
+            "created_at": user.created_at.isoformat() if user.created_at else None
+        },
+        "follower_count": follower_count,
+        "following_count": following_count,
+        "is_following": is_following,
+        "problems": problems_data
+    }
+
+@router.get("/users/search")
+def search_users(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Search for users by username"""
+    if len(q.strip()) < 2:
+        return {"users": []}
+    
+    users = db.query(User).filter(
+        User.username.ilike(f"%{q}%")
+    ).limit(10).all()
+    
+    users_data = []
+    for user in users:
+        # Get follower count for each user
+        follower_count = db.query(Follow).filter(Follow.following_id == user.id).count()
+        
+        # Check if current user is following this user
+        is_following = False
+        if current_user.id != user.id:
+            follow = db.query(Follow).filter(
+                Follow.follower_id == current_user.id,
+                Follow.following_id == user.id
+            ).first()
+            is_following = follow is not None
+        
+        users_data.append({
+            "id": user.id,
+            "username": user.username,
+            "bio": user.bio,
+            "profile_picture": user.profile_picture,
+            "follower_count": follower_count,
+            "is_following": is_following
+        })
+    
+    return {"users": users_data}

@@ -8,6 +8,7 @@ import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
 import ProblemDetail from "./ProblemDetail";
 import UserProfile from "./UserProfile";
+import PublicUserProfile from "./PublicUserProfile";
 import AuthGuard from "./AuthGuard";
 
 function App() {
@@ -44,6 +45,13 @@ function App() {
           element={
             <ProtectedRoute>
           <UserProfile />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/user/:username" 
+          element={
+            <ProtectedRoute>
+          <PublicUserProfile />
           </ProtectedRoute>
           } />
         </Routes>
