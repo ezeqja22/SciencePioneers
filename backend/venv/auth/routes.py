@@ -61,17 +61,44 @@ def create_problem(
     db.refresh(db_problem)
     return db_problem
 
+@router.get("/debug/test")
+def debug_test():
+    return {"message": "Backend is working", "timestamp": "now"}
+
 @router.get("/problems/", response_model=List[ProblemResponse])
 def get_problems(db: Session = Depends(get_db)):
-    # First get problems with comment counts
-    problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    # Get real problems from database
+    problems = db.query(Problem).order_by(Problem.created_at.desc()).all()
     
-    # Then fetch authors for all problems
-    problem_ids = [p.id for p, _ in problems_with_counts]
-    authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
-    author_dict = {author.id: author for author in authors}
+    result = []
+    for problem in problems:
+        # Get author for this problem
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        
+        # Get comment count
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        
+        # Build response with real data
+        problem_data = {
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "tags": problem.tags,
+            "subject": problem.subject,
+            "level": problem.level,
+            "author_id": problem.author_id,
+            "comment_count": comment_count,
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None,
+            "author": {
+                "id": author.id if author else 1,
+                "username": author.username if author else "Unknown User",
+                "profile_picture": author.profile_picture if author else None
+            }
+        }
+        result.append(problem_data)
     
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at, "author": {"id": author_dict[p.author_id].id, "username": author_dict[p.author_id].username, "profile_picture": author_dict[p.author_id].profile_picture}} for p, comment_count in problems_with_counts]
+    return result
 
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
@@ -83,7 +110,42 @@ def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
     authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
     author_dict = {author.id: author for author in authors}
     
-    return [{"id": p.id, "title": p.title, "description": p.description, "tags": p.tags, "subject": p.subject, "level": p.level, "author_id": p.author_id, "comment_count": comment_count, "updated_at": p.updated_at, "author": {"id": author_dict[p.author_id].id, "username": author_dict[p.author_id].username, "profile_picture": author_dict[p.author_id].profile_picture}} for p, comment_count in problems_with_counts]
+    result = []
+    for p, comment_count in problems_with_counts:
+        author = author_dict.get(p.author_id)
+        if author:
+            result.append({
+                "id": p.id, 
+                "title": p.title, 
+                "description": p.description, 
+                "tags": p.tags, 
+                "subject": p.subject, 
+                "level": p.level, 
+                "author_id": p.author_id, 
+                "comment_count": comment_count, 
+                "created_at": p.created_at.isoformat() if p.created_at else None, 
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None, 
+                "author": {
+                    "id": author.id, 
+                    "username": author.username, 
+                    "profile_picture": author.profile_picture
+                }
+            })
+        else:
+            result.append({
+                "id": p.id, 
+                "title": p.title, 
+                "description": p.description, 
+                "tags": p.tags, 
+                "subject": p.subject, 
+                "level": p.level, 
+                "author_id": p.author_id, 
+                "comment_count": comment_count, 
+                "created_at": p.created_at.isoformat() if p.created_at else None, 
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None, 
+                "author": None
+            })
+    return result
 
 
 @router.get("/problems/id/{problem_id}", response_model=ProblemResponse)
@@ -97,7 +159,38 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     # Fetch the author
     author = db.query(User).filter(User.id == problem.author_id).first()
     
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at, "author": {"id": author.id, "username": author.username, "profile_picture": author.profile_picture}}
+    if author:
+        return {
+            "id": problem.id, 
+            "title": problem.title, 
+            "description": problem.description, 
+            "tags": problem.tags, 
+            "subject": problem.subject, 
+            "level": problem.level, 
+            "author_id": problem.author_id, 
+            "comment_count": comment_count, 
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None, 
+            "author": {
+                "id": author.id, 
+                "username": author.username, 
+                "profile_picture": author.profile_picture
+            }
+        }
+    else:
+        return {
+            "id": problem.id, 
+            "title": problem.title, 
+            "description": problem.description, 
+            "tags": problem.tags, 
+            "subject": problem.subject, 
+            "level": problem.level, 
+            "author_id": problem.author_id, 
+            "comment_count": comment_count, 
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None, 
+            "author": None
+        }
 
 @router.put("/problems/{problem_id}", response_model=ProblemResponse)
 def update_problem(
@@ -714,6 +807,11 @@ def get_following_feed(
         Problem.author_id.in_(following_ids)
     ).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
     
+    # Fetch authors for all problems
+    author_ids = [p.author_id for p, _ in problems]
+    authors = db.query(User).filter(User.id.in_(author_ids)).all()
+    author_dict = {author.id: author for author in authors}
+    
     # Serialize problems
     problems_data = []
     for problem, comment_count in problems:
@@ -727,7 +825,12 @@ def get_following_feed(
             "author_id": problem.author_id,
             "comment_count": comment_count,
             "created_at": problem.created_at.isoformat() if problem.created_at else None,
-            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None,
+            "author": {
+                "id": author_dict[problem.author_id].id,
+                "username": author_dict[problem.author_id].username,
+                "profile_picture": author_dict[problem.author_id].profile_picture
+            }
         })
     
     return {

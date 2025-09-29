@@ -42,7 +42,9 @@ class ProblemResponse(BaseModel):
     level: Optional[str]
     author_id: int
     comment_count: int
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    author: Optional[dict] = None
 
     class Config:
         from_attributes = True

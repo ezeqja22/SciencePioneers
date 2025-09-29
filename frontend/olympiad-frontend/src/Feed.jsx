@@ -9,6 +9,7 @@ function Feed() {
   const [loading, setLoading] = useState(true);
   const [voteData, setVoteData] = useState({});
   const [followStatus, setFollowStatus] = useState({});
+  const [activeTab, setActiveTab] = useState("all"); // "all", "following", "trending"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,6 +22,17 @@ function Feed() {
     
     fetchProblems();
   }, []);
+
+  useEffect(() => {
+    // Fetch data when tab changes
+    if (activeTab === "all") {
+      fetchProblems();
+    } else if (activeTab === "following") {
+      fetchFollowingProblems();
+    } else if (activeTab === "trending") {
+      fetchTrendingProblems();
+    }
+  }, [activeTab]);
 
   const handleLogout = () => {
     // Clear all user data
@@ -36,6 +48,7 @@ function Feed() {
   };
 
   const fetchProblems = async () => {
+    setLoading(true);
     try {
       const response = await axios.get("http://127.0.0.1:8000/auth/problems/");
       setProblems(response.data);
@@ -48,6 +61,62 @@ function Feed() {
       await fetchFollowStatus(response.data);
     } catch (error) {
       console.error("Error fetching problems:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchFollowingProblems = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://127.0.0.1:8000/auth/feed/following", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      // The backend returns an object with 'problems' array
+      const problemsData = Array.isArray(response.data.problems) ? response.data.problems : [];
+      setProblems(problemsData);
+      
+      // Only fetch vote data and follow status if we have problems
+      if (problemsData.length > 0) {
+        const problemIds = problemsData.map(problem => problem.id);
+        await fetchVoteData(problemIds);
+        await fetchFollowStatus(problemsData);
+      }
+    } catch (error) {
+      console.error("Error fetching following problems:", error);
+      // Set empty array on error to prevent map error
+      setProblems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTrendingProblems = async () => {
+    setLoading(true);
+    try {
+      // For now, we'll use the same endpoint but sort by popularity
+      // Later we can implement a proper trending algorithm
+      const response = await axios.get("http://127.0.0.1:8000/auth/problems/");
+      
+      // Ensure response.data is an array and sort by comment count
+      const problemsData = Array.isArray(response.data) ? response.data : [];
+      const sortedProblems = problemsData.sort((a, b) => b.comment_count - a.comment_count);
+      setProblems(sortedProblems);
+      
+      // Only fetch vote data and follow status if we have problems
+      if (sortedProblems.length > 0) {
+        const problemIds = sortedProblems.map(problem => problem.id);
+        await fetchVoteData(problemIds);
+        await fetchFollowStatus(sortedProblems);
+      }
+    } catch (error) {
+      console.error("Error fetching trending problems:", error);
+      // Set empty array on error to prevent map error
+      setProblems([]);
     } finally {
       setLoading(false);
     }
@@ -168,7 +237,7 @@ function Feed() {
 
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
         <h2>Science Problems Feed</h2>
         <div style={{ display: "flex", gap: "10px" }}>
           <Link to="/profile">
@@ -210,22 +279,105 @@ function Feed() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div style={{ 
+        display: "flex", 
+        borderBottom: "2px solid #e9ecef", 
+        marginBottom: "30px",
+        gap: "0"
+      }}>
+        <button
+          onClick={() => setActiveTab("all")}
+          style={{
+            padding: "12px 24px",
+            border: "none",
+            backgroundColor: activeTab === "all" ? "#007bff" : "transparent",
+            color: activeTab === "all" ? "white" : "#666",
+            cursor: "pointer",
+            borderBottom: activeTab === "all" ? "2px solid #007bff" : "2px solid transparent",
+            fontWeight: activeTab === "all" ? "bold" : "normal",
+            transition: "all 0.2s ease"
+          }}
+        >
+          All Problems
+        </button>
+        <button
+          onClick={() => setActiveTab("following")}
+          style={{
+            padding: "12px 24px",
+            border: "none",
+            backgroundColor: activeTab === "following" ? "#007bff" : "transparent",
+            color: activeTab === "following" ? "white" : "#666",
+            cursor: "pointer",
+            borderBottom: activeTab === "following" ? "2px solid #007bff" : "2px solid transparent",
+            fontWeight: activeTab === "following" ? "bold" : "normal",
+            transition: "all 0.2s ease"
+          }}
+        >
+          Following
+        </button>
+        <button
+          onClick={() => setActiveTab("trending")}
+          style={{
+            padding: "12px 24px",
+            border: "none",
+            backgroundColor: activeTab === "trending" ? "#007bff" : "transparent",
+            color: activeTab === "trending" ? "white" : "#666",
+            cursor: "pointer",
+            borderBottom: activeTab === "trending" ? "2px solid #007bff" : "2px solid transparent",
+            fontWeight: activeTab === "trending" ? "bold" : "normal",
+            transition: "all 0.2s ease"
+          }}
+        >
+          Trending
+        </button>
+      </div>
+
       {problems.length === 0 ? (
         <div style={{ textAlign: "center", marginTop: "50px" }}>
-          <h3>No problems yet!</h3>
-          <p>Be the first to create a science problem.</p>
-          <Link to="/create-problem">
-            <button style={{ 
-              padding: "10px 20px", 
-              backgroundColor: "#28a745", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}>
-              Create First Problem
-            </button>
-          </Link>
+          {activeTab === "all" && (
+            <>
+              <h3>No problems yet!</h3>
+              <p>Be the first to create a science problem.</p>
+              <Link to="/create-problem">
+                <button style={{ 
+                  padding: "10px 20px", 
+                  backgroundColor: "#28a745", 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: "5px",
+                  cursor: "pointer"
+                }}>
+                  Create First Problem
+                </button>
+              </Link>
+            </>
+          )}
+          {activeTab === "following" && (
+            <>
+              <h3>You're not following anyone yet!</h3>
+              <p>Follow other users to see their problems in your feed.</p>
+              <p>Switch to "All Problems" to discover users to follow.</p>
+            </>
+          )}
+          {activeTab === "trending" && (
+            <>
+              <h3>No trending problems yet!</h3>
+              <p>Problems with more comments and engagement will appear here.</p>
+              <Link to="/create-problem">
+                <button style={{ 
+                  padding: "10px 20px", 
+                  backgroundColor: "#28a745", 
+                  color: "white", 
+                  border: "none", 
+                  borderRadius: "5px",
+                  cursor: "pointer"
+                }}>
+                  Create a Problem
+                </button>
+              </Link>
+            </>
+          )}
         </div>
       ) : (
         <div>
@@ -243,7 +395,7 @@ function Feed() {
             }}
           >
               {/* Author Info Section - Twitter Style */}
-              {problem.author && (
+              {problem.author ? (
                 <div style={{ display: "flex", alignItems: "center", marginBottom: "15px", gap: "10px" }}>
                   {/* Profile Picture */}
                   <div style={{
@@ -280,17 +432,55 @@ function Feed() {
                       onClick={(e) => handleFollow(problem.author.id, e)}
                       style={{
                         padding: "4px 12px",
-                        backgroundColor: followStatus[problem.author.id] ? "#6c757d" : "#007bff",
+                        backgroundColor: followStatus[problem.author.id] ? "#28a745" : "#007bff",
                         color: "white",
                         border: "none",
                         borderRadius: "15px",
                         cursor: "pointer",
                         fontSize: "12px",
-                        marginLeft: "auto"
+                        marginLeft: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px"
                       }}
                     >
-                      {followStatus[problem.author.id] ? "Following" : "Follow"}
+                      {followStatus[problem.author.id] ? (
+                        <>
+                          <span>✓</span>
+                          <span>Following</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>+</span>
+                          <span>Follow</span>
+                        </>
+                      )}
                     </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "15px", gap: "10px" }}>
+                  <div style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    backgroundColor: "#6c757d",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "bold"
+                  }}>
+                    ?
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: "bold", fontSize: "14px", color: "#333" }}>
+                      Unknown Author
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#666" }}>
+                      {new Date(problem.created_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
               )}
