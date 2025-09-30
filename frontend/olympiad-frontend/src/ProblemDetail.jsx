@@ -27,6 +27,7 @@ function ProblemDetail() {
         level: ""
     });
     const [editTags, setEditTags] = useState([""]);
+    const [problemImages, setProblemImages] = useState([]);
 
 
 
@@ -34,6 +35,15 @@ function ProblemDetail() {
         try {
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`);
             setProblem(response.data);
+            
+            // Fetch problem images
+            try {
+                const imagesResponse = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/images`);
+                setProblemImages(imagesResponse.data.images || []);
+            } catch (error) {
+                console.error("Error fetching problem images:", error);
+                setProblemImages([]);
+            }
         } catch (error) {
             console.error("Error fetching problem:", error);
         } finally {
@@ -410,6 +420,159 @@ function ProblemDetail() {
                             lineHeight: "1.6"
                         }}
                     />
+                    {/* Image Management */}
+                    <div style={{ marginBottom: "20px" }}>
+                        <h4 style={{ marginBottom: "10px", color: "#333" }}>
+                            Problem Images ({problemImages.length}/10)
+                        </h4>
+                        
+                        {/* Existing Images */}
+                        {problemImages.length > 0 && (
+                            <div style={{ marginBottom: "15px" }}>
+                                <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "8px" }}>
+                                    Current Images:
+                                </div>
+                                <div style={{ 
+                                    display: "grid", 
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", 
+                                    gap: "10px" 
+                                }}>
+                                    {problemImages.map((image, index) => (
+                                        <div key={index} style={{ 
+                                            position: "relative",
+                                            border: "1px solid #ddd", 
+                                            borderRadius: "8px", 
+                                            overflow: "hidden",
+                                            backgroundColor: "white"
+                                        }}>
+                                            <img 
+                                                src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
+                                                alt={`Problem image ${index + 1}`}
+                                                style={{
+                                                    width: "100%",
+                                                    height: "100px",
+                                                    objectFit: "cover"
+                                                }}
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const token = localStorage.getItem("token");
+                                                        await axios.delete(
+                                                            `http://127.0.0.1:8000/auth/problems/${id}/images/${image}`,
+                                                            {
+                                                                headers: {
+                                                                    Authorization: `Bearer ${token}`
+                                                                }
+                                                            }
+                                                        );
+                                                        alert("Image deleted successfully!");
+                                                        fetchProblem(); // Refresh to update the list
+                                                    } catch (error) {
+                                                        console.error("Error deleting image:", error);
+                                                        alert(`Error deleting image: ${error.response?.data?.detail || error.message}`);
+                                                    }
+                                                }}
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "5px",
+                                                    right: "5px",
+                                                    padding: "4px 8px",
+                                                    backgroundColor: "#dc3545",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "4px",
+                                                    cursor: "pointer",
+                                                    fontSize: "12px"
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Add New Images */}
+                        {problemImages.length < 10 && (
+                            <div>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={async (e) => {
+                                        const files = Array.from(e.target.files);
+                                        console.log("New images selected:", files);
+                                        
+                                        if (files.length === 0) return;
+                                        
+                                        // Check if adding these files would exceed the limit
+                                        if (problemImages.length + files.length > 10) {
+                                            alert("Maximum 10 images allowed. Please select fewer images.");
+                                            return;
+                                        }
+                                        
+                                        try {
+                                            for (const file of files) {
+                                                if (!file.type.startsWith('image/')) {
+                                                    alert(`${file.name} is not an image file`);
+                                                    continue;
+                                                }
+                                                
+                                                const formData = new FormData();
+                                                formData.append('file', file);
+                                                
+                                                const token = localStorage.getItem("token");
+                                                const uploadResponse = await axios.post(
+                                                    `http://127.0.0.1:8000/auth/problems/${id}/images`,
+                                                    formData,
+                                                    {
+                                                        headers: {
+                                                            Authorization: `Bearer ${token}`,
+                                                            'Content-Type': 'multipart/form-data'
+                                                        }
+                                                    }
+                                                );
+                                                
+                                                console.log("Image uploaded successfully:", uploadResponse.data);
+                                            }
+                                            alert(`${files.length} image(s) uploaded successfully!`);
+                                            
+                                            // Refresh the problem data to show the new images
+                                            fetchProblem();
+                                        } catch (error) {
+                                            console.error("Error uploading images:", error);
+                                            alert(`Error uploading images: ${error.response?.data?.detail || error.message}`);
+                                        }
+                                    }}
+                                    style={{
+                                        width: "100%",
+                                        padding: "8px",
+                                        border: "1px solid #ddd",
+                                        borderRadius: "4px",
+                                        marginBottom: "10px"
+                                    }}
+                                />
+                                <small style={{ color: "#666", fontSize: "12px" }}>
+                                    Add up to {10 - problemImages.length} more images to your problem
+                                </small>
+                            </div>
+                        )}
+                        
+                        {problemImages.length >= 10 && (
+                            <div style={{ 
+                                padding: "10px", 
+                                backgroundColor: "#f8f9fa", 
+                                borderRadius: "4px",
+                                color: "#666",
+                                fontSize: "12px"
+                            }}>
+                                Maximum 10 images reached
+                            </div>
+                        )}
+                    </div>
+
                     <div style={{ display: "flex", gap: "10px", marginBottom: "30px" }}>
                         <button 
                             onClick={handleSaveProblem} 
@@ -601,6 +764,44 @@ function ProblemDetail() {
             }}>
                 <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
             </div>
+            
+            {/* Problem Images */}
+            {problemImages && problemImages.length > 0 && (
+                <div style={{
+                    backgroundColor: "#f9f9f9",
+                    padding: "20px",
+                    borderRadius: "8px",
+                    marginBottom: "30px"
+                }}>
+                    <h3 style={{ marginBottom: "15px", color: "#333" }}>Problem Images</h3>
+                    <div style={{ 
+                        display: "grid", 
+                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+                        gap: "15px" 
+                    }}>
+                        {problemImages.map((image, index) => (
+                            <div key={index} style={{ 
+                                border: "1px solid #ddd", 
+                                borderRadius: "8px", 
+                                overflow: "hidden",
+                                backgroundColor: "white"
+                            }}>
+                                <img 
+                                    src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
+                                    alt={`Problem image ${index + 1}`}
+                                    style={{
+                                        width: "100%",
+                                        height: "200px",
+                                        objectFit: "cover",
+                                        cursor: "pointer"
+                                    }}
+                                    onClick={() => window.open(`http://127.0.0.1:8000/auth/serve-problem-image/${image}`, '_blank')}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
                 </div>
             )}
 

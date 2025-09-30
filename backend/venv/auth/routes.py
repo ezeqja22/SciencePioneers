@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
@@ -98,7 +99,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 def me(current_user: User = Depends(get_verified_user)):
     return current_user
 
-@router.post("/problems/", response_model=ProblemCreate)
+@router.post("/problems/", response_model=ProblemResponse)
 def create_problem(
     problem: ProblemCreate,
     db: Session = Depends(get_db),
@@ -115,7 +116,21 @@ def create_problem(
     db.add(db_problem)
     db.commit()
     db.refresh(db_problem)
-    return db_problem
+    
+    # Return the created problem with all fields
+    return {
+        "id": db_problem.id,
+        "title": db_problem.title,
+        "description": db_problem.description,
+        "tags": db_problem.tags,
+        "subject": db_problem.subject,
+        "level": db_problem.level,
+        "author_id": db_problem.author_id,
+        "comment_count": 0,
+        "created_at": db_problem.created_at.isoformat() if db_problem.created_at else None,
+        "updated_at": db_problem.updated_at.isoformat() if db_problem.updated_at else None,
+        "author": None
+    }
 
 @router.get("/debug/test")
 def debug_test():
@@ -1140,3 +1155,122 @@ def cleanup_expired_users(db: Session = Depends(get_db)):
         "message": f"Cleaned up {count} expired unverified users",
         "deleted_count": count
     }
+
+@router.post("/problems/{problem_id}/images")
+async def upload_problem_image(
+    problem_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_verified_user)
+):
+    """Upload an image for a problem"""
+    # Check if problem exists and user owns it
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    if problem.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to modify this problem")
+    
+    # Check file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Create uploads directory if it doesn't exist
+    os.makedirs("../../uploads/problem_images", exist_ok=True)
+    
+    # Generate unique filename
+    file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = f"../../uploads/problem_images/{unique_filename}"
+    
+    # Read and save file
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    # Resize image if too large (optional)
+    try:
+        with Image.open(file_path) as img:
+            if img.width > 1920 or img.height > 1920:
+                img.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+                img.save(file_path, optimize=True, quality=85)
+    except Exception as e:
+        print(f"Image processing error: {e}")
+    
+    # Store the image association in the database
+    problem_image = ProblemImage(
+        problem_id=problem_id,
+        filename=unique_filename
+    )
+    db.add(problem_image)
+    db.commit()
+    
+    return {
+        "message": "Image uploaded successfully",
+        "filename": unique_filename,
+        "file_path": file_path
+    }
+
+@router.get("/serve-problem-image/{filename}")
+async def serve_problem_image(filename: str):
+    """Serve problem images"""
+    file_path = f"../../uploads/problem_images/{filename}"
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    return FileResponse(file_path)
+
+@router.get("/problems/{problem_id}/images")
+async def get_problem_images(
+    problem_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get all images for a problem"""
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Get images from database
+    problem_images = db.query(ProblemImage).filter(ProblemImage.problem_id == problem_id).all()
+    image_filenames = [img.filename for img in problem_images]
+    
+    return {"images": image_filenames}
+
+@router.delete("/problems/{problem_id}/images/{filename}")
+async def delete_problem_image(
+    problem_id: int,
+    filename: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_verified_user)
+):
+    """Delete a problem image"""
+    # Check if problem exists and user owns it
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    if problem.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to modify this problem")
+    
+    # Delete from database
+    problem_image = db.query(ProblemImage).filter(
+        ProblemImage.problem_id == problem_id,
+        ProblemImage.filename == filename
+    ).first()
+    
+    if not problem_image:
+        raise HTTPException(status_code=404, detail="Image not found in database")
+    
+    db.delete(problem_image)
+    db.commit()
+    
+    # Delete file
+    file_path = f"../../uploads/problem_images/{filename}"
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"message": "Image deleted successfully"}
+    else:
+        return {"message": "Image deleted from database but file not found"}

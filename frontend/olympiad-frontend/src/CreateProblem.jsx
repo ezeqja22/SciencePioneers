@@ -11,6 +11,8 @@ function CreateProblem() {
     level: "Any Level"
   });
   const [tags, setTags] = useState([""]); // Array of tag strings
+  const [images, setImages] = useState([]); // Array of uploaded image filenames
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -40,6 +42,34 @@ function CreateProblem() {
       const newTags = tags.filter((_, i) => i !== index);
       setTags(newTags);
     }
+  };
+
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    // Check if adding these files would exceed the limit
+    if (images.length + files.length > 10) {
+      alert("Maximum 10 images allowed. Please select fewer images.");
+      return;
+    }
+    
+    // Validate files
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Store files for later upload
+    setImages([...images, ...validFiles]);
+  };
+
+  const removeImage = (index) => {
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
   };
 
   const handleSubmit = async (e) => {
@@ -72,6 +102,42 @@ function CreateProblem() {
         }
       );
 
+      // Upload images if any
+      if (images.length > 0) {
+        console.log("Problem created with ID:", response.data.id);
+        console.log("Uploading images:", images);
+        setUploadingImages(true);
+        try {
+          for (const file of images) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const uploadUrl = `http://127.0.0.1:8000/auth/problems/${response.data.id}/images`;
+            console.log("Uploading to URL:", uploadUrl);
+            console.log("File being uploaded:", file.name, file.type, file.size);
+            
+            const uploadResponse = await axios.post(
+              uploadUrl,
+              formData,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'multipart/form-data'
+                }
+              }
+            );
+            console.log("Image upload response:", uploadResponse.data);
+          }
+        } catch (error) {
+          console.error("Error uploading images:", error);
+          console.error("Error response:", error.response?.data);
+          console.error("Error status:", error.response?.status);
+          alert(`Problem created but images failed to upload: ${error.response?.data?.detail || error.message}. You can add them later by editing the problem.`);
+        } finally {
+          setUploadingImages(false);
+        }
+      }
+      
       alert("Problem created successfully!");
       navigate("/feed");
     } catch (error) {
@@ -247,10 +313,94 @@ function CreateProblem() {
           </small>
         </div>
 
+        <div>
+          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+            Images (Optional) - {images.length}/10
+          </label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{
+              width: "100%",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "16px"
+            }}
+          />
+          {images.length > 0 && (
+            <div style={{ marginTop: "10px" }}>
+              <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "5px" }}>
+                Selected Images ({images.length}):
+              </div>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", 
+                gap: "10px" 
+              }}>
+                {images.map((file, index) => (
+                  <div key={index} style={{ 
+                    position: "relative",
+                    border: "1px solid #ddd", 
+                    borderRadius: "8px", 
+                    overflow: "hidden",
+                    backgroundColor: "white"
+                  }}>
+                    <img 
+                      src={URL.createObjectURL(file)} 
+                      alt={`Preview ${index + 1}`}
+                      style={{
+                        width: "100%",
+                        height: "80px",
+                        objectFit: "cover"
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      style={{
+                        position: "absolute",
+                        top: "5px",
+                        right: "5px",
+                        padding: "4px 8px",
+                        backgroundColor: "#dc3545",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "12px"
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {images.length >= 10 && (
+            <div style={{ 
+              padding: "10px", 
+              backgroundColor: "#f8f9fa", 
+              borderRadius: "4px",
+              color: "#666",
+              fontSize: "12px",
+              marginTop: "10px"
+            }}>
+              Maximum 10 images reached
+            </div>
+          )}
+          <small style={{ color: "#666", fontSize: "12px" }}>
+            Upload up to 10 diagrams, graphs, or other images to help illustrate your problem
+          </small>
+        </div>
+
         <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || uploadingImages}
             style={{
               padding: "12px 24px",
               backgroundColor: loading ? "#ccc" : "#007bff",
@@ -262,7 +412,7 @@ function CreateProblem() {
               flex: 1
             }}
           >
-            {loading ? "Creating..." : "Create Problem"}
+            {loading ? "Creating..." : uploadingImages ? "Uploading Images..." : "Create Problem"}
           </button>
           <button
             type="button"

@@ -40,6 +40,7 @@ class Problem(Base):
     comments = relationship("Comment", back_populates="problem")
     votes = relationship("Vote", back_populates="problem")
     bookmarks = relationship("Bookmark", back_populates="problem")
+    images = relationship("ProblemImage", back_populates="problem")
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -82,3 +83,11 @@ class Follow(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     follower = relationship("User", foreign_keys=[follower_id], back_populates="following")
     following = relationship("User", foreign_keys=[following_id], back_populates="followers")
+
+class ProblemImage(Base):
+    __tablename__ = "problem_images"
+    id = Column(Integer, primary_key=True, index=True)
+    problem_id = Column(Integer, ForeignKey("problems.id"))
+    filename = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    problem = relationship("Problem", back_populates="images")
