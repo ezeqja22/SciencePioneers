@@ -13,6 +13,7 @@ function Feed() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,6 +25,7 @@ function Feed() {
     }
     
     fetchProblems();
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -256,6 +258,18 @@ function Feed() {
     searchUsers(query);
   };
 
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
@@ -349,7 +363,12 @@ function Feed() {
                   gap: "10px"
                 }}
                 onClick={() => {
-                  navigate(`/user/${user.username}`);
+                  // If it's the current user, go to their own profile page
+                  if (currentUser && user.id === currentUser.id) {
+                    navigate('/profile');
+                  } else {
+                    navigate(`/user/${user.username}`);
+                  }
                   setShowSearchResults(false);
                   setSearchQuery("");
                 }}
@@ -538,7 +557,12 @@ function Feed() {
                         }}
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent bubbling to problem card
-                          navigate(`/user/${problem.author.username}`);
+                          // If it's the current user, go to their own profile page
+                          if (currentUser && problem.author.id === currentUser.id) {
+                            navigate('/profile');
+                          } else {
+                            navigate(`/user/${problem.author.username}`);
+                          }
                         }}
                       >
                         {problem.author.username}
@@ -548,35 +572,37 @@ function Feed() {
                       </div>
                     </div>
                     
-                    {/* Follow Button */}
-                    <button
-                      onClick={(e) => handleFollow(problem.author.id, e)}
-                      style={{
-                        padding: "4px 12px",
-                        backgroundColor: followStatus[problem.author.id] ? "#28a745" : "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "15px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        marginLeft: "auto",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px"
-                      }}
-                    >
-                      {followStatus[problem.author.id] ? (
-                        <>
-                          <span>✓</span>
-                          <span>Following</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>+</span>
-                          <span>Follow</span>
-                        </>
-                      )}
-                    </button>
+                    {/* Follow Button - Hide for own posts */}
+                    {currentUser && problem.author.id !== currentUser.id && (
+                      <button
+                        onClick={(e) => handleFollow(problem.author.id, e)}
+                        style={{
+                          padding: "4px 12px",
+                          backgroundColor: followStatus[problem.author.id] ? "#28a745" : "#007bff",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "15px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          marginLeft: "auto",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px"
+                        }}
+                      >
+                        {followStatus[problem.author.id] ? (
+                          <>
+                            <span>✓</span>
+                            <span>Following</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>+</span>
+                            <span>Follow</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (

@@ -692,6 +692,10 @@ def get_user_profile(
             }
         })
     
+    # Get follower and following counts
+    follower_count = db.query(Follow).filter(Follow.following_id == current_user.id).count()
+    following_count = db.query(Follow).filter(Follow.follower_id == current_user.id).count()
+    
     # Handle both old and new profile picture paths
     profile_picture_url = None
     if current_user.profile_picture:
@@ -708,7 +712,9 @@ def get_user_profile(
             "username": current_user.username,
             "email": current_user.email,
             "bio": current_user.bio,
-            "profile_picture": profile_picture_url
+            "profile_picture": profile_picture_url,
+            "follower_count": follower_count,
+            "following_count": following_count
         },
         "problems": problems_data,
         "comments": comments_data,

@@ -304,6 +304,23 @@ function UserProfile() {
                             </button>
                         </div>
                         <p style={{ margin: "0 0 10px 0", color: "#666", fontSize: "14px" }}>{user.email}</p>
+                        
+                        {/* Follower/Following Counts */}
+                        <div style={{ display: "flex", gap: "20px", margin: "10px 0" }}>
+                            <div style={{ textAlign: "center" }}>
+                                <div style={{ fontWeight: "bold", fontSize: "18px", color: "#333" }}>
+                                    {user.follower_count || 0}
+                                </div>
+                                <div style={{ fontSize: "12px", color: "#666" }}>Followers</div>
+                            </div>
+                            <div style={{ textAlign: "center" }}>
+                                <div style={{ fontWeight: "bold", fontSize: "18px", color: "#333" }}>
+                                    {user.following_count || 0}
+                                </div>
+                                <div style={{ fontSize: "12px", color: "#666" }}>Following</div>
+                            </div>
+                        </div>
+                        
                         {user.bio && (
                             <p style={{ margin: "0", color: "#555", fontSize: "16px" }}>{user.bio}</p>
                         )}

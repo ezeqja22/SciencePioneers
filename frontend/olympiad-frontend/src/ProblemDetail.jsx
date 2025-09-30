@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useState, useEffect } from "react";
 
@@ -7,6 +7,7 @@ function ProblemDetail() {
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
     const { id } = useParams();
+    const navigate = useNavigate();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [voteStatus, setVoteStatus] = useState({
@@ -194,7 +195,17 @@ function ProblemDetail() {
                     }
                 });
             
-            setProblem(response.data);
+            // Preserve author information when updating problem
+            setProblem(prevProblem => {
+                console.log("Previous created_at:", prevProblem.created_at);
+                console.log("Response created_at:", response.data.created_at);
+                return {
+                    ...prevProblem,
+                    ...response.data,
+                    author: prevProblem.author, // Keep the original author data
+                    created_at: prevProblem.created_at // Keep the original creation date
+                };
+            });
             setEditingProblem(false);
         } catch (error) {
             console.error("Error updating problem:", error);
@@ -351,7 +362,72 @@ function ProblemDetail() {
                 <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                         <div>
-                            <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+            <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+                            
+                            {/* Author Information */}
+                            {problem.author && (
+                                <div style={{ 
+                                    display: "flex", 
+                                    alignItems: "center", 
+                                    gap: "10px", 
+                                    marginBottom: "15px",
+                                    padding: "10px",
+                                    backgroundColor: "#f8f9fa",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e9ecef"
+                                }}>
+                                    <div style={{
+                                        width: "40px",
+                                        height: "40px",
+                                        borderRadius: "50%",
+                                        backgroundColor: "#007bff",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: "white",
+                                        fontWeight: "bold",
+                                        fontSize: "16px",
+                                        backgroundImage: problem.author.profile_picture ? 
+                                            `url(http://127.0.0.1:8000/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : 
+                                            'none',
+                                        backgroundSize: "cover",
+                                        backgroundPosition: "center"
+                                    }}>
+                                        {!problem.author.profile_picture && (problem.author.username ? problem.author.username[0].toUpperCase() : "?")}
+                                    </div>
+                                    <div>
+                                        <div 
+                                            style={{ 
+                                                fontWeight: "bold", 
+                                                color: "#007bff", 
+                                                cursor: "pointer",
+                                                textDecoration: "underline"
+                                            }}
+                                            onClick={() => {
+                                                // If it's the current user, go to their own profile page
+                                                if (currentUser && problem.author.id === currentUser.id) {
+                                                    navigate('/profile');
+                                                } else {
+                                                    navigate(`/user/${problem.author.username}`);
+                                                }
+                                            }}
+                                        >
+                                            {problem.author.username || "Unknown Author"}
+                                        </div>
+                                        <div style={{ fontSize: "12px", color: "#666" }}>
+                                            {(() => {
+                                                try {
+                                                    const date = new Date(problem.created_at);
+                                                    return isNaN(date.getTime()) ? "Unknown date" : date.toLocaleDateString();
+                                                } catch (error) {
+                                                    return "Unknown date";
+                                                }
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             {problem.updated_at && new Date(problem.updated_at).getTime() > new Date(problem.created_at).getTime() && (
                                 <div style={{ fontSize: "12px", color: "#666", marginTop: "-15px", marginBottom: "15px" }}>
                                     (Edited)
@@ -390,17 +466,17 @@ function ProblemDetail() {
                         )}
                     </div>
 
-                    <div style={{ marginBottom: "20px" }}>
-                        <span style={{
-                            backgroundColor: "#e3f2fd",
-                            color: "#1976d2",
-                            padding: "4px 8px",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            marginRight: "10px"
-                        }}>
-                            {problem.subject}
-                        </span>
+            <div style={{ marginBottom: "20px" }}>
+                <span style={{
+                    backgroundColor: "#e3f2fd",
+                    color: "#1976d2",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    marginRight: "10px"
+                }}>
+                    {problem.subject}
+                </span>
                         <span style={{
                             backgroundColor: "#fff3e0",
                             color: "#f57c00",
@@ -411,27 +487,27 @@ function ProblemDetail() {
                         }}>
                             {problem.level}
                         </span>
-                        {problem.tags && (
-                            <span style={{
-                                backgroundColor: "#f3e5f5",
-                                color: "#7b1fa2",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
-                                fontSize: "12px"
-                            }}>
-                                {problem.tags}
-                            </span>
-                        )}
-                    </div>
-
-                    <div style={{
-                        backgroundColor: "#f9f9f9",
-                        padding: "20px",
-                        borderRadius: "8px",
-                        marginBottom: "30px"
+                {problem.tags && (
+                    <span style={{
+                        backgroundColor: "#f3e5f5",
+                        color: "#7b1fa2",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px"
                     }}>
-                        <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
-                    </div>
+                        {problem.tags}
+                    </span>
+                )}
+            </div>
+
+            <div style={{
+                backgroundColor: "#f9f9f9",
+                padding: "20px",
+                borderRadius: "8px",
+                marginBottom: "30px"
+            }}>
+                <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
+            </div>
                 </div>
             )}
 
@@ -624,7 +700,7 @@ function ProblemDetail() {
                             </div>
                         )}
                     </div>
-                ))}
+    ))}
             </div>
         </div>
     );
