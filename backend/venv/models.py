@@ -33,6 +33,7 @@ class Problem(Base):
     tags = Column(String)
     subject = Column(String, nullable=False)
     level = Column(String, default="Any Level")
+    year = Column(Integer, nullable=True)
     author_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)

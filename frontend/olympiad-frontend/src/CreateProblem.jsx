@@ -8,7 +8,8 @@ function CreateProblem() {
     title: "",
     description: "",
     subject: "",
-    level: "Any Level"
+    level: "",
+    year: ""
   });
   const [tags, setTags] = useState([""]); // Array of tag strings
   const [images, setImages] = useState([]); // Array of uploaded image filenames
@@ -89,12 +90,19 @@ function CreateProblem() {
       const processedTags = validTags.join(", ");
       
       const token = localStorage.getItem("token");
+      
+      // Ensure year is a number or null
+      const requestData = {
+        ...formData,
+        tags: processedTags,
+        year: formData.year ? parseInt(formData.year) : null
+      };
+      
+      console.log("Creating problem with data:", requestData);
+      
       const response = await axios.post(
         "http://127.0.0.1:8000/auth/problems/",
-        {
-          ...formData,
-          tags: processedTags
-        },
+        requestData,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -142,6 +150,9 @@ function CreateProblem() {
       navigate("/feed");
     } catch (error) {
       console.error("Error creating problem:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error message:", error.message);
       alert("Error creating problem: " + (error.response?.data?.detail || error.message));
     } finally {
       setLoading(false);
@@ -247,6 +258,31 @@ function CreateProblem() {
           />
           <small style={{ color: "#666", fontSize: "12px" }}>
             Specify the competition level or difficulty (defaults to "Any Level" if left blank)
+          </small>
+        </div>
+
+        <div>
+          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+            Year (Optional)
+          </label>
+          <input
+            type="number"
+            name="year"
+            value={formData.year}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "16px"
+            }}
+            placeholder="e.g., 2024, 2023, 2022..."
+            min="1900"
+            max="2030"
+          />
+          <small style={{ color: "#666", fontSize: "12px" }}>
+            Year of the olympiad or competition (optional)
           </small>
         </div>
 

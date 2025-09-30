@@ -111,6 +111,7 @@ def create_problem(
         tags=problem.tags,
         subject=problem.subject,
         level=problem.level,
+        year=problem.year,
         author_id=current_user.id
     )
     db.add(db_problem)
@@ -125,6 +126,7 @@ def create_problem(
         "tags": db_problem.tags,
         "subject": db_problem.subject,
         "level": db_problem.level,
+        "year": db_problem.year,
         "author_id": db_problem.author_id,
         "comment_count": 0,
         "created_at": db_problem.created_at.isoformat() if db_problem.created_at else None,
@@ -167,6 +169,7 @@ def get_problems(
             "tags": problem.tags,
             "subject": problem.subject,
             "level": problem.level,
+            "year": problem.year,
             "author_id": problem.author_id,
             "comment_count": comment_count,
             "created_at": problem.created_at.isoformat() if problem.created_at else None,
@@ -254,6 +257,7 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
             "tags": problem.tags, 
             "subject": problem.subject, 
             "level": problem.level, 
+            "year": problem.year,
             "author_id": problem.author_id, 
             "comment_count": comment_count, 
             "created_at": problem.created_at.isoformat() if problem.created_at else None,
@@ -272,6 +276,7 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
             "tags": problem.tags, 
             "subject": problem.subject, 
             "level": problem.level, 
+            "year": problem.year,
             "author_id": problem.author_id, 
             "comment_count": comment_count, 
             "created_at": problem.created_at.isoformat() if problem.created_at else None,
@@ -301,6 +306,7 @@ def update_problem(
     db_problem.tags = problem.tags
     db_problem.subject = problem.subject
     db_problem.level = problem.level
+    db_problem.year = problem.year
     db_problem.updated_at = datetime.utcnow()
     
     db.commit()
@@ -309,7 +315,43 @@ def update_problem(
     # Return with comment count
     result = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.id == problem_id).group_by(Problem.id).first()
     problem, comment_count = result
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "level": problem.level, "author_id": problem.author_id, "comment_count": comment_count, "updated_at": problem.updated_at}
+    # Fetch the author
+    author = db.query(User).filter(User.id == problem.author_id).first()
+    
+    if author:
+        return {
+            "id": problem.id, 
+            "title": problem.title, 
+            "description": problem.description, 
+            "tags": problem.tags, 
+            "subject": problem.subject, 
+            "level": problem.level, 
+            "year": problem.year,
+            "author_id": problem.author_id, 
+            "comment_count": comment_count, 
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None, 
+            "author": {
+                "id": author.id, 
+                "username": author.username, 
+                "profile_picture": author.profile_picture
+            }
+        }
+    else:
+        return {
+            "id": problem.id, 
+            "title": problem.title, 
+            "description": problem.description, 
+            "tags": problem.tags, 
+            "subject": problem.subject, 
+            "level": problem.level, 
+            "year": problem.year,
+            "author_id": problem.author_id, 
+            "comment_count": comment_count, 
+            "created_at": problem.created_at.isoformat() if problem.created_at else None,
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None, 
+            "author": None
+        }
 
 @router.delete("/problems/{problem_id}")
 def delete_problem(
@@ -369,37 +411,6 @@ def get_comments(problem_id: int, db: Session = Depends(get_db)):
     comments = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
     return comments
 
-@router.put("/problems/{problem_id}", response_model=ProblemResponse)
-def update_problem(
-    problem_id: int,
-    problem: ProblemCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # Check if problem exists and belongs to current user
-    db_problem = db.query(Problem).filter(
-        Problem.id == problem_id,
-        Problem.author_id == current_user.id
-    ).first()
-    
-    if not db_problem:
-        raise HTTPException(status_code=404, detail="Problem not found or you don't have permission to edit it")
-    
-    # Update problem
-    db_problem.title = problem.title
-    db_problem.description = problem.description
-    db_problem.tags = problem.tags
-    db_problem.subject = problem.subject
-    db_problem.updated_at = datetime.utcnow()  # Add this field to your Problem model
-    
-    db.commit()
-    db.refresh(db_problem)
-    
-    # Return with comment count
-    from sqlalchemy import func
-    result = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.id == problem_id).group_by(Problem.id).first()
-    problem, comment_count = result
-    return {"id": problem.id, "title": problem.title, "description": problem.description, "tags": problem.tags, "subject": problem.subject, "author_id": problem.author_id, "comment_count": comment_count}
 
 @router.delete("/problems/{problem_id}")
 def delete_problem(

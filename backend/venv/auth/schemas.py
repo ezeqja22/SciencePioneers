@@ -32,6 +32,7 @@ class ProblemCreate(BaseModel):
     tags: Optional[str] = None
     subject: str
     level: Optional[str] = "Any Level"
+    year: Optional[int] = None
 
 class ProblemResponse(BaseModel):
     id: int
@@ -40,6 +41,7 @@ class ProblemResponse(BaseModel):
     tags: Optional[str]
     subject: str
     level: Optional[str]
+    year: Optional[int]
     author_id: int
     comment_count: int
     created_at: Optional[datetime] = None

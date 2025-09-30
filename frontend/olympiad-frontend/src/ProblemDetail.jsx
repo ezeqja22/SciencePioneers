@@ -24,7 +24,8 @@ function ProblemDetail() {
         title: "",
         description: "",
         subject: "",
-        level: ""
+        level: "",
+        year: ""
     });
     const [editTags, setEditTags] = useState([""]);
     const [problemImages, setProblemImages] = useState([]);
@@ -33,7 +34,9 @@ function ProblemDetail() {
 
     const fetchProblem = async () => {
         try {
+            console.log("Fetching problem with ID:", id);
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`);
+            console.log("Problem response:", response.data);
             setProblem(response.data);
             
             // Fetch problem images
@@ -46,6 +49,8 @@ function ProblemDetail() {
             }
         } catch (error) {
             console.error("Error fetching problem:", error);
+            console.error("Error response:", error.response?.data);
+            console.error("Error status:", error.response?.status);
         } finally {
             setLoading(false);
         }
@@ -182,12 +187,14 @@ function ProblemDetail() {
     }
 
     const handleEditProblem = () => {
+        if (!problem) return;
         setEditingProblem(true);
         setEditProblemData({
             title: problem.title,
             description: problem.description,
             subject: problem.subject,
-            level: problem.level || "Any Level"
+            level: problem.level || "Any Level",
+            year: problem.year || ""
         });
         // Parse existing tags from comma-separated string
         const existingTags = problem.tags ? problem.tags.split(",").map(tag => tag.trim()).filter(tag => tag) : [""];
@@ -219,6 +226,8 @@ function ProblemDetail() {
         if (!editProblemData.title.trim() || !editProblemData.description.trim()) return;
 
         try {
+            console.log("Saving problem with data:", editProblemData);
+            
             // Validate tags
             const validTags = editTags.filter(tag => tag.trim() !== "");
             if (validTags.length > 5) {
@@ -230,16 +239,25 @@ function ProblemDetail() {
             const processedTags = validTags.join(", ");
             
             const token = localStorage.getItem("token");
+            console.log("Sending request to update problem...");
+            
+            // Ensure year is a number or null
+            const requestData = {
+                ...editProblemData,
+                tags: processedTags,
+                year: editProblemData.year ? parseInt(editProblemData.year) : null
+            };
+            
+            console.log("Request data:", requestData);
+            
             const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}`,
-                {
-                    ...editProblemData,
-                    tags: processedTags
-                },
+                requestData,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
+            console.log("Problem update response:", response.data);
             
             // Preserve author information when updating problem
             setProblem(prevProblem => {
@@ -255,6 +273,10 @@ function ProblemDetail() {
             setEditingProblem(false);
         } catch (error) {
             console.error("Error updating problem:", error);
+            console.error("Error response:", error.response?.data);
+            console.error("Error status:", error.response?.status);
+            console.error("Error message:", error.message);
+            alert(`Error updating problem: ${error.response?.data?.detail || error.message}`);
         }
     };
 
@@ -302,6 +324,15 @@ function ProblemDetail() {
         return <div>Loading...</div>;
     }
 
+    if (!problem) {
+        return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+                <h2>Problem not found</h2>
+                <p>This problem may have been deleted or doesn't exist.</p>
+            </div>
+        );
+    }
+
     return (
         <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
             {editingProblem ? (
@@ -340,6 +371,21 @@ function ProblemDetail() {
                             value={editProblemData.level}
                             onChange={(e) => setEditProblemData({...editProblemData, level: e.target.value})}
                             placeholder="Level (e.g., IMO, EGMO Phase 2, etc.)"
+                            style={{ 
+                                padding: "4px 8px", 
+                                marginRight: "10px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "4px",
+                                fontSize: "12px"
+                            }}
+                        />
+                        <input
+                            type="number"
+                            value={editProblemData.year}
+                            onChange={(e) => setEditProblemData({...editProblemData, year: e.target.value})}
+                            placeholder="Year (e.g., 2024)"
+                            min="1900"
+                            max="2030"
                             style={{ 
                                 padding: "4px 8px", 
                                 marginRight: "10px", 
@@ -721,16 +767,30 @@ function ProblemDetail() {
                 }}>
                     {problem.subject}
                 </span>
-                        <span style={{
-                            backgroundColor: "#fff3e0",
-                            color: "#f57c00",
-                            padding: "4px 8px",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            marginRight: "10px"
-                        }}>
-                            {problem.level}
-                        </span>
+                        {problem.level && problem.level.trim() && (
+                            <span style={{
+                                backgroundColor: "#fff3e0",
+                                color: "#f57c00",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                fontSize: "12px",
+                                marginRight: "10px"
+                            }}>
+                                {problem.level}
+                            </span>
+                        )}
+                        {problem.year && (
+                            <span style={{
+                                backgroundColor: "#e8f5e8", 
+                                color: "#2e7d32",
+                                padding: "4px 8px",
+                                borderRadius: "4px",
+                                fontSize: "12px",
+                                marginRight: "10px"
+                            }}>
+                                Year: {problem.year}
+                            </span>
+                        )}
                 {problem.tags && problem.tags.trim() && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                         {problem.tags.split(",").map((tag, index) => {

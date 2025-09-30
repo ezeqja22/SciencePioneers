@@ -682,15 +682,28 @@ function Feed() {
                 }}>
                   {problem.subject}
                 </span>
-                <span style={{
-                  backgroundColor: "#fff3e0",
-                  color: "#f57c00",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  fontSize: "12px"
-                }}>
-                  {problem.level}
-                </span>
+                {problem.level && problem.level.trim() && (
+                  <span style={{
+                    backgroundColor: "#fff3e0",
+                    color: "#f57c00",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px"
+                  }}>
+                    {problem.level}
+                  </span>
+                )}
+                {problem.year && (
+                  <span style={{ 
+                    backgroundColor: "#e8f5e8", 
+                    color: "#2e7d32",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px"
+                  }}>
+                    Year: {problem.year}
+                  </span>
+                )}
                 {problem.tags && problem.tags.trim() && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
                     {problem.tags.split(",").map((tag, index) => {
