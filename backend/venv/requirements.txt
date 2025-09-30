@@ -10,3 +10,5 @@ jwt
 pydantic[email]
 alembic
 python-multipart
+fastapi-mail
+jinja2

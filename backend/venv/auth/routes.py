@@ -4,7 +4,7 @@ from sqlalchemy import func
 from database import get_db
 from models import User, Problem, Comment, Vote, Bookmark, Follow
 from auth.utils import hash_password, verify_password, create_jwt
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from typing import List
@@ -16,16 +16,64 @@ from PIL import Image
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserOut)
-def register(req: RegisterRequest, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == req.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+@router.post("/register")
+async def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    # Check if email is already registered (verified or not)
+    existing_user = db.query(User).filter(User.email == req.email).first()
+    if existing_user:
+        if existing_user.is_verified:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        else:
+            # User exists but not verified - delete the old record and create new one
+            db.delete(existing_user)
+            db.commit()
+    
+    # Check if username is already taken
+    if db.query(User).filter(User.username == req.username).first():
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Generate verification code first
+    from email_service import email_service
+    verification_code = email_service.generate_verification_code()
+    verification_expires = email_service.get_verification_expiry()
+    
+    # Try to send email BEFORE creating user
+    success = await email_service.send_verification_email(
+        req.email, req.username, verification_code
+    )
+    
+    if not success:
+        # For testing: create user even if email fails, but log the code
+        print(f"DEBUG: Email sending failed for {req.email}, but code is: {verification_code}")
+        # Continue to create user for testing purposes
+    
+    # Create user (for testing, even if email failed)
     hashed = hash_password(req.password)
-    user = User(username=req.username, email=req.email, password_hash=hashed)
+    user = User(
+        username=req.username, 
+        email=req.email, 
+        password_hash=hashed, 
+        is_verified=False,
+        verification_code=verification_code,
+        verification_expires=verification_expires
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    
+    if not success:
+        return {
+            "message": "Registration successful! Email sending failed, but user created for testing.",
+            "debug_code": verification_code,
+            "email": req.email,
+            "username": req.username
+        }
+    
+    return {
+        "message": "Registration successful! Please check your email for verification code.",
+        "email": req.email,
+        "username": req.username
+    }
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
@@ -34,12 +82,20 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if email is verified
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403, 
+            detail="Email not verified. Please check your email for verification code."
+        )
+    
     token = create_jwt(user.id)
     return {"token": token}
 
 
 @router.get("/me", response_model=UserOut)
-def me(current_user: User = Depends(get_current_user)):
+def me(current_user: User = Depends(get_verified_user)):
     return current_user
 
 @router.post("/problems/", response_model=ProblemCreate)
@@ -958,3 +1014,123 @@ def search_users(
         })
     
     return {"users": users_data}
+
+@router.post("/send-verification")
+async def send_verification_email(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    email = request.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    """Send verification email to user"""
+    from email_service import email_service
+    
+    # Check if user exists and is not verified
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    # Generate new verification code
+    verification_code = email_service.generate_verification_code()
+    verification_expires = email_service.get_verification_expiry()
+    
+    # Update user with verification code
+    user.verification_code = verification_code
+    user.verification_expires = verification_expires
+    db.commit()
+    
+    # For now, just return the code for testing (remove this in production)
+    print(f"DEBUG: Verification code for {email}: {verification_code}")
+    
+    # Send email
+    success = await email_service.send_verification_email(
+        email, user.username, verification_code
+    )
+    
+    if not success:
+        # For testing, return the code in the response
+        print(f"WARNING: Email sending failed for {email}, but code is: {verification_code}")
+        return {
+            "message": "Verification code generated (email sending failed)",
+            "verification_code": verification_code,
+            "note": "Check your backend console for the code"
+        }
+    
+    return {"message": "Verification email sent successfully"}
+
+@router.post("/verify-email")
+def verify_email(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    email = request.get("email")
+    verification_code = request.get("verification_code")
+    
+    if not email or not verification_code:
+        raise HTTPException(status_code=400, detail="Email and verification code are required")
+    
+    """Verify user's email with verification code"""
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if already verified
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    
+    # Check verification code
+    if not user.verification_code or user.verification_code != verification_code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Check if code has expired
+    if user.verification_expires and user.verification_expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Verification code has expired")
+    
+    # Verify user
+    user.is_verified = True
+    user.verification_code = None  # Clear the code
+    user.verification_expires = None
+    db.commit()
+    
+    return {"message": "Email verified successfully"}
+
+@router.get("/verification-status/{email}")
+def get_verification_status(email: str, db: Session = Depends(get_db)):
+    """Check if user's email is verified"""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "email": user.email,
+        "is_verified": user.is_verified,
+        "verification_expires": user.verification_expires.isoformat() if user.verification_expires else None
+    }
+
+@router.post("/cleanup-expired-users")
+def cleanup_expired_users(db: Session = Depends(get_db)):
+    """Clean up unverified users older than 1 hour"""
+    from datetime import datetime, timedelta
+    
+    cutoff_time = datetime.utcnow() - timedelta(hours=1)
+    expired_users = db.query(User).filter(
+        User.is_verified == False,
+        User.created_at < cutoff_time
+    ).all()
+    
+    count = len(expired_users)
+    for user in expired_users:
+        db.delete(user)
+    
+    db.commit()
+    
+    return {
+        "message": f"Cleaned up {count} expired unverified users",
+        "deleted_count": count
+    }

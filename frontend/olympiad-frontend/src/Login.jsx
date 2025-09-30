@@ -22,7 +22,20 @@ function Login() {
       // Replace history entry to prevent back navigation to login
       navigate("/feed", { replace: true });
     } catch (err) {
-      alert("Login failed: " + err.response?.data?.detail || err.message);
+      const errorMessage = err.response?.data?.detail || err.message;
+      
+      // Check if it's an email verification error
+      if (err.response?.status === 403 && errorMessage.includes("Email not verified")) {
+        // Redirect to verification page
+        navigate("/verify-email", { 
+          state: { 
+            email: email,
+            fromLogin: true 
+          } 
+        });
+      } else {
+        alert("Login failed: " + errorMessage);
+      }
     }
   };
 
