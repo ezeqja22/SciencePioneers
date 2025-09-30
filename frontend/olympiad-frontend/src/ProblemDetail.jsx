@@ -23,10 +23,10 @@ function ProblemDetail() {
     const [editProblemData, setEditProblemData] = useState({
         title: "",
         description: "",
-        tags: "",
         subject: "",
         level: ""
     });
+    const [editTags, setEditTags] = useState([""]);
 
 
 
@@ -176,19 +176,55 @@ function ProblemDetail() {
         setEditProblemData({
             title: problem.title,
             description: problem.description,
-            tags: problem.tags || "",
             subject: problem.subject,
             level: problem.level || "Any Level"
         });
+        // Parse existing tags from comma-separated string
+        const existingTags = problem.tags ? problem.tags.split(",").map(tag => tag.trim()).filter(tag => tag) : [""];
+        setEditTags(existingTags.length > 0 ? existingTags : [""]);
+    };
+
+    const handleEditTagChange = (index, value) => {
+        const newTags = [...editTags];
+        newTags[index] = value;
+        setEditTags(newTags);
+    };
+
+    const addEditTag = () => {
+        if (editTags.length < 5) {
+            setEditTags([...editTags, ""]);
+        } else {
+            alert("Maximum 5 tags allowed");
+        }
+    };
+
+    const removeEditTag = (index) => {
+        if (editTags.length > 1) {
+            const newTags = editTags.filter((_, i) => i !== index);
+            setEditTags(newTags);
+        }
     };
 
     const handleSaveProblem = async () => {
         if (!editProblemData.title.trim() || !editProblemData.description.trim()) return;
 
         try {
+            // Validate tags
+            const validTags = editTags.filter(tag => tag.trim() !== "");
+            if (validTags.length > 5) {
+                alert("Maximum 5 tags allowed");
+                return;
+            }
+            
+            // Process tags: filter out empty tags and join with commas
+            const processedTags = validTags.join(", ");
+            
             const token = localStorage.getItem("token");
             const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}`,
-                editProblemData,
+                {
+                    ...editProblemData,
+                    tags: processedTags
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -302,18 +338,63 @@ function ProblemDetail() {
                                 fontSize: "12px"
                             }}
                         />
-                        <input
-                            type="text"
-                            value={editProblemData.tags}
-                            onChange={(e) => setEditProblemData({...editProblemData, tags: e.target.value})}
-                            placeholder="Tags (comma separated)"
-                            style={{ 
-                                padding: "4px 8px", 
-                                border: "1px solid #ddd", 
-                                borderRadius: "4px",
-                                fontSize: "12px"
-                            }}
-                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
+                            <div style={{ fontSize: "10px", color: "#666", marginBottom: "5px" }}>
+                                Tags ({editTags.length}/5)
+                            </div>
+                            {editTags.map((tag, index) => (
+                                <div key={index} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                    <input
+                                        type="text"
+                                        value={tag}
+                                        onChange={(e) => handleEditTagChange(index, e.target.value)}
+                                        placeholder={`Tag ${index + 1}`}
+                                        style={{ 
+                                            flex: 1,
+                                            padding: "4px 8px", 
+                                            border: "1px solid #ddd", 
+                                            borderRadius: "4px",
+                                            fontSize: "12px"
+                                        }}
+                                    />
+                                    {editTags.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeEditTag(index)}
+                                            style={{
+                                                padding: "4px 8px",
+                                                backgroundColor: "#dc3545",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "4px",
+                                                cursor: "pointer",
+                                                fontSize: "12px"
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {editTags.length < 5 && (
+                                <button
+                                    type="button"
+                                    onClick={addEditTag}
+                                    style={{
+                                        padding: "4px 8px",
+                                        backgroundColor: "#28a745",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                        fontSize: "12px",
+                                        alignSelf: "flex-start"
+                                    }}
+                                >
+                                    + Add Tag
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <textarea
                         value={editProblemData.description}
@@ -487,16 +568,28 @@ function ProblemDetail() {
                         }}>
                             {problem.level}
                         </span>
-                {problem.tags && (
-                    <span style={{
-                        backgroundColor: "#f3e5f5",
-                        color: "#7b1fa2",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px"
-                    }}>
-                        {problem.tags}
-                    </span>
+                {problem.tags && problem.tags.trim() && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                        {problem.tags.split(",").map((tag, index) => {
+                            const trimmedTag = tag.trim();
+                            if (!trimmedTag) return null;
+                            return (
+                                <span
+                                    key={index}
+                                    style={{
+                                        backgroundColor: "#f3e5f5",
+                                        color: "#7b1fa2",
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        fontSize: "12px",
+                                        whiteSpace: "nowrap"
+                                    }}
+                                >
+                                    {trimmedTag}
+                                </span>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
 

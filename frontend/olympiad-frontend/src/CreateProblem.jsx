@@ -7,10 +7,10 @@ function CreateProblem() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    tags: "",
     subject: "",
     level: "Any Level"
   });
+  const [tags, setTags] = useState([""]); // Array of tag strings
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -21,15 +21,50 @@ function CreateProblem() {
     });
   };
 
+  const handleTagChange = (index, value) => {
+    const newTags = [...tags];
+    newTags[index] = value;
+    setTags(newTags);
+  };
+
+  const addTag = () => {
+    if (tags.length < 5) {
+      setTags([...tags, ""]);
+    } else {
+      alert("Maximum 5 tags allowed");
+    }
+  };
+
+  const removeTag = (index) => {
+    if (tags.length > 1) {
+      const newTags = tags.filter((_, i) => i !== index);
+      setTags(newTags);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Validate tags
+      const validTags = tags.filter(tag => tag.trim() !== "");
+      if (validTags.length > 5) {
+        alert("Maximum 5 tags allowed");
+        setLoading(false);
+        return;
+      }
+      
+      // Process tags: filter out empty tags and join with commas
+      const processedTags = validTags.join(", ");
+      
       const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://127.0.0.1:8000/auth/problems/",
-        formData,
+        {
+          ...formData,
+          tags: processedTags
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -151,24 +186,64 @@ function CreateProblem() {
 
         <div>
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-            Tags (Optional)
+            Tags (Optional) - {tags.length}/5
           </label>
-          <input
-            type="text"
-            name="tags"
-            value={formData.tags}
-            onChange={handleChange}
-            style={{
-              width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
-            placeholder="e.g., algebra, mechanics, organic chemistry (separate with commas)"
-          />
+          {tags.map((tag, index) => (
+            <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+              <input
+                type="text"
+                value={tag}
+                onChange={(e) => handleTagChange(index, e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "16px"
+                }}
+                placeholder={`Tag ${index + 1}`}
+              />
+              {tags.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeTag(index)}
+                  style={{
+                    padding: "10px",
+                    backgroundColor: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "16px"
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {tags.length < 5 && (
+            <button
+              type="button"
+              onClick={addTag}
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px"
+              }}
+            >
+              + Add Tag
+            </button>
+          )}
           <small style={{ color: "#666", fontSize: "12px" }}>
-            Separate multiple tags with commas
+            Add up to 5 tags to help categorize your problem
           </small>
         </div>
 

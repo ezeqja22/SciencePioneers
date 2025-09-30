@@ -653,16 +653,28 @@ function Feed() {
                 }}>
                   {problem.level}
                 </span>
-                {problem.tags && (
-                  <span style={{
-                    backgroundColor: "#f3e5f5",
-                    color: "#7b1fa2",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    fontSize: "12px"
-                  }}>
-                    {problem.tags}
-                  </span>
+                {problem.tags && problem.tags.trim() && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                    {problem.tags.split(",").map((tag, index) => {
+                      const trimmedTag = tag.trim();
+                      if (!trimmedTag) return null;
+                      return (
+                        <span
+                          key={index}
+                          style={{
+                            backgroundColor: "#f3e5f5",
+                            color: "#7b1fa2",
+                            padding: "4px 8px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            whiteSpace: "nowrap"
+                          }}
+                        >
+                          {trimmedTag}
+                        </span>
+                      );
+                    })}
+                  </div>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", gap: "10px", alignItems: "center" }}>
                   <span style={{ fontSize: "12px", color: "#666" }}>
