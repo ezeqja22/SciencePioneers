@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from database import get_db
 from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage
 from auth.utils import hash_password, verify_password, create_jwt
@@ -136,10 +136,20 @@ def create_problem(
 def debug_test():
     return {"message": "Backend is working", "timestamp": "now"}
 
-@router.get("/problems/", response_model=List[ProblemResponse])
-def get_problems(db: Session = Depends(get_db)):
-    # Get real problems from database
-    problems = db.query(Problem).order_by(Problem.created_at.desc()).all()
+@router.get("/problems/")
+def get_problems(
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """Get problems with pagination"""
+    offset = (page - 1) * limit
+    
+    # Get total count for pagination
+    total_problems = db.query(Problem).count()
+    
+    # Get problems with pagination
+    problems = db.query(Problem).order_by(Problem.created_at.desc()).offset(offset).limit(limit).all()
     
     result = []
     for problem in problems:
@@ -169,7 +179,13 @@ def get_problems(db: Session = Depends(get_db)):
         }
         result.append(problem_data)
     
-    return result
+    return {
+        "problems": result,
+        "total": total_problems,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total_problems + limit - 1) // limit
+    }
 
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
@@ -1000,16 +1016,27 @@ def get_public_user_profile(
 @router.get("/users/search")
 def search_users(
     q: str,
+    page: int = 1,
+    limit: int = 10,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Search for users by username"""
+    """Search for users by username with pagination"""
     if len(q.strip()) < 2:
-        return {"users": []}
+        return {"users": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
+    
+    offset = (page - 1) * limit
+    
+    # Get total count for pagination
+    total_users = db.query(User).filter(
+        User.username.ilike(f"%{q}%"),
+        User.is_verified == True
+    ).count()
     
     users = db.query(User).filter(
-        User.username.ilike(f"%{q}%")
-    ).limit(10).all()
+        User.username.ilike(f"%{q}%"),
+        User.is_verified == True
+    ).offset(offset).limit(limit).all()
     
     users_data = []
     for user in users:
@@ -1034,7 +1061,154 @@ def search_users(
             "is_following": is_following
         })
     
-    return {"users": users_data}
+    return {
+        "users": users_data,
+        "total": total_users,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total_users + limit - 1) // limit
+    }
+
+@router.get("/problems/search")
+def search_problems(
+    q: str,
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Search problems by title, description, or tags with pagination"""
+    if len(q.strip()) < 2:
+        return {"problems": [], "total": 0, "page": page, "limit": limit, "total_pages": 0}
+    
+    offset = (page - 1) * limit
+    
+    # Get total count for pagination
+    total_problems = db.query(Problem).filter(
+        or_(
+            Problem.title.ilike(f"%{q}%"),
+            Problem.description.ilike(f"%{q}%"),
+            Problem.tags.ilike(f"%{q}%")
+        )
+    ).count()
+    
+    problems = db.query(Problem).filter(
+        or_(
+            Problem.title.ilike(f"%{q}%"),
+            Problem.description.ilike(f"%{q}%"),
+            Problem.tags.ilike(f"%{q}%")
+        )
+    ).offset(offset).limit(limit).all()
+    
+    results = []
+    for problem in problems:
+        # Get author info
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        
+        # Get comment count
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        
+        # Get vote counts
+        upvotes = db.query(Vote).filter(Vote.problem_id == problem.id, Vote.vote_type == "upvote").count()
+        downvotes = db.query(Vote).filter(Vote.problem_id == problem.id, Vote.vote_type == "downvote").count()
+        
+        results.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "subject": problem.subject,
+            "level": problem.level,
+            "tags": problem.tags,
+            "created_at": problem.created_at.isoformat(),
+            "updated_at": problem.updated_at.isoformat() if problem.updated_at else None,
+            "author": {
+                "id": author.id,
+                "username": author.username,
+                "profile_picture": author.profile_picture
+            },
+            "comment_count": comment_count,
+            "upvotes": upvotes,
+            "downvotes": downvotes
+        })
+    
+    return {
+        "problems": results,
+        "total": total_problems,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total_problems + limit - 1) // limit
+    }
+
+@router.get("/search/combined")
+def combined_search(
+    q: str,
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Combined search for both users and problems"""
+    if len(q.strip()) < 2:
+        return {"users": [], "problems": [], "query": q}
+    
+    # Search users (limit to 5 per page)
+    users = db.query(User).filter(
+        User.username.ilike(f"%{q}%"),
+        User.is_verified == True
+    ).limit(5).all()
+    
+    user_results = []
+    for user in users:
+        follower_count = db.query(Follow).filter(Follow.following_id == user.id).count()
+        is_following = db.query(Follow).filter(
+            Follow.follower_id == current_user.id,
+            Follow.following_id == user.id
+        ).first() is not None
+        
+        user_results.append({
+            "id": user.id,
+            "username": user.username,
+            "bio": user.bio,
+            "profile_picture": user.profile_picture,
+            "follower_count": follower_count,
+            "is_following": is_following
+        })
+    
+    # Search problems (limit to 5 per page)
+    problems = db.query(Problem).filter(
+        or_(
+            Problem.title.ilike(f"%{q}%"),
+            Problem.description.ilike(f"%{q}%"),
+            Problem.tags.ilike(f"%{q}%")
+        )
+    ).limit(5).all()
+    
+    problem_results = []
+    for problem in problems:
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        
+        problem_results.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "subject": problem.subject,
+            "level": problem.level,
+            "tags": problem.tags,
+            "created_at": problem.created_at.isoformat(),
+            "author": {
+                "id": author.id,
+                "username": author.username,
+                "profile_picture": author.profile_picture
+            },
+            "comment_count": comment_count
+        })
+    
+    return {
+        "users": user_results,
+        "problems": problem_results,
+        "query": q
+    }
 
 @router.post("/send-verification")
 async def send_verification_email(

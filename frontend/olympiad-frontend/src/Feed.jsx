@@ -14,6 +14,9 @@ function Feed() {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProblems, setTotalProblems] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,18 +55,21 @@ function Feed() {
     navigate("/", { replace: true });
   };
 
-  const fetchProblems = async () => {
+  const fetchProblems = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/auth/problems/");
-      setProblems(response.data);
+      const response = await axios.get(`http://127.0.0.1:8000/auth/problems/?page=${page}&limit=10`);
+      setProblems(response.data.problems || response.data);
+      setCurrentPage(page);
+      setTotalPages(response.data.total_pages || 1);
+      setTotalProblems(response.data.total || response.data.length);
       
       // Fetch vote data for all problems
-      const problemIds = response.data.map(problem => problem.id);
+      const problemIds = (response.data.problems || response.data).map(problem => problem.id);
       await fetchVoteData(problemIds);
       
       // Fetch follow status for all authors
-      await fetchFollowStatus(response.data);
+      await fetchFollowStatus(response.data.problems || response.data);
     } catch (error) {
       console.error("Error fetching problems:", error);
     } finally {
@@ -258,6 +264,12 @@ function Feed() {
     searchUsers(query);
   };
 
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -324,19 +336,45 @@ function Feed() {
 
       {/* Search Bar */}
       <div style={{ marginBottom: "20px", position: "relative" }}>
-        <input
-          type="text"
-          placeholder="Search users..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          style={{
-            width: "100%",
-            padding: "10px",
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            fontSize: "16px"
-          }}
-        />
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Search.."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchSubmit}
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              fontSize: "16px",
+              outline: "none",
+              transition: "border-color 0.2s"
+            }}
+            onFocus={(e) => e.target.style.borderColor = "#007bff"}
+            onBlur={(e) => e.target.style.borderColor = "#ddd"}
+          />
+          <button
+            onClick={() => {
+              if (searchQuery.trim()) {
+                navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+              }
+            }}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: "500"
+            }}
+          >
+            🔍 Search
+          </button>
+        </div>
         {showSearchResults && searchResults.length > 0 && (
           <div style={{
             position: "absolute",
@@ -707,6 +745,52 @@ function Feed() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {activeTab === "all" && totalPages > 1 && (
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "center", 
+          alignItems: "center", 
+          gap: "10px",
+          marginTop: "40px",
+          padding: "20px"
+        }}>
+          <button
+            onClick={() => fetchProblems(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: currentPage === 1 ? "#ccc" : "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: currentPage === 1 ? "not-allowed" : "pointer"
+            }}
+          >
+            Previous
+          </button>
+          
+          <span style={{ padding: "0 20px", color: "#666" }}>
+            Page {currentPage} of {totalPages} ({totalProblems} total problems)
+          </span>
+          
+          <button
+            onClick={() => fetchProblems(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: currentPage === totalPages ? "#ccc" : "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: currentPage === totalPages ? "not-allowed" : "pointer"
+            }}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

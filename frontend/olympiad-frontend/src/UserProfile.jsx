@@ -12,8 +12,7 @@ function UserProfile() {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
     const [editFormData, setEditFormData] = useState({
-        bio: "",
-        profile_picture: ""
+        bio: ""
     });
 
     useEffect(() => {
@@ -55,8 +54,7 @@ function UserProfile() {
 
     const handleEditProfile = () => {
         setEditFormData({
-            bio: profileData?.user?.bio || "",
-            profile_picture: profileData?.user?.profile_picture || ""
+            bio: profileData?.user?.bio || ""
         });
         setIsEditingProfile(true);
     };
@@ -75,8 +73,7 @@ function UserProfile() {
                 ...prev,
                 user: {
                     ...prev.user,
-                    bio: editFormData.bio,
-                    profile_picture: editFormData.profile_picture
+                    bio: editFormData.bio
                 }
             }));
             
@@ -359,30 +356,6 @@ function UserProfile() {
                             />
                         </div>
                         
-                        <div>
-                            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
-                                Profile Picture URL (Coming Soon):
-                            </label>
-                            <input
-                                type="text"
-                                value={editFormData.profile_picture}
-                                onChange={(e) => setEditFormData({...editFormData, profile_picture: e.target.value})}
-                                placeholder="Profile picture URL (feature coming soon)"
-                                disabled
-                                style={{
-                                    width: "100%",
-                                    padding: "10px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: "5px",
-                                    fontSize: "14px",
-                                    backgroundColor: "#f5f5f5",
-                                    color: "#999"
-                                }}
-                            />
-                            <p style={{ fontSize: "12px", color: "#666", margin: "5px 0 0 0" }}>
-                                Profile picture upload will be available in a future update
-                            </p>
-                        </div>
                         
                         <div style={{ display: "flex", gap: "10px" }}>
                             <button

@@ -10,6 +10,7 @@ import ProblemDetail from "./ProblemDetail";
 import UserProfile from "./UserProfile";
 import PublicUserProfile from "./PublicUserProfile";
 import EmailVerification from "./EmailVerification";
+import SearchResults from "./SearchResults";
 import AuthGuard from "./AuthGuard";
 
 function App() {
@@ -58,6 +59,13 @@ function App() {
           <Route 
           path="/verify-email" 
           element={<EmailVerification />} />
+          <Route 
+          path="/search" 
+          element={
+            <ProtectedRoute>
+          <SearchResults />
+          </ProtectedRoute>
+          } />
         </Routes>
       </AuthGuard>
     </Router>
