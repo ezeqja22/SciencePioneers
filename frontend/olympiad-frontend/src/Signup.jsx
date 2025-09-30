@@ -14,13 +14,19 @@ function Signup() {
       // Clear any existing token first
       localStorage.removeItem("token");
       
-      await axios.post("http://127.0.0.1:8000/auth/register", { // Correct endpoint
+      const response = await axios.post("http://127.0.0.1:8000/auth/register", { // Correct endpoint
         username,
         email, // Send email
         password,
       });
-      alert("Signup successful! Please login with your credentials.");
-      navigate("/login");
+      
+      // Redirect to verification page with email and username
+      navigate("/verify-email", { 
+        state: { 
+          email: email, 
+          username: username 
+        } 
+      });
     } catch (err) {
       alert("Signup failed: " + (err.response?.data?.detail || err.message));
     }
