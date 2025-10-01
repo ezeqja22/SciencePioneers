@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import MathEditor from "./MathEditor";
+import "./MathEditor.css";
 
 function CreateProblem() {
   const [formData, setFormData] = useState({
@@ -15,6 +17,8 @@ function CreateProblem() {
   const [images, setImages] = useState([]); // Array of uploaded image filenames
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showMathEditor, setShowMathEditor] = useState(false);
+  const [mathEditorTarget, setMathEditorTarget] = useState(null); // 'title' or 'description'
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -22,6 +26,27 @@ function CreateProblem() {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const openMathEditor = (target) => {
+    setMathEditorTarget(target);
+    setShowMathEditor(true);
+  };
+
+  const handleMathInsert = (mathContent) => {
+    if (mathEditorTarget) {
+      setFormData({
+        ...formData,
+        [mathEditorTarget]: formData[mathEditorTarget] + mathContent
+      });
+    }
+    setShowMathEditor(false);
+    setMathEditorTarget(null);
+  };
+
+  const closeMathEditor = () => {
+    setShowMathEditor(false);
+    setMathEditorTarget(null);
   };
 
   const handleTagChange = (index, value) => {
@@ -165,43 +190,84 @@ function CreateProblem() {
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
             Title *
           </label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            style={{
-              width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
-            placeholder="Enter a descriptive title for your problem"
-          />
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              style={{
+                flex: 1,
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "16px"
+              }}
+              placeholder="Enter a descriptive title for your problem"
+            />
+            <button
+              type="button"
+              onClick={() => openMathEditor('title')}
+              style={{
+                padding: "10px 12px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                whiteSpace: "nowrap"
+              }}
+            >
+              📐 Math
+            </button>
+          </div>
         </div>
 
         <div>
           <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
             Description *
           </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows="6"
-            style={{
-              width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px",
-              resize: "vertical"
-            }}
-            placeholder="Describe the problem in detail. Include any relevant information, constraints, or context."
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows="6"
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "16px",
+                  resize: "vertical"
+                }}
+                placeholder="Describe the problem in detail. Include any relevant information, constraints, or context."
+              />
+              <button
+                type="button"
+                onClick={() => openMathEditor('description')}
+                style={{
+                  padding: "10px 12px",
+                  backgroundColor: "#007bff",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  whiteSpace: "nowrap",
+                  alignSelf: "flex-start"
+                }}
+              >
+                📐 Math
+              </button>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -461,6 +527,14 @@ function CreateProblem() {
           </button>
         </div>
       </form>
+      
+      {/* Math Editor Modal */}
+      <MathEditor
+        isOpen={showMathEditor}
+        onClose={closeMathEditor}
+        onInsert={handleMathInsert}
+        initialValue=""
+      />
     </div>
   );
 }

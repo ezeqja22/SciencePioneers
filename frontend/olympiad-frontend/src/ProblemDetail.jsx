@@ -1,7 +1,33 @@
 import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useState, useEffect } from "react";
+import MathEditor from "./MathEditor";
+import "./MathEditor.css";
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
+
+// Helper function to render math content
+const renderMathContent = (text) => {
+    if (!text) return '';
+    
+    // If the text contains LaTeX commands or mathematical expressions, wrap the entire text
+    const hasLatex = /\\[a-zA-Z]+|[\^_]\s*[a-zA-Z0-9]|[\+\-\*\/\=\<\>\≤\≥\±\∓\∞]/.test(text);
+    
+    if (hasLatex) {
+        // Wrap the entire text in $ delimiters for math rendering
+        try {
+            return <InlineMath math={text} />;
+        } catch (error) {
+            // If KaTeX fails, fall back to regular text
+            console.warn('KaTeX rendering failed:', error);
+            return <span>{text}</span>;
+        }
+    }
+    
+    // For regular text without math, return as is
+    return <span>{text}</span>;
+};
 
 function ProblemDetail() {
     const [problem, setProblem] = useState(null);
@@ -20,6 +46,9 @@ function ProblemDetail() {
     const [editingComment, setEditingComment] = useState(null);
     const [editText, setEditText] = useState("");
     const [editingProblem, setEditingProblem] = useState(false);
+    const [showMathEditor, setShowMathEditor] = useState(false);
+    const [mathEditorTarget, setMathEditorTarget] = useState(null);
+    const [showCommentMathEditor, setShowCommentMathEditor] = useState(false);
     const [editProblemData, setEditProblemData] = useState({
         title: "",
         description: "",
@@ -30,7 +59,41 @@ function ProblemDetail() {
     const [editTags, setEditTags] = useState([""]);
     const [problemImages, setProblemImages] = useState([]);
 
+    const openMathEditor = (target) => {
+        setMathEditorTarget(target);
+        setShowMathEditor(true);
+    };
 
+    const handleMathInsert = (mathContent) => {
+        if (mathEditorTarget === 'editComment') {
+            setEditText(prev => prev + mathContent);
+        } else if (mathEditorTarget) {
+            setEditProblemData({
+                ...editProblemData,
+                [mathEditorTarget]: editProblemData[mathEditorTarget] + mathContent
+            });
+        }
+        setShowMathEditor(false);
+        setMathEditorTarget(null);
+    };
+
+    const closeMathEditor = () => {
+        setShowMathEditor(false);
+        setMathEditorTarget(null);
+    };
+
+    const openCommentMathEditor = () => {
+        setShowCommentMathEditor(true);
+    };
+
+    const handleCommentMathInsert = (mathContent) => {
+        setNewComment(prev => prev + mathContent);
+        setShowCommentMathEditor(false);
+    };
+
+    const closeCommentMathEditor = () => {
+        setShowCommentMathEditor(false);
+    };
 
     const fetchProblem = async () => {
         try {
@@ -306,10 +369,19 @@ function ProblemDetail() {
                 }
             });
             
-            // Redirect to feed after deletion
-            window.location.href = "/";
+            // Smart navigation: go back to the previous page
+            // Check if user came from a specific page, otherwise default to feed
+            const referrer = document.referrer;
+            if (referrer.includes('/feed') || referrer.includes('/profile') || referrer.includes('/user/')) {
+                // Go back to the previous page
+                window.history.back();
+            } else {
+                // Default to feed if no specific referrer
+                navigate('/feed');
+            }
         } catch (error) {
             console.error("Error deleting problem:", error);
+            alert("Error deleting problem. Please try again.");
         }
     };
 
@@ -339,21 +411,39 @@ function ProblemDetail() {
         <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
             {editingProblem ? (
                 <div>
-                    <input
-                        type="text"
-                        value={editProblemData.title}
-                        onChange={(e) => setEditProblemData({...editProblemData, title: e.target.value})}
-                        placeholder="Problem title"
-                        style={{ 
-                            width: "100%", 
-                            padding: "10px", 
-                            marginBottom: "10px", 
-                            border: "1px solid #ddd", 
-                            borderRadius: "4px",
-                            fontSize: "24px",
-                            fontWeight: "bold"
-                        }}
-                    />
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+                        <input
+                            type="text"
+                            value={editProblemData.title}
+                            onChange={(e) => setEditProblemData({...editProblemData, title: e.target.value})}
+                            placeholder="Problem title"
+                            style={{ 
+                                flex: 1,
+                                padding: "10px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "4px",
+                                fontSize: "24px",
+                                fontWeight: "bold"
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => openMathEditor('title')}
+                            style={{
+                                padding: "10px 12px",
+                                backgroundColor: "#007bff",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                whiteSpace: "nowrap"
+                            }}
+                        >
+                            📐 Math
+                        </button>
+                    </div>
                     <div style={{ marginBottom: "20px" }}>
                         <input
                             type="text"
@@ -454,20 +544,39 @@ function ProblemDetail() {
                             )}
                         </div>
                     </div>
-                    <textarea
-                        value={editProblemData.description}
-                        onChange={(e) => setEditProblemData({...editProblemData, description: e.target.value})}
-                        placeholder="Problem description"
-                        style={{ 
-                            width: "100%", 
-                            minHeight: "100px", 
-                            padding: "20px", 
-                            marginBottom: "20px", 
-                            border: "1px solid #ddd", 
-                            borderRadius: "8px",
-                            lineHeight: "1.6"
-                        }}
-                    />
+                    <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+                        <textarea
+                            value={editProblemData.description}
+                            onChange={(e) => setEditProblemData({...editProblemData, description: e.target.value})}
+                            placeholder="Problem description"
+                            style={{ 
+                                flex: 1,
+                                minHeight: "100px", 
+                                padding: "20px", 
+                                border: "1px solid #ddd", 
+                                borderRadius: "8px",
+                                lineHeight: "1.6"
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => openMathEditor('description')}
+                            style={{
+                                padding: "10px 12px",
+                                backgroundColor: "#007bff",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                whiteSpace: "nowrap",
+                                alignSelf: "flex-start"
+                            }}
+                        >
+                            📐 Math
+                        </button>
+                    </div>
                     {/* Image Management */}
                     <div style={{ marginBottom: "20px" }}>
                         <h4 style={{ marginBottom: "10px", color: "#333" }}>
@@ -650,9 +759,26 @@ function ProblemDetail() {
                 </div>
             ) : (
                 <div>
+                    {/* Back to Feed Button */}
+                    <div style={{ marginBottom: "20px" }}>
+                        <Link to="/feed">
+                            <button style={{ 
+                                padding: "8px 16px", 
+                                backgroundColor: "#007bff", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                fontSize: "14px"
+                            }}>
+                                ← Back to Feed
+                            </button>
+                        </Link>
+                    </div>
+                    
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                         <div>
-            <h1 style={{ color: "#333", marginBottom: "20px" }}>{problem.title}</h1>
+            <h1 style={{ color: "#333", marginBottom: "20px" }}>{renderMathContent(problem.title)}</h1>
                             
                             {/* Author Information */}
                             {problem.author && (
@@ -822,7 +948,7 @@ function ProblemDetail() {
                 borderRadius: "8px",
                 marginBottom: "30px"
             }}>
-                <p style={{ lineHeight: "1.6", color: "#333" }}>{problem.description}</p>
+                <div style={{ lineHeight: "1.6", color: "#333" }}>{renderMathContent(problem.description)}</div>
             </div>
             
             {/* Problem Images */}
@@ -921,6 +1047,7 @@ function ProblemDetail() {
                 {/* Add Comment Form */}
                 <div style={{ marginBottom: "20px" }}>
                     <form onSubmit={handleSubmitComment}>
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
                         <textarea
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
@@ -935,6 +1062,24 @@ function ProblemDetail() {
                                 fontFamily: "inherit"
                             }}
                         />
+                            <button
+                                type="button"
+                                onClick={openCommentMathEditor}
+                                style={{
+                                    marginLeft: "10px",
+                                    padding: "8px 12px",
+                                    backgroundColor: "#4caf50",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "5px",
+                                    cursor: "pointer",
+                                    fontSize: "14px"
+                                }}
+                                title="Add Math"
+                            >
+                                📐 Math
+                            </button>
+                        </div>
                         <button
                             type="submit"
                             disabled={!newComment.trim()}
@@ -963,20 +1108,41 @@ function ProblemDetail() {
                     }}>
                         {editingComment === comment.id ? (
                             <div>
-                                <textarea
-                                    value={editText}
-                                    onChange={(e) => setEditText(e.target.value)}
-                                    style={{
-                                        width: "100%",
-                                        minHeight: "60px",
-                                        padding: "8px",
-                                        border: "1px solid #ddd",
-                                        borderRadius: "4px",
-                                        resize: "vertical",
-                                        fontFamily: "inherit",
-                                        marginBottom: "10px"
-                                    }}
-                                />
+                                <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
+                                    <textarea
+                                        value={editText}
+                                        onChange={(e) => setEditText(e.target.value)}
+                                        style={{
+                                            width: "100%",
+                                            minHeight: "60px",
+                                            padding: "8px",
+                                            border: "1px solid #ddd",
+                                            borderRadius: "4px",
+                                            resize: "vertical",
+                                            fontFamily: "inherit"
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setMathEditorTarget('editComment');
+                                            setShowMathEditor(true);
+                                        }}
+                                        style={{
+                                            marginLeft: "10px",
+                                            padding: "6px 10px",
+                                            backgroundColor: "#4caf50",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: "pointer",
+                                            fontSize: "12px"
+                                        }}
+                                        title="Add Math"
+                                    >
+                                        📐 Math
+                                    </button>
+                                </div>
                                 <div style={{ display: "flex", gap: "10px" }}>
                                     <button
                                         onClick={() => handleSaveEdit(comment.id)}
@@ -1011,7 +1177,7 @@ function ProblemDetail() {
                             </div>
                         ) : (
                             <div>
-                                <p style={{ margin: "0 0 10px 0", color: "#333" }}>{comment.text}</p>
+                                <div style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(comment.text)}</div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
                                         By: {comment.author.username} 
@@ -1056,6 +1222,22 @@ function ProblemDetail() {
                     </div>
     ))}
             </div>
+            
+            {/* Math Editor Modal */}
+            <MathEditor
+                isOpen={showMathEditor}
+                onClose={closeMathEditor}
+                onInsert={handleMathInsert}
+                initialValue=""
+            />
+
+            {/* Comment Math Editor Modal */}
+            <MathEditor
+                isOpen={showCommentMathEditor}
+                onClose={closeCommentMathEditor}
+                onInsert={handleCommentMathInsert}
+                initialValue=""
+            />
         </div>
     );
 }

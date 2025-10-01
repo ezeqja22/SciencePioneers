@@ -3,7 +3,31 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
 import SearchBar from "./SearchBar";
+
+// Helper function to render math content
+const renderMathContent = (text) => {
+  if (!text) return '';
+  
+  // If the text contains LaTeX commands or mathematical expressions, wrap the entire text
+  const hasLatex = /\\[a-zA-Z]+|[\^_]\s*[a-zA-Z0-9]|[\+\-\*\/\=\<\>\≤\≥\±\∓\∞]/.test(text);
+  
+  if (hasLatex) {
+    // Wrap the entire text in $ delimiters for math rendering
+    try {
+      return <InlineMath math={text} />;
+    } catch (error) {
+      // If KaTeX fails, fall back to regular text
+      console.warn('KaTeX rendering failed:', error);
+      return <span>{text}</span>;
+    }
+  }
+  
+  // For regular text without math, return as is
+  return <span>{text}</span>;
+};
 
 function Feed() {
   const [problems, setProblems] = useState([]);
@@ -575,8 +599,8 @@ function Feed() {
                 </div>
               )}
               
-              <h3 style={{ marginTop: 0, color: "#333" }}>{problem.title}</h3>
-              <p style={{ color: "#666", lineHeight: "1.5" }}>{problem.description}</p>
+              <h3 style={{ marginTop: 0, color: "#333" }}>{renderMathContent(problem.title)}</h3>
+              <div style={{ color: "#666", lineHeight: "1.5" }}>{renderMathContent(problem.description)}</div>
               <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
                 <span style={{
                   backgroundColor: "#e3f2fd",

@@ -48,17 +48,17 @@ async def cleanup_expired_users():
     finally:
         db.close()
 
-# Background task for cleanup
-@app.on_event("startup")
-async def startup_event():
-    """Start background cleanup task"""
-    asyncio.create_task(periodic_cleanup())
+# Background task for cleanup - TEMPORARILY DISABLED
+# @app.on_event("startup")
+# async def startup_event():
+#     """Start background cleanup task"""
+#     asyncio.create_task(periodic_cleanup())
 
-async def periodic_cleanup():
-    """Run cleanup every 5 minutes"""
-    while True:
-        await asyncio.sleep(300)  # 5 minutes
-        await cleanup_expired_users()
+# async def periodic_cleanup():
+#     """Run cleanup every 5 minutes"""
+#     while True:
+#         await asyncio.sleep(300)  # 5 minutes
+#         await cleanup_expired_users()
 
 @app.get("/")
 def read_root():
