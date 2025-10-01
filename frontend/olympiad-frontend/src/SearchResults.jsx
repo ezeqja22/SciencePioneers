@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import SearchBar from './SearchBar';
 
 const SearchResults = () => {
     const location = useLocation();
@@ -10,6 +11,9 @@ const SearchResults = () => {
     const [currentUser, setCurrentUser] = useState(null);
     const [followStatus, setFollowStatus] = useState({});
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'users', 'problems'
+    
+    // Get category from URL parameters
+    const category = new URLSearchParams(location.search).get('category') || 'all';
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalResults, setTotalResults] = useState(0);
@@ -22,11 +26,21 @@ const SearchResults = () => {
         setSearchInput(query);
     }, [query]);
 
+    // Set active tab based on category parameter
     useEffect(() => {
-        if (query) {
-            fetchSearchResults();
-            fetchCurrentUser();
+        if (category === 'users') {
+            setActiveTab('users');
+        } else if (category === 'problems') {
+            setActiveTab('problems');
+        } else {
+            setActiveTab('all');
         }
+    }, [category]);
+
+    useEffect(() => {
+        // Always fetch results, even without query (for advanced search)
+        fetchSearchResults();
+        fetchCurrentUser();
     }, [query, currentPage, activeTab]);
 
     const fetchCurrentUser = async () => {
@@ -42,21 +56,36 @@ const SearchResults = () => {
     };
 
     const fetchSearchResults = async () => {
-        if (!query.trim()) return;
+        // Allow search even without query for advanced filtering
         
         setLoading(true);
         try {
             const token = localStorage.getItem("token");
-            let endpoint = '';
             
-            // Always use combined search for initial load, only use individual endpoints for pagination
-            if (activeTab === 'users' && currentPage > 1) {
-                endpoint = `http://127.0.0.1:8000/auth/users/search?q=${encodeURIComponent(query)}&page=${currentPage}&limit=10`;
-            } else if (activeTab === 'problems' && currentPage > 1) {
-                endpoint = `http://127.0.0.1:8000/auth/problems/search?q=${encodeURIComponent(query)}&page=${currentPage}&limit=10`;
+            // Check if we have advanced search parameters
+            const urlParams = new URLSearchParams(location.search);
+            const hasAdvancedParams = urlParams.get('subject') || urlParams.get('level') || 
+                                    urlParams.get('year') || urlParams.get('tags');
+            
+            let endpoint;
+            if (hasAdvancedParams) {
+                // Use advanced search endpoint
+                const params = new URLSearchParams();
+                if (query && query.trim()) params.append('q', query.trim());
+                if (urlParams.get('category')) params.append('category', urlParams.get('category'));
+                if (urlParams.get('subject')) params.append('subject', urlParams.get('subject'));
+                if (urlParams.get('level')) params.append('level', urlParams.get('level'));
+                if (urlParams.get('year')) params.append('year', urlParams.get('year'));
+                if (urlParams.get('tags')) params.append('tags', urlParams.get('tags'));
+                params.append('page', currentPage);
+                params.append('limit', '10');
+                
+                endpoint = `http://127.0.0.1:8000/auth/search/advanced?${params.toString()}`;
+                console.log("Using advanced search endpoint:", endpoint);
             } else {
-                // Use combined search for initial load or when switching tabs
+                // Use regular combined search
                 endpoint = `http://127.0.0.1:8000/auth/search/combined?q=${encodeURIComponent(query)}`;
+                console.log("Using combined search endpoint:", endpoint);
             }
 
             console.log("Searching with endpoint:", endpoint);
@@ -70,7 +99,13 @@ const SearchResults = () => {
 
             console.log("Search response:", response.data);
 
-            if (activeTab === 'all' || (activeTab === 'users' && currentPage === 1) || (activeTab === 'problems' && currentPage === 1)) {
+            if (hasAdvancedParams) {
+                // Advanced search results - always show problems
+                setSearchResults(response.data);
+                setTotalPages(response.data.total_pages || 1);
+                setTotalResults(response.data.total_problems || 0);
+                console.log("Advanced search results set:", response.data);
+            } else if (activeTab === 'all' || (activeTab === 'users' && currentPage === 1) || (activeTab === 'problems' && currentPage === 1)) {
                 // Use combined search results
                 setSearchResults(response.data);
                 setTotalPages(1); // Combined search doesn't use pagination
@@ -190,49 +225,11 @@ const SearchResults = () => {
 
             {/* Search Bar */}
             <div style={{ marginBottom: "30px" }}>
-                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    <input
-                        type="text"
-                        placeholder="Search users and problems..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) {
-                                navigate(`/search?q=${encodeURIComponent(e.target.value.trim())}`);
-                            }
-                        }}
-                        style={{
-                            flex: 1,
-                            padding: "12px 16px",
-                            border: "1px solid #ddd",
-                            borderRadius: "8px",
-                            fontSize: "16px",
-                            outline: "none",
-                            transition: "border-color 0.2s"
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = "#007bff"}
-                        onBlur={(e) => e.target.style.borderColor = "#ddd"}
-                    />
-                    <button
-                        onClick={() => {
-                            if (searchInput.trim()) {
-                                navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
-                            }
-                        }}
-                        style={{
-                            padding: "12px 20px",
-                            backgroundColor: "#007bff",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            fontSize: "16px",
-                            fontWeight: "500"
-                        }}
-                    >
-                        🔍 Search
-                    </button>
-                </div>
+                <SearchBar 
+                placeholder="Search users and problems..." 
+                initialQuery={query}
+                showAdvanced={true}
+            />
                 <p style={{ color: "#666", fontSize: "14px", margin: "8px 0 0 0" }}>
                     Modify your search or try a new keyword
                 </p>
@@ -452,7 +449,7 @@ const SearchResults = () => {
                                     {problem.description}
                                 </p>
                                 
-                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                                     <span style={{ 
                                         padding: "4px 8px", 
                                         backgroundColor: "#e3f2fd", 
@@ -462,15 +459,51 @@ const SearchResults = () => {
                                     }}>
                                         {problem.subject}
                                     </span>
-                                    <span style={{ 
-                                        padding: "4px 8px", 
-                                        backgroundColor: "#fff3e0", 
-                                        color: "#f57c00", 
-                                        borderRadius: "4px", 
-                                        fontSize: "12px" 
-                                    }}>
-                                        {problem.level}
-                                    </span>
+                                    {problem.level && (
+                                        <span style={{ 
+                                            padding: "4px 8px", 
+                                            backgroundColor: "#fff3e0", 
+                                            color: "#f57c00", 
+                                            borderRadius: "4px", 
+                                            fontSize: "12px" 
+                                        }}>
+                                            {problem.level}
+                                        </span>
+                                    )}
+                                    {problem.year && (
+                                        <span style={{ 
+                                            padding: "4px 8px", 
+                                            backgroundColor: "#e8f5e8", 
+                                            color: "#2e7d32", 
+                                            borderRadius: "4px", 
+                                            fontSize: "12px" 
+                                        }}>
+                                            Year: {problem.year}
+                                        </span>
+                                    )}
+                                    {problem.tags && problem.tags.trim() && (
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                                            {problem.tags.split(",").map((tag, index) => {
+                                                const trimmedTag = tag.trim();
+                                                if (!trimmedTag) return null;
+                                                return (
+                                                    <span
+                                                        key={index}
+                                                        style={{
+                                                            backgroundColor: "#f3e5f5",
+                                                            color: "#7b1fa2",
+                                                            padding: "4px 8px",
+                                                            borderRadius: "4px",
+                                                            fontSize: "12px",
+                                                            whiteSpace: "nowrap"
+                                                        }}
+                                                    >
+                                                        {trimmedTag}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                     <span style={{ color: "#666", fontSize: "12px" }}>
                                         💬 {problem.comment_count} comments
                                     </span>

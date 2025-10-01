@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import SearchBar from "./SearchBar";
 
 function Feed() {
   const [problems, setProblems] = useState([]);
@@ -334,116 +335,11 @@ function Feed() {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div style={{ marginBottom: "20px", position: "relative" }}>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <input
-            type="text"
-            placeholder="Search.."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearchSubmit}
-            style={{
-              flex: 1,
-              padding: "12px 16px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              fontSize: "16px",
-              outline: "none",
-              transition: "border-color 0.2s"
-            }}
-            onFocus={(e) => e.target.style.borderColor = "#007bff"}
-            onBlur={(e) => e.target.style.borderColor = "#ddd"}
-          />
-          <button
-            onClick={() => {
-              if (searchQuery.trim()) {
-                navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-              }
-            }}
-            style={{
-              padding: "12px 20px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "16px",
-              fontWeight: "500"
-            }}
-          >
-            🔍 Search
-          </button>
-        </div>
-        {showSearchResults && searchResults.length > 0 && (
-          <div style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            backgroundColor: "white",
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-            zIndex: 1000,
-            maxHeight: "300px",
-            overflowY: "auto"
-          }}>
-            {searchResults.map(user => (
-              <div
-                key={user.id}
-                style={{
-                  padding: "10px",
-                  borderBottom: "1px solid #eee",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px"
-                }}
-                onClick={() => {
-                  // If it's the current user, go to their own profile page
-                  if (currentUser && user.id === currentUser.id) {
-                    navigate('/profile');
-                  } else {
-                    navigate(`/user/${user.username}`);
-                  }
-                  setShowSearchResults(false);
-                  setSearchQuery("");
-                }}
-              >
-                <div style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "50%",
-                  backgroundColor: "#007bff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: "bold",
-                  backgroundImage: user.profile_picture ? 
-                    `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : 
-                    'none',
-                  backgroundSize: "cover",
-                  backgroundPosition: "center"
-                }}>
-                  {!user.profile_picture && user.username.charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: "bold" }}>{user.username}</div>
-                  {user.bio && <div style={{ fontSize: "12px", color: "#666" }}>{user.bio}</div>}
-                  <div style={{ fontSize: "12px", color: "#666" }}>
-                    {user.follower_count} followers
-                  </div>
-                </div>
-                {user.is_following && (
-                  <span style={{ color: "#28a745", fontSize: "12px" }}>✓ Following</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Enhanced Search Bar */}
+      <div style={{ marginBottom: "20px" }}>
+        <SearchBar placeholder="Search problems, users, tags, levels..." />
       </div>
+        {/* Removed old search results - now handled by SearchBar component */}
 
       {/* Tab Navigation */}
       <div style={{ 

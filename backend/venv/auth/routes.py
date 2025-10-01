@@ -1221,6 +1221,88 @@ def combined_search(
         "query": q
     }
 
+@router.get("/search/advanced")
+async def advanced_search(
+    q: str = "",
+    category: str = "problems",
+    subject: str = "",
+    level: str = "",
+    year: int = None,
+    tags: str = "",
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Advanced search with multiple filters - focuses on problems"""
+    print(f"Advanced search called with: q={q}, category={category}, subject={subject}, level={level}, year={year}, tags={tags}")
+    offset = (page - 1) * limit
+    results = {"users": [], "problems": []}
+    
+    # Build problems query with filters
+    problems_query = db.query(Problem)
+    
+    # Apply text search if provided
+    if q:
+        problems_query = problems_query.filter(
+            or_(
+                Problem.title.ilike(f"%{q}%"),
+                Problem.description.ilike(f"%{q}%"),
+                Problem.tags.ilike(f"%{q}%")
+            )
+        )
+    
+    # Apply problem-specific filters
+    if subject:
+        problems_query = problems_query.filter(Problem.subject == subject)
+    if level:
+        problems_query = problems_query.filter(Problem.level.ilike(f"%{level}%"))
+    if year:
+        problems_query = problems_query.filter(Problem.year == year)
+    if tags:
+        tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        for tag in tag_list:
+            problems_query = problems_query.filter(Problem.tags.ilike(f"%{tag}%"))
+    
+    # Execute problems query
+    problems = problems_query.offset(offset).limit(limit).all()
+    problem_results = []
+    for problem in problems:
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        
+        problem_results.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "subject": problem.subject,
+            "level": problem.level,
+            "year": problem.year,
+            "tags": problem.tags,
+            "created_at": problem.created_at.isoformat(),
+            "author": {
+                "id": author.id,
+                "username": author.username,
+                "profile_picture": author.profile_picture
+            },
+            "comment_count": comment_count
+        })
+    
+    # Get total count
+    total_problems = problems_query.count()
+    
+    print(f"Found {len(problem_results)} problems, total: {total_problems}")
+    
+    return {
+        "users": [],  # Advanced search focuses only on problems
+        "problems": problem_results,
+        "total_users": 0,
+        "total_problems": total_problems,
+        "page": page,
+        "limit": limit,
+        "total_pages": max(1, (total_problems + limit - 1) // limit)
+    }
+
 @router.post("/send-verification")
 async def send_verification_email(
     request: dict,
