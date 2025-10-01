@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import Layout from "./components/Layout";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -44,28 +48,132 @@ function Login() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h2>Login</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="text"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <br /><br />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <br /><br />
-        <button type="submit">Login</button>
-      </form>
-    </div>
+    <Layout>
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "60vh" 
+      }}>
+        <Card style={{ width: "100%", maxWidth: "400px" }}>
+          <div style={{ textAlign: "center", marginBottom: spacing.xl }}>
+            <h1 style={{
+              fontSize: typography.fontSize["3xl"],
+              fontWeight: typography.fontWeight.bold,
+              color: colors.primary,
+              marginBottom: spacing.sm
+            }}>
+              Welcome Back
+            </h1>
+            <p style={{
+              color: colors.gray[600],
+              fontSize: typography.fontSize.base,
+              margin: 0
+            }}>
+              Sign in to your SciencePioneers account
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: spacing.lg }}>
+              <label style={{
+                display: "block",
+                marginBottom: spacing.sm,
+                fontWeight: typography.fontWeight.medium,
+                color: colors.dark,
+                fontSize: typography.fontSize.base
+              }}>
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: spacing.md,
+                  border: `1px solid ${colors.gray[300]}`,
+                  borderRadius: borderRadius.md,
+                  fontSize: typography.fontSize.base,
+                  fontFamily: typography.fontFamily,
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s ease",
+                  "&:focus": {
+                    outline: "none",
+                    borderColor: colors.primary
+                  }
+                }}
+                onFocus={(e) => e.target.style.borderColor = colors.primary}
+                onBlur={(e) => e.target.style.borderColor = colors.gray[300]}
+              />
+            </div>
+
+            <div style={{ marginBottom: spacing.xl }}>
+              <label style={{
+                display: "block",
+                marginBottom: spacing.sm,
+                fontWeight: typography.fontWeight.medium,
+                color: colors.dark,
+                fontSize: typography.fontSize.base
+              }}>
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{
+                  width: "100%",
+                  padding: spacing.md,
+                  border: `1px solid ${colors.gray[300]}`,
+                  borderRadius: borderRadius.md,
+                  fontSize: typography.fontSize.base,
+                  fontFamily: typography.fontFamily,
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s ease"
+                }}
+                onFocus={(e) => e.target.style.borderColor = colors.primary}
+                onBlur={(e) => e.target.style.borderColor = colors.gray[300]}
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              variant="primary" 
+              size="lg" 
+              style={{ width: "100%", marginBottom: spacing.lg }}
+            >
+              Sign In
+            </Button>
+          </form>
+
+          <div style={{
+            textAlign: "center",
+            paddingTop: spacing.lg,
+            borderTop: `1px solid ${colors.gray[200]}`
+          }}>
+            <p style={{
+              margin: `0 0 ${spacing.sm} 0`,
+              color: colors.gray[600],
+              fontSize: typography.fontSize.base
+            }}>
+              Don't have an account?
+            </p>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => navigate("/signup", { state: { redirectTo } })}
+            >
+              Create Account
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </Layout>
   );
 }
 

@@ -2,6 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import SearchBar from './SearchBar';
+import Layout from './components/Layout';
+import Card from './components/Card';
+import Button from './components/Button';
+import { colors, spacing, typography, borderRadius } from './designSystem';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
+
+// Helper function to render math content
+const renderMathContent = (text) => {
+    if (!text) return '';
+    
+    // Check if text contains LaTeX patterns or math symbols
+    const latexPattern = /\\[a-zA-Z]+|\\[^a-zA-Z]|\$\$|\\\(|\\\)|\\\[|\\\]|\^|\_|\{|\}|\[|\]|∫|∑|∏|√|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|τ|υ|φ|χ|ψ|ω|∞|±|∓|×|÷|≤|≥|≠|≈|≡|∈|∉|⊂|⊃|∪|∩|∅|∇|∂|∆|Ω|Φ|Ψ|Λ|Σ|Π|Θ|Ξ|Γ|Δ/;
+    if (!latexPattern.test(text)) {
+        return text;
+    }
+    
+    try {
+        // If text contains LaTeX, render it with InlineMath
+        return <InlineMath math={text} />;
+    } catch (error) {
+        // If KaTeX fails, return plain text
+        return text;
+    }
+};
 
 const SearchResults = () => {
     const location = useLocation();
@@ -184,41 +209,25 @@ const SearchResults = () => {
     }
 
     return (
-        <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-                <div>
-                    <h1>Search Results for "{query}"</h1>
-                    <p style={{ color: "#666", margin: "5px 0" }}>
-                        {totalResults} result{totalResults !== 1 ? 's' : ''} found
-                    </p>
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                    <Link to="/feed">
-                        <button style={{ 
-                            padding: "10px 20px", 
-                            backgroundColor: "#28a745", 
-                            color: "white", 
-                            border: "none", 
-                            borderRadius: "5px",
-                            cursor: "pointer"
-                        }}>
-                            Back to Feed
-                        </button>
-                    </Link>
-                    <button 
-                        onClick={handleLogout}
-                        style={{ 
-                            padding: "10px 20px", 
-                            backgroundColor: "#dc3545", 
-                            color: "white", 
-                            border: "none", 
-                            borderRadius: "5px",
-                            cursor: "pointer"
-                        }}>
-                        Logout
-                    </button>
-                </div>
+        <Layout showHomeButton={true}>
+            <div style={{ marginBottom: spacing.xl }}>
+                <h1 style={{
+                    fontSize: typography.fontSize["3xl"],
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.primary,
+                    marginBottom: spacing.sm,
+                    textAlign: "center"
+                }}>
+                    Search Results for "{query}"
+                </h1>
+                <p style={{ 
+                    color: colors.gray[600], 
+                    margin: `0 0 ${spacing.lg} 0`,
+                    textAlign: "center",
+                    fontSize: typography.fontSize.base
+                }}>
+                    {totalResults} result{totalResults !== 1 ? 's' : ''} found
+                </p>
             </div>
 
             {/* Search Bar */}
@@ -429,7 +438,7 @@ const SearchResults = () => {
                                         {!problem.author.profile_picture && problem.author.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>{problem.title}</h3>
+                                        <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>{renderMathContent(problem.title)}</h3>
                                         <p style={{ margin: "0", color: "#666", fontSize: "14px" }}>
                                             by {problem.author.username} • {new Date(problem.created_at).toLocaleDateString()}
                                         </p>
@@ -444,7 +453,7 @@ const SearchResults = () => {
                                     overflow: "hidden",
                                     textOverflow: "ellipsis"
                                 }}>
-                                    {problem.description}
+                                    {renderMathContent(problem.description)}
                                 </p>
                                 
                                 <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
@@ -564,7 +573,7 @@ const SearchResults = () => {
                     </button>
                 </div>
             )}
-        </div>
+        </Layout>
     );
 };
 

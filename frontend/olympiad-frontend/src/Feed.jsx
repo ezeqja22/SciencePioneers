@@ -6,27 +6,28 @@ import { useNavigate } from "react-router-dom";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import SearchBar from "./SearchBar";
+import Layout from "./components/Layout";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
   if (!text) return '';
   
-  // If the text contains LaTeX commands or mathematical expressions, wrap the entire text
-  const hasLatex = /\\[a-zA-Z]+|[\^_]\s*[a-zA-Z0-9]|[\+\-\*\/\=\<\>\≤\≥\±\∓\∞]/.test(text);
-  
-  if (hasLatex) {
-    // Wrap the entire text in $ delimiters for math rendering
-    try {
-      return <InlineMath math={text} />;
-    } catch (error) {
-      // If KaTeX fails, fall back to regular text
-      console.warn('KaTeX rendering failed:', error);
-      return <span>{text}</span>;
-    }
+  // Check if text contains LaTeX patterns or math symbols
+  const latexPattern = /\\[a-zA-Z]+|\\[^a-zA-Z]|\$\$|\\\(|\\\)|\\\[|\\\]|\^|\_|\{|\}|\[|\]|∫|∑|∏|√|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|τ|υ|φ|χ|ψ|ω|∞|±|∓|×|÷|≤|≥|≠|≈|≡|∈|∉|⊂|⊃|∪|∩|∅|∇|∂|∆|Ω|Φ|Ψ|Λ|Σ|Π|Θ|Ξ|Γ|Δ/;
+  if (!latexPattern.test(text)) {
+    return text;
   }
   
-  // For regular text without math, return as is
-  return <span>{text}</span>;
+  try {
+    // If text contains LaTeX, render it with InlineMath
+    return <InlineMath math={text} />;
+  } catch (error) {
+    // If KaTeX fails, return plain text
+    return text;
+  }
 };
 
 function Feed() {
@@ -322,47 +323,18 @@ function Feed() {
   }
 
   return (
-    <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>Science Problems Feed</h2>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Link to="/profile">
-            <button style={{ 
-              padding: "10px 20px", 
-              backgroundColor: "#28a745", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}>
-              My Profile
-            </button>
-          </Link>
-          <Link to="/create-problem">
-            <button style={{ 
-              padding: "10px 20px", 
-              backgroundColor: "#007bff", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}>
-              Create Problem
-            </button>
-          </Link>
-          <button 
-            onClick={handleLogout}
-            style={{ 
-              padding: "10px 20px", 
-              backgroundColor: "#dc3545", 
-              color: "white", 
-              border: "none", 
-              borderRadius: "5px",
-              cursor: "pointer"
-            }}>
-            Logout
-          </button>
-        </div>
+    <Layout showHomeButton={true}>
+      <div style={{ marginBottom: spacing.xl }}>
+        <h1 style={{
+          fontSize: typography.fontSize["3xl"],
+          fontWeight: typography.fontWeight.bold,
+          color: colors.primary,
+          marginBottom: spacing.lg,
+          textAlign: "center"
+        }}>
+          Science Problems Feed
+        </h1>
+        
       </div>
 
       {/* Enhanced Search Bar */}
@@ -374,21 +346,24 @@ function Feed() {
       {/* Tab Navigation */}
       <div style={{ 
         display: "flex", 
-        borderBottom: "2px solid #e9ecef", 
-        marginBottom: "30px",
-        gap: "0"
+        borderBottom: `2px solid ${colors.gray[300]}`, 
+        marginBottom: spacing.xl,
+        gap: 0,
+        backgroundColor: colors.white,
+        borderRadius: `${borderRadius.md} ${borderRadius.md} 0 0`,
+        overflow: "hidden"
       }}>
         <button
           onClick={() => setActiveTab("all")}
           style={{
-            padding: "12px 24px",
+            padding: `${spacing.md} ${spacing.lg}`,
             border: "none",
-            backgroundColor: activeTab === "all" ? "#007bff" : "transparent",
-            color: activeTab === "all" ? "white" : "#666",
+            backgroundColor: activeTab === "all" ? colors.primary : "transparent",
+            color: activeTab === "all" ? colors.white : colors.gray[600],
             cursor: "pointer",
-            borderBottom: activeTab === "all" ? "2px solid #007bff" : "2px solid transparent",
-            fontWeight: activeTab === "all" ? "bold" : "normal",
-            transition: "all 0.2s ease"
+            fontWeight: activeTab === "all" ? typography.fontWeight.bold : typography.fontWeight.medium,
+            transition: "all 0.2s ease",
+            fontSize: typography.fontSize.base
           }}
         >
           All Problems
@@ -396,14 +371,14 @@ function Feed() {
         <button
           onClick={() => setActiveTab("following")}
           style={{
-            padding: "12px 24px",
+            padding: `${spacing.md} ${spacing.lg}`,
             border: "none",
-            backgroundColor: activeTab === "following" ? "#007bff" : "transparent",
-            color: activeTab === "following" ? "white" : "#666",
+            backgroundColor: activeTab === "following" ? colors.primary : "transparent",
+            color: activeTab === "following" ? colors.white : colors.gray[600],
             cursor: "pointer",
-            borderBottom: activeTab === "following" ? "2px solid #007bff" : "2px solid transparent",
-            fontWeight: activeTab === "following" ? "bold" : "normal",
-            transition: "all 0.2s ease"
+            fontWeight: activeTab === "following" ? typography.fontWeight.bold : typography.fontWeight.medium,
+            transition: "all 0.2s ease",
+            fontSize: typography.fontSize.base
           }}
         >
           Following
@@ -411,14 +386,14 @@ function Feed() {
         <button
           onClick={() => setActiveTab("trending")}
           style={{
-            padding: "12px 24px",
+            padding: `${spacing.md} ${spacing.lg}`,
             border: "none",
-            backgroundColor: activeTab === "trending" ? "#007bff" : "transparent",
-            color: activeTab === "trending" ? "white" : "#666",
+            backgroundColor: activeTab === "trending" ? colors.primary : "transparent",
+            color: activeTab === "trending" ? colors.white : colors.gray[600],
             cursor: "pointer",
-            borderBottom: activeTab === "trending" ? "2px solid #007bff" : "2px solid transparent",
-            fontWeight: activeTab === "trending" ? "bold" : "normal",
-            transition: "all 0.2s ease"
+            fontWeight: activeTab === "trending" ? typography.fontWeight.bold : typography.fontWeight.medium,
+            transition: "all 0.2s ease",
+            fontSize: typography.fontSize.base
           }}
         >
           Trending
@@ -474,17 +449,14 @@ function Feed() {
       ) : (
         <div>
           {problems.map((problem) => (
-            <div 
+            <Card 
             key={problem.id} 
-            onClick={() => navigate(`/problem/${problem.id}`)}
+            hover={true}
             style={{
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-              padding: "20px",
-              marginBottom: "20px",
-              backgroundColor: "#f9f9f9",
-              cursor: "pointer"  // Add this to show it's clickable
+              marginBottom: spacing.lg,
+              cursor: "pointer"
             }}
+            onClick={() => navigate(`/problem/${problem.id}`)}
           >
               {/* Author Info Section - Twitter Style */}
               {problem.author ? (
@@ -682,7 +654,7 @@ function Feed() {
                   </button>
                 </div>
               </div>
-            </div>
+          </Card>
           ))}
         </div>
       )}
@@ -693,11 +665,11 @@ function Feed() {
           display: "flex", 
           justifyContent: "center", 
           alignItems: "center", 
-          gap: "10px",
-          marginTop: "40px",
-          padding: "20px"
+          gap: spacing.md,
+          marginTop: spacing.xl,
+          padding: spacing.lg
         }}>
-          <button
+          <Button
             onClick={() => {
               if (activeTab === "trending") {
                 fetchTrendingProblems(currentPage - 1);
@@ -706,23 +678,22 @@ function Feed() {
               }
             }}
             disabled={currentPage === 1}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: currentPage === 1 ? "#ccc" : "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: currentPage === 1 ? "not-allowed" : "pointer"
-            }}
+            variant={currentPage === 1 ? "ghost" : "primary"}
+            size="md"
           >
-            Previous
-          </button>
+            ← Previous
+          </Button>
           
-          <span style={{ padding: "0 20px", color: "#666" }}>
+          <span style={{ 
+            padding: `0 ${spacing.lg}`,
+            fontSize: typography.fontSize.base,
+            color: colors.gray[600],
+            fontWeight: typography.fontWeight.medium
+          }}>
             Page {currentPage} of {totalPages} ({totalProblems} total problems)
           </span>
           
-          <button
+          <Button
             onClick={() => {
               if (activeTab === "trending") {
                 fetchTrendingProblems(currentPage + 1);
@@ -731,20 +702,54 @@ function Feed() {
               }
             }}
             disabled={currentPage === totalPages}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: currentPage === totalPages ? "#ccc" : "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: currentPage === totalPages ? "not-allowed" : "pointer"
-            }}
+            variant={currentPage === totalPages ? "ghost" : "primary"}
+            size="md"
           >
-            Next
-          </button>
+            Next →
+          </Button>
         </div>
       )}
-    </div>
+
+      {/* Floating Create Problem Button */}
+      <div style={{
+        position: "fixed",
+        bottom: spacing.xl,
+        right: spacing.xl,
+        zIndex: 1000
+      }}>
+        <Link to="/create-problem" style={{ textDecoration: "none" }}>
+          <div style={{
+            width: "60px",
+            height: "60px",
+            backgroundColor: colors.primary,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            transition: "all 0.3s ease",
+            fontSize: "24px",
+            color: colors.white,
+            fontWeight: typography.fontWeight.bold
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "scale(1.1)";
+            e.target.style.backgroundColor = colors.secondary;
+            e.target.style.boxShadow = "0 6px 25px rgba(0,0,0,0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "scale(1)";
+            e.target.style.backgroundColor = colors.primary;
+            e.target.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
+          }}
+          title="Create New Problem"
+          >
+            +
+          </div>
+        </Link>
+      </div>
+    </Layout>
   );
 }
 

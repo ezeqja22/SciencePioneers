@@ -1,6 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Layout from './components/Layout';
+import Card from './components/Card';
+import Button from './components/Button';
+import { colors, spacing, typography, borderRadius } from './designSystem';
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
+
+// Helper function to render math content
+const renderMathContent = (text) => {
+    if (!text) return '';
+    
+    // Check if text contains LaTeX patterns or math symbols
+    const latexPattern = /\\[a-zA-Z]+|\\[^a-zA-Z]|\$\$|\\\(|\\\)|\\\[|\\\]|\^|\_|\{|\}|\[|\]|∫|∑|∏|√|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|τ|υ|φ|χ|ψ|ω|∞|±|∓|×|÷|≤|≥|≠|≈|≡|∈|∉|⊂|⊃|∪|∩|∅|∇|∂|∆|Ω|Φ|Ψ|Λ|Σ|Π|Θ|Ξ|Γ|Δ/;
+    if (!latexPattern.test(text)) {
+        return text;
+    }
+    
+    try {
+        // If text contains LaTeX, render it with InlineMath
+        return <InlineMath math={text} />;
+    } catch (error) {
+        // If KaTeX fails, return plain text
+        return text;
+    }
+};
 
 const PublicUserProfile = () => {
     const { username } = useParams();
@@ -100,46 +125,17 @@ const PublicUserProfile = () => {
     }
 
     return (
-        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                marginBottom: '20px',
-                padding: '10px 0',
-                borderBottom: '1px solid #eee'
-            }}>
-                <h1 style={{ margin: 0, color: '#333' }}>User Profile</h1>
-                <div>
-                    <button 
-                        onClick={() => navigate('/feed')}
-                        style={{ 
-                            padding: '8px 16px', 
-                            backgroundColor: '#6c757d', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: '5px',
-                            cursor: 'pointer',
-                            marginRight: '10px'
-                        }}
-                    >
-                        Back to Feed
-                    </button>
-                    <button 
-                        onClick={handleLogout}
-                        style={{ 
-                            padding: '8px 16px', 
-                            backgroundColor: '#dc3545', 
-                            color: 'white', 
-                            border: 'none', 
-                            borderRadius: '5px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        Logout
-                    </button>
-                </div>
+        <Layout showHomeButton={true}>
+            <div style={{ marginBottom: spacing.xl }}>
+                <h1 style={{
+                    fontSize: typography.fontSize["3xl"],
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.primary,
+                    marginBottom: spacing.lg,
+                    textAlign: "center"
+                }}>
+                    User Profile
+                </h1>
             </div>
 
             {/* User Info */}
@@ -225,13 +221,13 @@ const PublicUserProfile = () => {
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                                    <h4 style={{ margin: 0, color: '#333' }}>{problem.title}</h4>
+                                    <h4 style={{ margin: 0, color: '#333' }}>{renderMathContent(problem.title)}</h4>
                                     <span style={{ color: '#666', fontSize: '14px' }}>
                                         {new Date(problem.created_at).toLocaleDateString()}
                                     </span>
                                 </div>
                                 <p style={{ margin: '0 0 15px 0', color: '#555' }}>
-                                    {problem.description}
+                                    {renderMathContent(problem.description)}
                                 </p>
                                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                                     {problem.tags && problem.tags.split(',').map((tag, index) => (
@@ -271,7 +267,7 @@ const PublicUserProfile = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </Layout>
     );
 };
 

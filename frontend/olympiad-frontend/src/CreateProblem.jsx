@@ -4,6 +4,10 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import MathEditor from "./MathEditor";
 import "./MathEditor.css";
+import Layout from "./components/Layout";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 function CreateProblem() {
   const [formData, setFormData] = useState({
@@ -179,9 +183,17 @@ function CreateProblem() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "30px" }}>
-        <h2>Create New Problem</h2>
+    <Layout showHomeButton={true}>
+      <div style={{ marginBottom: spacing.xl }}>
+        <h1 style={{
+          fontSize: typography.fontSize["3xl"],
+          fontWeight: typography.fontWeight.bold,
+          color: colors.primary,
+          marginBottom: spacing.lg,
+          textAlign: "center"
+        }}>
+          Create New Problem
+        </h1>
         <p style={{ color: "#666" }}>Share a science problem with the community</p>
       </div>
 
@@ -535,7 +547,7 @@ function CreateProblem() {
         onInsert={handleMathInsert}
         initialValue=""
       />
-    </div>
+    </Layout>
   );
 }
 

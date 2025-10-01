@@ -1,6 +1,31 @@
 import React, { useRef,useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import Layout from "./components/Layout";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import { colors, spacing, typography, borderRadius } from "./designSystem";
+import { InlineMath, BlockMath } from 'react-katex';
+import 'katex/dist/katex.min.css';
+
+// Helper function to render math content
+const renderMathContent = (text) => {
+    if (!text) return '';
+    
+    // Check if text contains LaTeX patterns or math symbols
+    const latexPattern = /\\[a-zA-Z]+|\\[^a-zA-Z]|\$\$|\\\(|\\\)|\\\[|\\\]|\^|\_|\{|\}|\[|\]|∫|∑|∏|√|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|τ|υ|φ|χ|ψ|ω|∞|±|∓|×|÷|≤|≥|≠|≈|≡|∈|∉|⊂|⊃|∪|∩|∅|∇|∂|∆|Ω|Φ|Ψ|Λ|Σ|Π|Θ|Ξ|Γ|Δ/;
+    if (!latexPattern.test(text)) {
+        return text;
+    }
+    
+    try {
+        // If text contains LaTeX, render it with InlineMath
+        return <InlineMath math={text} />;
+    } catch (error) {
+        // If KaTeX fails, return plain text
+        return text;
+    }
+};
 
 function UserProfile() {
     const navigate = useNavigate();
@@ -189,36 +214,17 @@ function UserProfile() {
     const { user, problems, comments, bookmarks } = profileData;
 
     return (
-        <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
-            {/* Navigation Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-                <h2>My Profile</h2>
-                <div style={{ display: "flex", gap: "10px" }}>
-                    <Link to="/feed">
-                        <button style={{ 
-                            padding: "10px 20px", 
-                            backgroundColor: "#28a745", 
-                            color: "white", 
-                            border: "none", 
-                            borderRadius: "5px",
-                            cursor: "pointer"
-                        }}>
-                            Back to Feed
-                        </button>
-                    </Link>
-                    <button 
-                        onClick={handleLogout}
-                        style={{ 
-                            padding: "10px 20px", 
-                            backgroundColor: "#dc3545", 
-                            color: "white", 
-                            border: "none", 
-                            borderRadius: "5px",
-                            cursor: "pointer"
-                        }}>
-                        Logout
-                    </button>
-                </div>
+        <Layout showHomeButton={true}>
+            <div style={{ marginBottom: spacing.xl }}>
+                <h1 style={{
+                    fontSize: typography.fontSize["3xl"],
+                    fontWeight: typography.fontWeight.bold,
+                    color: colors.primary,
+                    marginBottom: spacing.lg,
+                    textAlign: "center"
+                }}>
+                    My Profile
+                </h1>
             </div>
             
             {/* Hidden file input */}
@@ -489,9 +495,9 @@ function UserProfile() {
                                         backgroundColor: "#f9f9f9"
                                     }}>
                                         <Link to={`/problem/${problem.id}`} style={{ textDecoration: "none" }}>
-                                            <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{problem.title}</h4>
+                                            <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(problem.title)}</h4>
                                         </Link>
-                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{problem.description.substring(0, 150)}...</p>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
                                                 backgroundColor: "#e3f2fd",
@@ -541,13 +547,13 @@ function UserProfile() {
                                     }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                                             <Link to={`/problem/${comment.problem.id}`} style={{ textDecoration: "none" }}>
-                                                <h5 style={{ margin: "0", color: "#007bff" }}>{comment.problem.title}</h5>
+                                                <h5 style={{ margin: "0", color: "#007bff" }}>{renderMathContent(comment.problem.title)}</h5>
                                             </Link>
                                             <span style={{ fontSize: "12px", color: "#666" }}>
                                                 {new Date(comment.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <p style={{ color: "#333", margin: "0" }}>{comment.text}</p>
+                                        <p style={{ color: "#333", margin: "0" }}>{renderMathContent(comment.text)}</p>
                                     </div>
                                 ))}
                             </div>
@@ -575,7 +581,7 @@ function UserProfile() {
                                     }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                                             <Link to={`/problem/${bookmark.problem.id}`} style={{ textDecoration: "none" }}>
-                                                <h4 style={{ margin: "0", color: "#333" }}>{bookmark.problem.title}</h4>
+                                                <h4 style={{ margin: "0", color: "#333" }}>{renderMathContent(bookmark.problem.title)}</h4>
                                             </Link>
                                             <button
                                                 onClick={() => handleBookmark(bookmark.problem.id, true)}
@@ -592,7 +598,7 @@ function UserProfile() {
                                                 Remove Bookmark
                                             </button>
                                         </div>
-                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{bookmark.problem.description.substring(0, 150)}...</p>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(bookmark.problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
                                                 backgroundColor: "#e3f2fd",
@@ -623,7 +629,7 @@ function UserProfile() {
                     </div>
                 )}
             </div>
-        </div>
+        </Layout>
     );
 }
 

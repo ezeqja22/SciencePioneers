@@ -6,27 +6,28 @@ import MathEditor from "./MathEditor";
 import "./MathEditor.css";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import Layout from "./components/Layout";
+import Card from "./components/Card";
+import Button from "./components/Button";
+import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
     if (!text) return '';
     
-    // If the text contains LaTeX commands or mathematical expressions, wrap the entire text
-    const hasLatex = /\\[a-zA-Z]+|[\^_]\s*[a-zA-Z0-9]|[\+\-\*\/\=\<\>\≤\≥\±\∓\∞]/.test(text);
-    
-    if (hasLatex) {
-        // Wrap the entire text in $ delimiters for math rendering
-        try {
-            return <InlineMath math={text} />;
-        } catch (error) {
-            // If KaTeX fails, fall back to regular text
-            console.warn('KaTeX rendering failed:', error);
-            return <span>{text}</span>;
-        }
+    // Check if text contains LaTeX patterns or math symbols
+    const latexPattern = /\\[a-zA-Z]+|\\[^a-zA-Z]|\$\$|\\\(|\\\)|\\\[|\\\]|\^|\_|\{|\}|\[|\]|∫|∑|∏|√|α|β|γ|δ|ε|ζ|η|θ|ι|κ|λ|μ|ν|ξ|ο|π|ρ|σ|τ|υ|φ|χ|ψ|ω|∞|±|∓|×|÷|≤|≥|≠|≈|≡|∈|∉|⊂|⊃|∪|∩|∅|∇|∂|∆|Ω|Φ|Ψ|Λ|Σ|Π|Θ|Ξ|Γ|Δ/;
+    if (!latexPattern.test(text)) {
+        return text;
     }
     
-    // For regular text without math, return as is
-    return <span>{text}</span>;
+    try {
+        // If text contains LaTeX, render it with InlineMath
+        return <InlineMath math={text} />;
+    } catch (error) {
+        // If KaTeX fails, return plain text
+        return text;
+    }
 };
 
 function ProblemDetail() {
@@ -408,7 +409,7 @@ function ProblemDetail() {
     }
 
     return (
-        <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
+        <Layout showHomeButton={true}>
             {editingProblem ? (
                 <div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
@@ -1238,7 +1239,7 @@ function ProblemDetail() {
                 onInsert={handleCommentMathInsert}
                 initialValue=""
             />
-        </div>
+        </Layout>
     );
 }
 
