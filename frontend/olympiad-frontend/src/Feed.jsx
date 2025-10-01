@@ -45,15 +45,12 @@ function Feed() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Validate authentication before fetching data
+    // Only fetch data if user is authenticated
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login", { replace: true });
-      return;
+    if (token) {
+      fetchProblems();
+      fetchCurrentUser();
     }
-    
-    fetchProblems();
-    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
@@ -77,7 +74,7 @@ function Feed() {
     setFollowStatus({});
     
     // Replace current history entry to prevent back navigation
-    navigate("/", { replace: true });
+    navigate("/homepage", { replace: true });
   };
 
   const fetchProblems = async (page = 1) => {

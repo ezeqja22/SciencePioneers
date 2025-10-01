@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Signup() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState(""); // Add email state
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get redirect path from location state
+  const redirectTo = location.state?.redirectTo || "/homepage";
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -20,11 +24,12 @@ function Signup() {
         password,
       });
       
-      // Redirect to verification page with email and username
+      // Redirect to verification page with email, username, and redirect path
       navigate("/verify-email", { 
         state: { 
           email: email, 
-          username: username 
+          username: username,
+          redirectTo: redirectTo
         } 
       });
     } catch (err) {

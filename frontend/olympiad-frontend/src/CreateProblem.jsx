@@ -166,7 +166,7 @@ function CreateProblem() {
       }
 
       alert("Problem created successfully!");
-      navigate("/feed");
+      navigate("/homepage");
     } catch (error) {
       console.error("Error creating problem:", error);
       console.error("Error response:", error.response?.data);
@@ -512,7 +512,7 @@ function CreateProblem() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/feed")}
+            onClick={() => navigate("/homepage")}
             style={{
               padding: "12px 24px",
               backgroundColor: "#6c757d",

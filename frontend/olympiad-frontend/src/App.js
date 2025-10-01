@@ -1,8 +1,9 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Login from "./Login";
+import Homepage from "./Homepage";
 import Feed from "./Feed";
 import CreateProblem from "./CreateProblem";
 import ProtectedRoute from "./ProtectedRoute";
@@ -11,6 +12,8 @@ import UserProfile from "./UserProfile";
 import PublicUserProfile from "./PublicUserProfile";
 import EmailVerification from "./EmailVerification";
 import SearchResults from "./SearchResults";
+import Forums from "./Forums";
+import SubjectPage from "./SubjectPage";
 import AuthGuard from "./AuthGuard";
 
 function App() {
@@ -18,9 +21,12 @@ function App() {
     <Router>
       <AuthGuard>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Navigate to="/homepage" replace />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route 
+          path="/homepage" 
+          element={<Homepage />} />
           <Route 
           path="/feed" 
           element={
@@ -64,6 +70,20 @@ function App() {
           element={
             <ProtectedRoute>
           <SearchResults />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/forums" 
+          element={
+            <ProtectedRoute>
+          <Forums />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/subject/:subject" 
+          element={
+            <ProtectedRoute>
+          <SubjectPage />
           </ProtectedRoute>
           } />
         </Routes>

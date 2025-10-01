@@ -172,7 +172,7 @@ const SearchResults = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        navigate("/", { replace: true });
+        navigate("/homepage", { replace: true });
     };
 
     if (loading) {

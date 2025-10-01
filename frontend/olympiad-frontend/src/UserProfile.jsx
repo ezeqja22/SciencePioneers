@@ -16,14 +16,11 @@ function UserProfile() {
     });
 
     useEffect(() => {
-        // Validate authentication before fetching data
+        // Only fetch data if user is authenticated
         const token = localStorage.getItem("token");
-        if (!token) {
-            navigate("/login", { replace: true });
-            return;
+        if (token) {
+            fetchUserProfile();
         }
-        
-        fetchUserProfile();
     }, []);
 
     const fetchUserProfile = async () => {
@@ -170,7 +167,7 @@ function UserProfile() {
         setSelectedFile(null);
         
         // Replace current history entry to prevent back navigation
-        navigate("/", { replace: true });
+        navigate("/homepage", { replace: true });
     };
 
     if (loading) {

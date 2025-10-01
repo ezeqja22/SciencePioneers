@@ -9,6 +9,7 @@ const EmailVerification = () => {
   // Get email from location state (passed from signup)
   const email = location.state?.email || '';
   const username = location.state?.username || '';
+  const redirectTo = location.state?.redirectTo || '/homepage';
   
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,7 @@ const EmailVerification = () => {
       if (response.status === 200) {
         setSuccess(true);
         setTimeout(() => {
-          navigate('/login');
+          navigate(redirectTo);
         }, 2000);
       }
     } catch (err) {
@@ -235,7 +236,7 @@ const EmailVerification = () => {
           }}>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(redirectTo)}
               style={{
                 backgroundColor: 'transparent',
                 color: '#6c757d',

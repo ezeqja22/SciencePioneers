@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get redirect path from location state
+  const redirectTo = location.state?.redirectTo || "/homepage";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +24,7 @@ function Login() {
 
       alert("Login successful!");
       // Replace history entry to prevent back navigation to login
-      navigate("/feed", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message;
       
