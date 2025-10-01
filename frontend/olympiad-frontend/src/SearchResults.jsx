@@ -20,6 +20,13 @@ const SearchResults = () => {
     const [searchInput, setSearchInput] = useState('');
 
     const query = new URLSearchParams(location.search).get('q') || '';
+    
+    // Extract all search parameters for advanced search
+    const searchParams = new URLSearchParams(location.search);
+    const subject = searchParams.get('subject') || '';
+    const level = searchParams.get('level') || '';
+    const year = searchParams.get('year') || '';
+    const tags = searchParams.get('tags') || '';
 
     // Update search input when query changes
     useEffect(() => {
@@ -41,7 +48,7 @@ const SearchResults = () => {
         // Always fetch results, even without query (for advanced search)
         fetchSearchResults();
         fetchCurrentUser();
-    }, [query, currentPage, activeTab]);
+    }, [query, currentPage, activeTab, subject, level, year, tags]);
 
     const fetchCurrentUser = async () => {
         try {
