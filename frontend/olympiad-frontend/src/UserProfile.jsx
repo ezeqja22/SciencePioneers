@@ -35,13 +35,11 @@ function UserProfile() {
                 return;
             }
             
-            console.log("Fetching user profile with token:", token.substring(0, 20) + "...");
             const response = await axios.get("http://127.0.0.1:8000/auth/user/profile", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
-            console.log("Profile data received:", response.data);
             setProfileData(response.data);
         } catch (error) {
             console.error("Error fetching user profile:", error);

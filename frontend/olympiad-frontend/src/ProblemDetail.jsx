@@ -34,10 +34,17 @@ function ProblemDetail() {
 
     const fetchProblem = async () => {
         try {
-            console.log("Fetching problem with ID:", id);
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`);
-            console.log("Problem response:", response.data);
             setProblem(response.data);
+            
+            // Increment view count
+            try {
+                const token = localStorage.getItem("token");
+                await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/view`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } catch (viewError) {
+            }
             
             // Fetch problem images
             try {
@@ -226,7 +233,6 @@ function ProblemDetail() {
         if (!editProblemData.title.trim() || !editProblemData.description.trim()) return;
 
         try {
-            console.log("Saving problem with data:", editProblemData);
             
             // Validate tags
             const validTags = editTags.filter(tag => tag.trim() !== "");
@@ -248,7 +254,6 @@ function ProblemDetail() {
                 year: editProblemData.year ? parseInt(editProblemData.year) : null
             };
             
-            console.log("Request data:", requestData);
             
             const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}`,
                 requestData,
@@ -257,12 +262,9 @@ function ProblemDetail() {
                         Authorization: `Bearer ${token}`
                     }
                 });
-            console.log("Problem update response:", response.data);
             
             // Preserve author information when updating problem
             setProblem(prevProblem => {
-                console.log("Previous created_at:", prevProblem.created_at);
-                console.log("Response created_at:", response.data.created_at);
                 return {
                     ...prevProblem,
                     ...response.data,
@@ -549,7 +551,6 @@ function ProblemDetail() {
                                     accept="image/*"
                                     onChange={async (e) => {
                                         const files = Array.from(e.target.files);
-                                        console.log("New images selected:", files);
                                         
                                         if (files.length === 0) return;
                                         
@@ -581,7 +582,6 @@ function ProblemDetail() {
                                                     }
                                                 );
                                                 
-                                                console.log("Image uploaded successfully:", uploadResponse.data);
                                             }
                                             alert(`${files.length} image(s) uploaded successfully!`);
                                             
@@ -780,7 +780,7 @@ function ProblemDetail() {
                             </span>
                         )}
                         {problem.year && (
-                            <span style={{
+                    <span style={{
                                 backgroundColor: "#e8f5e8", 
                                 color: "#2e7d32",
                                 padding: "4px 8px",
@@ -800,16 +800,16 @@ function ProblemDetail() {
                                 <span
                                     key={index}
                                     style={{
-                                        backgroundColor: "#f3e5f5",
-                                        color: "#7b1fa2",
-                                        padding: "4px 8px",
-                                        borderRadius: "4px",
+                        backgroundColor: "#f3e5f5",
+                        color: "#7b1fa2",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
                                         fontSize: "12px",
                                         whiteSpace: "nowrap"
                                     }}
                                 >
                                     {trimmedTag}
-                                </span>
+                    </span>
                             );
                         })}
                     </div>

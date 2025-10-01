@@ -98,7 +98,6 @@ function CreateProblem() {
         year: formData.year ? parseInt(formData.year) : null
       };
       
-      console.log("Creating problem with data:", requestData);
       
       const response = await axios.post(
         "http://127.0.0.1:8000/auth/problems/",
@@ -112,8 +111,6 @@ function CreateProblem() {
 
       // Upload images if any
       if (images.length > 0) {
-        console.log("Problem created with ID:", response.data.id);
-        console.log("Uploading images:", images);
         setUploadingImages(true);
         try {
           for (const file of images) {
@@ -121,8 +118,6 @@ function CreateProblem() {
             formData.append('file', file);
             
             const uploadUrl = `http://127.0.0.1:8000/auth/problems/${response.data.id}/images`;
-            console.log("Uploading to URL:", uploadUrl);
-            console.log("File being uploaded:", file.name, file.type, file.size);
             
             const uploadResponse = await axios.post(
               uploadUrl,
@@ -134,7 +129,6 @@ function CreateProblem() {
                 }
               }
             );
-            console.log("Image upload response:", uploadResponse.data);
           }
         } catch (error) {
           console.error("Error uploading images:", error);
@@ -145,7 +139,7 @@ function CreateProblem() {
           setUploadingImages(false);
         }
       }
-      
+
       alert("Problem created successfully!");
       navigate("/feed");
     } catch (error) {

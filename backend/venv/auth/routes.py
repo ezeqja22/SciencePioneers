@@ -17,6 +17,85 @@ from PIL import Image
 
 router = APIRouter()
 
+
+@router.get("/problems/trending")
+async def get_trending_problems(
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get trending problems based on engagement score"""
+    from sqlalchemy import desc
+    
+    # Calculate engagement score: (comments × 2) + (votes × 1) + (views × 0.3) + (bookmarks × 1.5)
+    trending_query = db.query(
+        Problem,
+        (
+            func.coalesce(func.count(Comment.id), 0) * 2 +
+            func.coalesce(func.count(Vote.id), 0) * 1 +
+            func.coalesce(Problem.view_count, 0) * 0.3 +
+            func.coalesce(func.count(Bookmark.id), 0) * 1.5
+        ).label('engagement_score')
+    ).outerjoin(Comment, Comment.problem_id == Problem.id).outerjoin(
+        Vote, Vote.problem_id == Problem.id
+    ).outerjoin(
+        Bookmark, Bookmark.problem_id == Problem.id
+    ).group_by(Problem.id).order_by(desc('engagement_score'))
+    
+    # Apply pagination
+    offset = (page - 1) * limit
+    trending_problems = trending_query.offset(offset).limit(limit).all()
+    
+    # If no problems with engagement, fall back to recent problems
+    if not trending_problems:
+        fallback_query = db.query(Problem).order_by(desc(Problem.created_at)).offset(offset).limit(limit)
+        fallback_problems = fallback_query.all()
+        trending_problems = [(problem, 0) for problem in fallback_problems]
+    
+    # Format results
+    results = []
+    for problem_data in trending_problems:
+        problem = problem_data[0]
+        engagement_score = problem_data[1]
+        
+        # Get author info
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        
+        # Get comment count
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        
+        results.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "subject": problem.subject,
+            "level": problem.level,
+            "year": problem.year,
+            "tags": problem.tags,
+            "view_count": getattr(problem, 'view_count', 0) or 0,
+            "engagement_score": float(engagement_score),
+            "created_at": problem.created_at.isoformat(),
+            "author": {
+                "id": author.id,
+                "username": author.username,
+                "profile_picture": author.profile_picture
+            },
+            "comment_count": comment_count
+        })
+    
+    # Get total count for pagination
+    total_problems = db.query(Problem).count()
+    total_pages = max(1, (total_problems + limit - 1) // limit)
+    
+    return {
+        "problems": results,
+        "total_problems": total_problems,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages
+    }
+
 @router.post("/register")
 async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     # Check if email is already registered (verified or not)
@@ -45,8 +124,7 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     
     if not success:
         # For testing: create user even if email fails, but log the code
-        print(f"DEBUG: Email sending failed for {req.email}, but code is: {verification_code}")
-        # Continue to create user for testing purposes
+        pass  # Continue to create user for testing purposes
     
     # Create user (for testing, even if email failed)
     hashed = hash_password(req.password)
@@ -1235,7 +1313,6 @@ async def advanced_search(
     current_user: User = Depends(get_current_user)
 ):
     """Advanced search with multiple filters - focuses on problems"""
-    print(f"Advanced search called with: q={q}, category={category}, subject={subject}, level={level}, year={year}, tags={tags}")
     offset = (page - 1) * limit
     results = {"users": [], "problems": []}
     
@@ -1291,7 +1368,6 @@ async def advanced_search(
     # Get total count
     total_problems = problems_query.count()
     
-    print(f"Found {len(problem_results)} problems, total: {total_problems}")
     
     return {
         "users": [],  # Advanced search focuses only on problems
@@ -1333,7 +1409,6 @@ async def send_verification_email(
     db.commit()
     
     # For now, just return the code for testing (remove this in production)
-    print(f"DEBUG: Verification code for {email}: {verification_code}")
     
     # Send email
     success = await email_service.send_verification_email(
@@ -1342,7 +1417,6 @@ async def send_verification_email(
     
     if not success:
         # For testing, return the code in the response
-        print(f"WARNING: Email sending failed for {email}, but code is: {verification_code}")
         return {
             "message": "Verification code generated (email sending failed)",
             "verification_code": verification_code,
@@ -1463,7 +1537,7 @@ async def upload_problem_image(
                 img.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
                 img.save(file_path, optimize=True, quality=85)
     except Exception as e:
-        print(f"Image processing error: {e}")
+        pass  # Image processing failed, but continue
     
     # Store the image association in the database
     problem_image = ProblemImage(
@@ -1541,3 +1615,23 @@ async def delete_problem_image(
         return {"message": "Image deleted successfully"}
     else:
         return {"message": "Image deleted from database but file not found"}
+
+
+@router.post("/problems/{problem_id}/view")
+async def increment_view_count(
+    problem_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Increment view count for a problem"""
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Increment view count
+    problem.view_count = (problem.view_count or 0) + 1
+    db.commit()
+    
+    return {"message": "View count incremented", "view_count": problem.view_count}
+
+

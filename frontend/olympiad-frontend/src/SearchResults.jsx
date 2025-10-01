@@ -88,30 +88,21 @@ const SearchResults = () => {
                 params.append('limit', '10');
                 
                 endpoint = `http://127.0.0.1:8000/auth/search/advanced?${params.toString()}`;
-                console.log("Using advanced search endpoint:", endpoint);
             } else {
                 // Use regular combined search
                 endpoint = `http://127.0.0.1:8000/auth/search/combined?q=${encodeURIComponent(query)}`;
-                console.log("Using combined search endpoint:", endpoint);
             }
-
-            console.log("Searching with endpoint:", endpoint);
-            console.log("Active tab:", activeTab);
-            console.log("Query:", query);
-            console.log("Current page:", currentPage);
 
             const response = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            console.log("Search response:", response.data);
 
             if (hasAdvancedParams) {
                 // Advanced search results - always show problems
                 setSearchResults(response.data);
                 setTotalPages(response.data.total_pages || 1);
                 setTotalResults(response.data.total_problems || 0);
-                console.log("Advanced search results set:", response.data);
             } else if (activeTab === 'all' || (activeTab === 'users' && currentPage === 1) || (activeTab === 'problems' && currentPage === 1)) {
                 // Use combined search results
                 setSearchResults(response.data);

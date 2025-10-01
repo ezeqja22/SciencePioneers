@@ -59,11 +59,18 @@ function Feed() {
   const fetchProblems = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://127.0.0.1:8000/auth/problems/?page=${page}&limit=10`);
+      let endpoint = `http://127.0.0.1:8000/auth/problems/?page=${page}&limit=10`;
+      
+      // Use trending endpoint for trending tab
+      if (activeTab === "trending") {
+        endpoint = `http://127.0.0.1:8000/auth/problems/trending?page=${page}&limit=10`;
+      }
+      
+      const response = await axios.get(endpoint);
       setProblems(response.data.problems || response.data);
       setCurrentPage(page);
       setTotalPages(response.data.total_pages || 1);
-      setTotalProblems(response.data.total || response.data.length);
+      setTotalProblems(response.data.total_problems || response.data.total || response.data.length);
       
       // Fetch vote data for all problems
       const problemIds = (response.data.problems || response.data).map(problem => problem.id);
@@ -107,23 +114,25 @@ function Feed() {
     }
   };
 
-  const fetchTrendingProblems = async () => {
+  const fetchTrendingProblems = async (page = 1) => {
     setLoading(true);
     try {
-      // For now, we'll use the same endpoint but sort by popularity
-      // Later we can implement a proper trending algorithm
-      const response = await axios.get("http://127.0.0.1:8000/auth/problems/");
-      
-      // Ensure response.data is an array and sort by comment count
-      const problemsData = Array.isArray(response.data) ? response.data : [];
-      const sortedProblems = problemsData.sort((a, b) => b.comment_count - a.comment_count);
-      setProblems(sortedProblems);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`http://127.0.0.1:8000/auth/problems/trending?page=${page}&limit=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setProblems(response.data.problems || []);
+      setCurrentPage(page);
+      setTotalPages(response.data.total_pages || 1);
+      setTotalProblems(response.data.total_problems || 0);
       
       // Only fetch vote data and follow status if we have problems
-      if (sortedProblems.length > 0) {
-        const problemIds = sortedProblems.map(problem => problem.id);
+      if (response.data.problems && response.data.problems.length > 0) {
+        const problemIds = response.data.problems.map(problem => problem.id);
         await fetchVoteData(problemIds);
-        await fetchFollowStatus(sortedProblems);
+        await fetchFollowStatus(response.data.problems);
       }
     } catch (error) {
       console.error("Error fetching trending problems:", error);
@@ -658,7 +667,7 @@ function Feed() {
       )}
 
       {/* Pagination */}
-      {activeTab === "all" && totalPages > 1 && (
+      {(activeTab === "all" || activeTab === "trending") && totalPages > 1 && (
         <div style={{ 
           display: "flex", 
           justifyContent: "center", 
@@ -668,7 +677,13 @@ function Feed() {
           padding: "20px"
         }}>
           <button
-            onClick={() => fetchProblems(currentPage - 1)}
+            onClick={() => {
+              if (activeTab === "trending") {
+                fetchTrendingProblems(currentPage - 1);
+              } else {
+                fetchProblems(currentPage - 1);
+              }
+            }}
             disabled={currentPage === 1}
             style={{
               padding: "10px 20px",
@@ -687,7 +702,13 @@ function Feed() {
           </span>
           
           <button
-            onClick={() => fetchProblems(currentPage + 1)}
+            onClick={() => {
+              if (activeTab === "trending") {
+                fetchTrendingProblems(currentPage + 1);
+              } else {
+                fetchProblems(currentPage + 1);
+              }
+            }}
             disabled={currentPage === totalPages}
             style={{
               padding: "10px 20px",
