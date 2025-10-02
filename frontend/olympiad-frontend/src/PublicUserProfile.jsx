@@ -4,6 +4,7 @@ import axios from 'axios';
 import Layout from './components/Layout';
 import Card from './components/Card';
 import Button from './components/Button';
+import BackButton from './components/BackButton';
 import { colors, spacing, typography, borderRadius } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -171,22 +172,18 @@ const PublicUserProfile = () => {
         return (
             <div style={{ padding: '20px', textAlign: 'center' }}>
                 <h2>User not found</h2>
-                <button onClick={() => navigate('/feed')} style={{ 
-                    padding: '10px 20px', 
-                    backgroundColor: '#007bff', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                }}>
-                    Back to Feed
-                </button>
+                <BackButton fallbackPath="/feed" />
             </div>
         );
     }
 
     return (
         <Layout showHomeButton={true}>
+            {/* Back Button */}
+            <div style={{ marginBottom: spacing.md }}>
+                <BackButton fallbackPath="/feed" />
+            </div>
+            
             <div style={{ marginBottom: spacing.xl }}>
                 <h1 style={{
                     fontSize: typography.fontSize["3xl"],

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import BackButton from './components/BackButton';
 
 const EmailVerification = () => {
   const navigate = useNavigate();
@@ -228,26 +229,22 @@ const EmailVerification = () => {
             </button>
           </div>
 
-          <div style={{ 
-            textAlign: 'center', 
+          <div style={{
+            textAlign: 'center',
             marginTop: '20px',
             paddingTop: '20px',
             borderTop: '1px solid #eee'
           }}>
-            <button
-              type="button"
-              onClick={() => navigate(redirectTo)}
+            <BackButton 
+              fallbackPath="/login"
               style={{
                 backgroundColor: 'transparent',
                 color: '#6c757d',
                 border: 'none',
-                cursor: 'pointer',
                 fontSize: '14px',
                 textDecoration: 'underline'
               }}
-            >
-              Back to Login
-            </button>
+            />
           </div>
         </form>
       </div>

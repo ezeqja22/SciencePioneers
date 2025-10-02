@@ -9,6 +9,7 @@ import SearchBar from "./SearchBar";
 import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
+import BackButton from "./components/BackButton";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content

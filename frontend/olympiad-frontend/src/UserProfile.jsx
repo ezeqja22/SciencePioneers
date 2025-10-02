@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
+import BackButton from "./components/BackButton";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -276,6 +277,11 @@ function UserProfile() {
 
     return (
         <Layout showHomeButton={true}>
+            {/* Back Button */}
+            <div style={{ marginBottom: spacing.md }}>
+                <BackButton fallbackPath="/feed" />
+            </div>
+            
             <div style={{ marginBottom: spacing.xl }}>
                 <h1 style={{
                     fontSize: typography.fontSize["3xl"],

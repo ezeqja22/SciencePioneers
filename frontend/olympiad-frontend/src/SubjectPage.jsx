@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography } from "./designSystem";
+import BackButton from "./components/BackButton";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -231,6 +232,7 @@ function SubjectPage() {
                     </div>
                 </Link>
 
+
                 <nav style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                     <Link to="/feed" style={{ 
                         color: "white", 
@@ -315,6 +317,26 @@ function SubjectPage() {
             {/* Main Content */}
             <main style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
                 <div style={{ marginBottom: "2rem" }}>
+                    {/* Back Button */}
+                    <div style={{ marginBottom: "1rem" }}>
+                        <BackButton 
+                            fallbackPath="/homepage"
+                            style={{
+                                backgroundColor: colors.light,
+                                color: colors.gray[600],
+                                border: `1px solid ${colors.gray[300]}`,
+                                borderRadius: "8px",
+                                padding: "8px 16px"
+                            }}
+                            hoverStyle={{
+                                backgroundColor: colors.primary,
+                                color: colors.white,
+                                borderColor: colors.primary,
+                                transform: "translateY(-1px)"
+                            }}
+                        />
+                    </div>
+                    
                     <h1 style={{ 
                         fontSize: "2.5rem", 
                         fontWeight: "700", 

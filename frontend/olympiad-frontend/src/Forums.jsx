@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import BackButton from "./components/BackButton";
 
 function Forums() {
     return (
@@ -59,21 +60,7 @@ function Forums() {
                     }}>
                         This is the Forums page. Community discussions and forums will be implemented here in the future.
                     </p>
-                    <Link to="/">
-                        <button style={{
-                            backgroundColor: "#1a4d3a",
-                            color: "white",
-                            border: "none",
-                            padding: "12px 24px",
-                            borderRadius: "8px",
-                            fontSize: "16px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            transition: "all 0.2s"
-                        }}>
-                            Back to Homepage
-                        </button>
-                    </Link>
+                    <BackButton fallbackPath="/homepage" />
                 </div>
             </main>
         </div>

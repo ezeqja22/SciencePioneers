@@ -9,6 +9,7 @@ import 'katex/dist/katex.min.css';
 import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
+import BackButton from "./components/BackButton";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content
@@ -760,21 +761,9 @@ function ProblemDetail() {
                 </div>
             ) : (
                 <div>
-                    {/* Back to Feed Button */}
+                    {/* Universal Back Button */}
                     <div style={{ marginBottom: "20px" }}>
-                        <Link to="/feed">
-                            <button style={{ 
-                                padding: "8px 16px", 
-                                backgroundColor: "#007bff", 
-                                color: "white", 
-                                border: "none", 
-                                borderRadius: "5px",
-                                cursor: "pointer",
-                                fontSize: "14px"
-                            }}>
-                                ← Back to Feed
-                            </button>
-                        </Link>
+                        <BackButton fallbackPath="/feed" />
                     </div>
                     
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
