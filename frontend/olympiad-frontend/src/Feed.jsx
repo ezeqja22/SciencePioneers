@@ -243,6 +243,29 @@ function Feed() {
     }
   };
 
+  const handleVote = async (problemId, voteType) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+        { vote_type: voteType },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      // Update vote data for this specific problem
+      setVoteData(prev => ({
+        ...prev,
+        [problemId]: response.data
+      }));
+    } catch (error) {
+      console.error("Error voting:", error);
+      alert("Error voting on problem");
+    }
+  };
+
   const handleFollow = async (authorId, e) => {
     e.stopPropagation();
     try {
@@ -626,12 +649,74 @@ function Feed() {
                   </div>
                 )}
                 <div style={{ marginLeft: "auto", display: "flex", gap: "10px", alignItems: "center" }}>
-                  <span style={{ fontSize: "12px", color: "#666" }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(problem.id, "like");
+                    }}
+                    style={{
+                      backgroundColor: voteData[problem.id]?.user_vote === "like" ? "#e8f5e8" : "#f8f9fa",
+                      border: `1px solid ${voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#dee2e6"}`,
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      color: voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#666",
+                      fontWeight: voteData[problem.id]?.user_vote === "like" ? "bold" : "500",
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (voteData[problem.id]?.user_vote !== "like") {
+                        e.target.style.backgroundColor = "#e9ecef";
+                        e.target.style.borderColor = "#adb5bd";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (voteData[problem.id]?.user_vote !== "like") {
+                        e.target.style.backgroundColor = "#f8f9fa";
+                        e.target.style.borderColor = "#dee2e6";
+                      }
+                    }}
+                  >
                     👍 {voteData[problem.id]?.like_count || 0}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#666" }}>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVote(problem.id, "dislike");
+                    }}
+                    style={{
+                      backgroundColor: voteData[problem.id]?.user_vote === "dislike" ? "#ffebee" : "#f8f9fa",
+                      border: `1px solid ${voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#dee2e6"}`,
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      color: voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#666",
+                      fontWeight: voteData[problem.id]?.user_vote === "dislike" ? "bold" : "500",
+                      padding: "6px 12px",
+                      borderRadius: "6px",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (voteData[problem.id]?.user_vote !== "dislike") {
+                        e.target.style.backgroundColor = "#e9ecef";
+                        e.target.style.borderColor = "#adb5bd";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (voteData[problem.id]?.user_vote !== "dislike") {
+                        e.target.style.backgroundColor = "#f8f9fa";
+                        e.target.style.borderColor = "#dee2e6";
+                      }
+                    }}
+                  >
                     👎 {voteData[problem.id]?.dislike_count || 0}
-                  </span>
+                  </button>
                   <span style={{ fontSize: "12px", color: "#666" }}>
                     💬 {problem.comment_count || 0}
                   </span>

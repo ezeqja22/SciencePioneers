@@ -35,6 +35,7 @@ const SearchResults = () => {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState(null);
     const [followStatus, setFollowStatus] = useState({});
+    const [voteData, setVoteData] = useState({});
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'users', 'problems'
     
     // Get category from URL parameters
@@ -128,11 +129,19 @@ const SearchResults = () => {
                 setSearchResults(response.data);
                 setTotalPages(response.data.total_pages || 1);
                 setTotalResults(response.data.total_problems || 0);
+                // Fetch vote data for problems
+                if (response.data.problems && response.data.problems.length > 0) {
+                    await fetchVoteData(response.data.problems);
+                }
             } else if (activeTab === 'all' || (activeTab === 'users' && currentPage === 1) || (activeTab === 'problems' && currentPage === 1)) {
                 // Use combined search results
                 setSearchResults(response.data);
                 setTotalPages(1); // Combined search doesn't use pagination
                 setTotalResults((response.data.users ? response.data.users.length : 0) + (response.data.problems ? response.data.problems.length : 0));
+                // Fetch vote data for problems
+                if (response.data.problems && response.data.problems.length > 0) {
+                    await fetchVoteData(response.data.problems);
+                }
             } else {
                 // Use individual endpoint results for pagination
                 if (activeTab === 'users') {
@@ -143,6 +152,10 @@ const SearchResults = () => {
                     setSearchResults({ users: [], problems: response.data.problems });
                     setTotalPages(response.data.total_pages);
                     setTotalResults(response.data.total);
+                    // Fetch vote data for problems
+                    if (response.data.problems && response.data.problems.length > 0) {
+                        await fetchVoteData(response.data.problems);
+                    }
                 }
             }
         } catch (error) {
@@ -180,6 +193,61 @@ const SearchResults = () => {
         } catch (error) {
             console.error("Error following/unfollowing user:", error);
             alert("Error following/unfollowing user");
+        }
+    };
+
+    const fetchVoteData = async (problemsList) => {
+        try {
+            const token = localStorage.getItem("token");
+            const votePromises = problemsList.map(async (problem) => {
+                const problemId = problem.id;
+                try {
+                    const response = await axios.get(
+                        `http://127.0.0.1:8000/auth/problems/${problemId}/votes`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+                    return { problemId, voteData: response.data };
+                } catch (error) {
+                    console.error(`Error fetching vote data for problem ${problemId}:`, error);
+                    return { problemId, voteData: { like_count: 0, dislike_count: 0, user_vote: null } };
+                }
+            });
+            
+            const voteResults = await Promise.all(votePromises);
+            const voteDataMap = {};
+            voteResults.forEach(({ problemId, voteData }) => {
+                voteDataMap[problemId] = voteData;
+            });
+            setVoteData(voteDataMap);
+        } catch (error) {
+            console.error("Error fetching vote data:", error);
+        }
+    };
+
+    const handleVote = async (problemId, voteType) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+                { vote_type: voteType },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            
+            // Update vote data for this specific problem
+            setVoteData(prev => ({
+                ...prev,
+                [problemId]: response.data
+            }));
+        } catch (error) {
+            console.error("Error voting:", error);
+            alert("Error voting on problem");
         }
     };
 
@@ -511,9 +579,79 @@ const SearchResults = () => {
                                             })}
                                         </div>
                                     )}
-                                    <span style={{ color: "#666", fontSize: "12px" }}>
-                                        💬 {problem.comment_count} comments
-                                    </span>
+                                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVote(problem.id, "like");
+                                            }}
+                                            style={{
+                                                backgroundColor: voteData[problem.id]?.user_vote === "like" ? "#e8f5e8" : "#f8f9fa",
+                                                border: `1px solid ${voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#dee2e6"}`,
+                                                cursor: "pointer",
+                                                fontSize: "14px",
+                                                color: voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#666",
+                                                fontWeight: voteData[problem.id]?.user_vote === "like" ? "bold" : "500",
+                                                padding: "6px 12px",
+                                                borderRadius: "6px",
+                                                transition: "all 0.2s ease",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "4px"
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (voteData[problem.id]?.user_vote !== "like") {
+                                                    e.target.style.backgroundColor = "#e9ecef";
+                                                    e.target.style.borderColor = "#adb5bd";
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (voteData[problem.id]?.user_vote !== "like") {
+                                                    e.target.style.backgroundColor = "#f8f9fa";
+                                                    e.target.style.borderColor = "#dee2e6";
+                                                }
+                                            }}
+                                        >
+                                            👍 {voteData[problem.id]?.like_count || 0}
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVote(problem.id, "dislike");
+                                            }}
+                                            style={{
+                                                backgroundColor: voteData[problem.id]?.user_vote === "dislike" ? "#ffebee" : "#f8f9fa",
+                                                border: `1px solid ${voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#dee2e6"}`,
+                                                cursor: "pointer",
+                                                fontSize: "14px",
+                                                color: voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#666",
+                                                fontWeight: voteData[problem.id]?.user_vote === "dislike" ? "bold" : "500",
+                                                padding: "6px 12px",
+                                                borderRadius: "6px",
+                                                transition: "all 0.2s ease",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "4px"
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                if (voteData[problem.id]?.user_vote !== "dislike") {
+                                                    e.target.style.backgroundColor = "#e9ecef";
+                                                    e.target.style.borderColor = "#adb5bd";
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                if (voteData[problem.id]?.user_vote !== "dislike") {
+                                                    e.target.style.backgroundColor = "#f8f9fa";
+                                                    e.target.style.borderColor = "#dee2e6";
+                                                }
+                                            }}
+                                        >
+                                            👎 {voteData[problem.id]?.dislike_count || 0}
+                                        </button>
+                                        <span style={{ color: "#666", fontSize: "12px" }}>
+                                            💬 {problem.comment_count} comments
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         ))}

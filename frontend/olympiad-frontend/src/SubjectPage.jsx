@@ -29,6 +29,7 @@ function SubjectPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [currentUser, setCurrentUser] = useState(null);
+    const [voteData, setVoteData] = useState({});
     const navigate = useNavigate();
 
     // Convert URL parameter back to proper case
@@ -48,12 +49,18 @@ function SubjectPage() {
     const fetchProblems = async () => {
         setLoading(true);
         try {
+            console.log("Fetching problems for subject:", subjectName);
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${subjectName}`);
+            console.log("Response data:", response.data);
             setProblems(response.data);
             // For now, we'll implement simple pagination on frontend
             setTotalPages(Math.ceil(response.data.length / 20));
+            
+            // Fetch vote data for all problems
+            await fetchVoteData(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
+            console.error("Subject name being used:", subjectName);
             setProblems([]);
         } finally {
             setLoading(false);
@@ -69,6 +76,61 @@ function SubjectPage() {
             setCurrentUser(response.data);
         } catch (error) {
             console.error("Error fetching current user:", error);
+        }
+    };
+
+    const fetchVoteData = async (problemsList) => {
+        try {
+            const token = localStorage.getItem("token");
+            const votePromises = problemsList.map(async (problem) => {
+                const problemId = problem.id;
+                try {
+                    const response = await axios.get(
+                        `http://127.0.0.1:8000/auth/problems/${problemId}/votes`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+                    return { problemId, voteData: response.data };
+                } catch (error) {
+                    console.error(`Error fetching vote data for problem ${problemId}:`, error);
+                    return { problemId, voteData: { like_count: 0, dislike_count: 0, user_vote: null } };
+                }
+            });
+            
+            const voteResults = await Promise.all(votePromises);
+            const voteDataMap = {};
+            voteResults.forEach(({ problemId, voteData }) => {
+                voteDataMap[problemId] = voteData;
+            });
+            setVoteData(voteDataMap);
+        } catch (error) {
+            console.error("Error fetching vote data:", error);
+        }
+    };
+
+    const handleVote = async (problemId, voteType) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+                { vote_type: voteType },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            
+            // Update vote data for this specific problem
+            setVoteData(prev => ({
+                ...prev,
+                [problemId]: response.data
+            }));
+        } catch (error) {
+            console.error("Error voting:", error);
+            alert("Error voting on problem");
         }
     };
 
@@ -154,6 +216,38 @@ function SubjectPage() {
                     }}>
                         Home
                     </Link>
+                    
+                    {/* Subject Dropdown */}
+                    <div style={{ position: "relative" }}>
+                        <select 
+                            value={subjectName}
+                            onChange={(e) => {
+                                if (e.target.value !== subjectName) {
+                                    navigate(`/subject/${e.target.value.toLowerCase().replace(/\s+/g, '-')}`);
+                                }
+                            }}
+                            style={{
+                                backgroundColor: "#2d7a5f",
+                                color: "white",
+                                border: "1px solid #4a9d7a",
+                                borderRadius: "6px",
+                                padding: "8px 12px",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                                outline: "none"
+                            }}
+                        >
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="Biology">Biology</option>
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
                     {currentUser && (
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <div style={{
@@ -354,6 +448,20 @@ function SubjectPage() {
                                                 {problem.level}
                                             </span>
                                         )}
+                                        {problem.tags && problem.tags.trim() && (
+                                            problem.tags.split(',').map((tag, index) => (
+                                                <span key={index} style={{
+                                                    backgroundColor: "#f3e5f5",
+                                                    color: "#7b1fa2",
+                                                    padding: "4px 8px",
+                                                    borderRadius: "4px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "500"
+                                                }}>
+                                                    {tag.trim()}
+                                                </span>
+                                            ))
+                                        )}
                                         {problem.year && (
                                             <span style={{ 
                                                 backgroundColor: "#e8f5e8", 
@@ -375,7 +483,75 @@ function SubjectPage() {
                                         fontSize: "12px",
                                         color: "#666"
                                     }}>
-                                        <div style={{ display: "flex", gap: "1rem" }}>
+                                        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleVote(problem.id, "like");
+                                                }}
+                                                style={{
+                                                    backgroundColor: voteData[problem.id]?.user_vote === "like" ? "#e8f5e8" : "#f8f9fa",
+                                                    border: `1px solid ${voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#dee2e6"}`,
+                                                    cursor: "pointer",
+                                                    fontSize: "14px",
+                                                    color: voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#666",
+                                                    fontWeight: voteData[problem.id]?.user_vote === "like" ? "bold" : "500",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "6px",
+                                                    transition: "all 0.2s ease",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "4px"
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (voteData[problem.id]?.user_vote !== "like") {
+                                                        e.target.style.backgroundColor = "#e9ecef";
+                                                        e.target.style.borderColor = "#adb5bd";
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (voteData[problem.id]?.user_vote !== "like") {
+                                                        e.target.style.backgroundColor = "#f8f9fa";
+                                                        e.target.style.borderColor = "#dee2e6";
+                                                    }
+                                                }}
+                                            >
+                                                👍 {voteData[problem.id]?.like_count || 0}
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleVote(problem.id, "dislike");
+                                                }}
+                                                style={{
+                                                    backgroundColor: voteData[problem.id]?.user_vote === "dislike" ? "#ffebee" : "#f8f9fa",
+                                                    border: `1px solid ${voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#dee2e6"}`,
+                                                    cursor: "pointer",
+                                                    fontSize: "14px",
+                                                    color: voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#666",
+                                                    fontWeight: voteData[problem.id]?.user_vote === "dislike" ? "bold" : "500",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "6px",
+                                                    transition: "all 0.2s ease",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "4px"
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (voteData[problem.id]?.user_vote !== "dislike") {
+                                                        e.target.style.backgroundColor = "#e9ecef";
+                                                        e.target.style.borderColor = "#adb5bd";
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (voteData[problem.id]?.user_vote !== "dislike") {
+                                                        e.target.style.backgroundColor = "#f8f9fa";
+                                                        e.target.style.borderColor = "#dee2e6";
+                                                    }
+                                                }}
+                                            >
+                                                👎 {voteData[problem.id]?.dislike_count || 0}
+                                            </button>
                                             <span>💬 {problem.comment_count || 0}</span>
                                         </div>
                                     </div>

@@ -269,10 +269,37 @@ def get_problems(
     }
 
 
+@router.get("/debug/subjects")
+def get_all_subjects(db: Session = Depends(get_db)):
+    """Debug endpoint to see what subjects exist in the database"""
+    subjects = db.query(Problem.subject).distinct().all()
+    return {"subjects": [s[0] for s in subjects]}
+
+@router.get("/debug/mathematics-problems")
+def get_mathematics_problems_debug(db: Session = Depends(get_db)):
+    """Debug endpoint to see Mathematics problems with all details"""
+    problems = db.query(Problem).filter(func.lower(Problem.subject) == 'mathematics').all()
+    result = []
+    for p in problems:
+        author = db.query(User).filter(User.id == p.author_id).first()
+        result.append({
+            "id": p.id,
+            "title": p.title,
+            "subject": p.subject,
+            "author_id": p.author_id,
+            "author": author.username if author else "No author found",
+            "created_at": str(p.created_at)
+        })
+    return {"problems": result}
+
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
-    # First get problems with comment counts
-    problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.subject == subject).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    print(f"DEBUG: Searching for problems with subject: '{subject}'")
+    
+    # First get problems with comment counts (case-insensitive search)
+    problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(func.lower(Problem.subject) == func.lower(subject)).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
+    
+    print(f"DEBUG: Found {len(problems_with_counts)} problems")
     
     # Then fetch authors for all problems
     authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
@@ -289,6 +316,7 @@ def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
                 "tags": p.tags, 
                 "subject": p.subject, 
                 "level": p.level, 
+                "year": p.year,
                 "author_id": p.author_id, 
                 "comment_count": comment_count, 
                 "created_at": p.created_at.isoformat() if p.created_at else None, 
@@ -307,6 +335,7 @@ def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
                 "tags": p.tags, 
                 "subject": p.subject, 
                 "level": p.level, 
+                "year": p.year,
                 "author_id": p.author_id, 
                 "comment_count": comment_count, 
                 "created_at": p.created_at.isoformat() if p.created_at else None, 
