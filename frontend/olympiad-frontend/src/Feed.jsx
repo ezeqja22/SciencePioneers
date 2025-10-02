@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import SearchBar from "./SearchBar";
@@ -32,6 +32,7 @@ const renderMathContent = (text) => {
 };
 
 function Feed() {
+  const location = useLocation();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [voteData, setVoteData] = useState({});
@@ -65,6 +66,16 @@ function Feed() {
       fetchTrendingProblems();
     }
   }, [activeTab]);
+
+  // Handle URL parameters for tab navigation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    
+    if (tabParam && ['all', 'following', 'trending'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
 
   const handleLogout = () => {
     // Clear all user data
@@ -480,7 +491,7 @@ function Feed() {
               marginBottom: spacing.lg,
               cursor: "pointer"
             }}
-            onClick={() => navigate(`/problem/${problem.id}`)}
+            onClick={() => navigate(`/problem/${problem.id}?from=feed&tab=${activeTab}`)}
           >
               {/* Author Info Section - Twitter Style */}
               {problem.author ? (

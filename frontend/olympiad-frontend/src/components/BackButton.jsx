@@ -13,12 +13,18 @@ const BackButton = ({
     const navigate = useNavigate();
 
     const handleBack = () => {
-        // Check if there's browser history to go back to
-        if (window.history.length > 1) {
-            navigate(-1); // Go back one step in browser history
-        } else {
-            // Fallback if no history (e.g., direct link access)
+        // If we have a specific fallback path (like /feed?tab=following), use it
+        // This ensures smart navigation with context preservation
+        if (fallbackPath !== "/homepage") {
             navigate(fallbackPath);
+        } else {
+            // Only use browser history for default homepage fallback
+            if (window.history.length > 1) {
+                navigate(-1); // Go back one step in browser history
+            } else {
+                // Final fallback if no history
+                navigate(fallbackPath);
+            }
         }
     };
 

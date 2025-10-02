@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import MathEditor from "./MathEditor";
@@ -36,6 +36,22 @@ function ProblemDetail() {
     const [loading, setLoading] = useState(true);
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    
+    // Create smart fallback path based on URL parameters
+    const getSmartFallbackPath = () => {
+        const urlParams = new URLSearchParams(location.search);
+        const from = urlParams.get('from');
+        const tab = urlParams.get('tab');
+        
+        if (from === 'feed' && tab) {
+            // Return to specific feed tab
+            return `/feed?tab=${tab}`;
+        }
+        
+        // Default fallback
+        return '/feed';
+    };
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [voteStatus, setVoteStatus] = useState({
@@ -763,7 +779,7 @@ function ProblemDetail() {
                 <div>
                     {/* Universal Back Button */}
                     <div style={{ marginBottom: "20px" }}>
-                        <BackButton fallbackPath="/feed" />
+                        <BackButton fallbackPath={getSmartFallbackPath()} />
                     </div>
                     
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
