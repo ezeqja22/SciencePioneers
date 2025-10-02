@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { colors, spacing, typography } from "./designSystem";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -25,11 +26,13 @@ const renderMathContent = (text) => {
 function SubjectPage() {
     const { subject } = useParams();
     const [problems, setProblems] = useState([]);
+    const [allProblems, setAllProblems] = useState([]); // Store all problems for filtering
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [currentUser, setCurrentUser] = useState(null);
     const [voteData, setVoteData] = useState({});
+    const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
 
     // Convert URL parameter back to proper case
@@ -52,7 +55,8 @@ function SubjectPage() {
             console.log("Fetching problems for subject:", subjectName);
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${subjectName}`);
             console.log("Response data:", response.data);
-            setProblems(response.data);
+            setAllProblems(response.data); // Store all problems
+            setProblems(response.data); // Initially show all problems
             // For now, we'll implement simple pagination on frontend
             setTotalPages(Math.ceil(response.data.length / 20));
             
@@ -137,6 +141,38 @@ function SubjectPage() {
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/homepage", { replace: true });
+    };
+
+    // Filter problems based on search query
+    const filterProblems = (query) => {
+        if (!query.trim()) {
+            setProblems(allProblems);
+            setTotalPages(Math.ceil(allProblems.length / 20));
+            setCurrentPage(1);
+            return;
+        }
+
+        const filtered = allProblems.filter(problem => {
+            const searchTerm = query.toLowerCase();
+            return (
+                problem.title.toLowerCase().includes(searchTerm) ||
+                problem.description.toLowerCase().includes(searchTerm) ||
+                (problem.tags && problem.tags.toLowerCase().includes(searchTerm)) ||
+                (problem.level && problem.level.toLowerCase().includes(searchTerm)) ||
+                (problem.year && problem.year.toString().includes(searchTerm))
+            );
+        });
+
+        setProblems(filtered);
+        setTotalPages(Math.ceil(filtered.length / 20));
+        setCurrentPage(1);
+    };
+
+    // Handle search input changes
+    const handleSearch = (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        filterProblems(query);
     };
 
     // Paginate problems (20 per page)
@@ -290,10 +326,70 @@ function SubjectPage() {
                     <p style={{ 
                         fontSize: "1.1rem", 
                         color: "#666",
-                        marginBottom: "2rem"
+                        marginBottom: "1rem"
                     }}>
                         {problems.length} problems found in {subjectName}
+                        {searchQuery && ` (filtered by "${searchQuery}")`}
                     </p>
+
+                    {/* Search Bar */}
+                    <div style={{ 
+                        marginBottom: "2rem",
+                        display: "flex",
+                        justifyContent: "center"
+                    }}>
+                        <div style={{ 
+                            position: "relative",
+                            width: "100%",
+                            maxWidth: "600px"
+                        }}>
+                            <input
+                                type="text"
+                                placeholder={`Search within ${subjectName} problems...`}
+                                value={searchQuery}
+                                onChange={handleSearch}
+                                style={{
+                                    width: "100%",
+                                    padding: "12px 20px",
+                                    fontSize: "16px",
+                                    border: "2px solid #e9ecef",
+                                    borderRadius: "25px",
+                                    outline: "none",
+                                    transition: "border-color 0.2s ease",
+                                    backgroundColor: "white",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = "#1a4d3a";
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = "#e9ecef";
+                                }}
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        filterProblems("");
+                                    }}
+                                    style={{
+                                        position: "absolute",
+                                        right: "15px",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        background: "none",
+                                        border: "none",
+                                        fontSize: "18px",
+                                        cursor: "pointer",
+                                        color: "#666",
+                                        padding: "2px"
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {problems.length === 0 ? (
@@ -613,6 +709,57 @@ function SubjectPage() {
                         )}
                     </>
                 )}
+
+                {/* Enhanced Floating Create Problem Button with Subject Pre-fill */}
+                <div style={{
+                    position: "fixed",
+                    bottom: spacing.xl,
+                    right: spacing.xl,
+                    zIndex: 1000
+                }}>
+                    <Link to={`/create-problem?subject=${encodeURIComponent(subjectName)}`} style={{ textDecoration: "none" }}>
+                        <div style={{
+                            width: "60px",
+                            height: "60px",
+                            backgroundColor: colors.primary,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                            transition: "all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                            fontSize: "24px",
+                            color: colors.white,
+                            fontWeight: typography.fontWeight.bold,
+                            overflow: "hidden",
+                            whiteSpace: "nowrap",
+                            position: "relative"
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.width = "220px";
+                            e.target.style.borderRadius = "30px";
+                            e.target.style.justifyContent = "flex-start";
+                            e.target.style.paddingLeft = "20px";
+                            e.target.style.backgroundColor = colors.secondary;
+                            e.target.style.boxShadow = "0 6px 25px rgba(0,0,0,0.2)";
+                            e.target.innerHTML = '<span style="font-size: 16px;">Create New Problem</span><span style="position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 24px;">+</span>';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.width = "60px";
+                            e.target.style.borderRadius = "50%";
+                            e.target.style.justifyContent = "center";
+                            e.target.style.paddingLeft = "0px";
+                            e.target.style.backgroundColor = colors.primary;
+                            e.target.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
+                            e.target.innerHTML = '+';
+                        }}
+                        title={`Create New ${subjectName} Problem`}
+                        >
+                            +
+                        </div>
+                    </Link>
+                </div>
             </main>
         </div>
     );

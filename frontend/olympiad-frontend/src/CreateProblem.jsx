@@ -1,7 +1,7 @@
 // src/CreateProblem.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import MathEditor from "./MathEditor";
 import "./MathEditor.css";
 import Layout from "./components/Layout";
@@ -10,6 +10,7 @@ import Button from "./components/Button";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 function CreateProblem() {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -18,6 +19,18 @@ function CreateProblem() {
     year: ""
   });
   const [tags, setTags] = useState([""]); // Array of tag strings
+
+  // Pre-fill subject from URL parameter if coming from SubjectPage
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const subjectParam = urlParams.get('subject');
+    if (subjectParam) {
+      setFormData(prev => ({
+        ...prev,
+        subject: subjectParam
+      }));
+    }
+  }, [location]);
   const [images, setImages] = useState([]); // Array of uploaded image filenames
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);

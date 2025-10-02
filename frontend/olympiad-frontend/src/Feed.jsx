@@ -795,7 +795,7 @@ function Feed() {
         </div>
       )}
 
-      {/* Floating Create Problem Button */}
+      {/* Enhanced Floating Create Problem Button */}
       <div style={{
         position: "fixed",
         bottom: spacing.xl,
@@ -813,20 +813,31 @@ function Feed() {
             justifyContent: "center",
             cursor: "pointer",
             boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
+            transition: "all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
             fontSize: "24px",
             color: colors.white,
-            fontWeight: typography.fontWeight.bold
+            fontWeight: typography.fontWeight.bold,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            position: "relative"
           }}
           onMouseEnter={(e) => {
-            e.target.style.transform = "scale(1.1)";
+            e.target.style.width = "220px";
+            e.target.style.borderRadius = "30px";
+            e.target.style.justifyContent = "flex-start";
+            e.target.style.paddingLeft = "20px";
             e.target.style.backgroundColor = colors.secondary;
             e.target.style.boxShadow = "0 6px 25px rgba(0,0,0,0.2)";
+            e.target.innerHTML = '<span style="font-size: 16px;">Create New Problem</span><span style="position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 24px;">+</span>';
           }}
           onMouseLeave={(e) => {
-            e.target.style.transform = "scale(1)";
+            e.target.style.width = "60px";
+            e.target.style.borderRadius = "50%";
+            e.target.style.justifyContent = "center";
+            e.target.style.paddingLeft = "0px";
             e.target.style.backgroundColor = colors.primary;
             e.target.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
+            e.target.innerHTML = '+';
           }}
           title="Create New Problem"
           >
