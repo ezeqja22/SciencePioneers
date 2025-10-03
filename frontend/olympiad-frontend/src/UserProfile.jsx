@@ -488,19 +488,38 @@ function UserProfile() {
             {/* Tabs */}
             <div style={{
                 display: "flex",
-                borderBottom: "2px solid #e9ecef",
-                marginBottom: "20px"
+                gap: "8px",
+                marginBottom: "30px",
+                backgroundColor: "#f8f9fa",
+                padding: "6px",
+                borderRadius: "12px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
                 <button
                     onClick={() => setActiveTab("problems")}
                     style={{
                         padding: "12px 24px",
+                        backgroundColor: activeTab === "problems" ? colors.primary : "transparent",
+                        color: activeTab === "problems" ? "white" : colors.gray[600],
                         border: "none",
-                        backgroundColor: activeTab === "problems" ? "#007bff" : "transparent",
-                        color: activeTab === "problems" ? "white" : "#666",
+                        borderRadius: "8px",
                         cursor: "pointer",
-                        borderRadius: "8px 8px 0 0",
-                        fontWeight: "bold"
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === "problems" ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== "problems") {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== "problems") {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     My Problems ({problems.length})
@@ -509,12 +528,27 @@ function UserProfile() {
                     onClick={() => setActiveTab("comments")}
                     style={{
                         padding: "12px 24px",
+                        backgroundColor: activeTab === "comments" ? colors.primary : "transparent",
+                        color: activeTab === "comments" ? "white" : colors.gray[600],
                         border: "none",
-                        backgroundColor: activeTab === "comments" ? "#007bff" : "transparent",
-                        color: activeTab === "comments" ? "white" : "#666",
+                        borderRadius: "8px",
                         cursor: "pointer",
-                        borderRadius: "8px 8px 0 0",
-                        fontWeight: "bold"
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === "comments" ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== "comments") {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== "comments") {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     My Comments ({comments.length})
@@ -523,12 +557,27 @@ function UserProfile() {
                     onClick={() => setActiveTab("bookmarks")}
                     style={{
                         padding: "12px 24px",
+                        backgroundColor: activeTab === "bookmarks" ? colors.primary : "transparent",
+                        color: activeTab === "bookmarks" ? "white" : colors.gray[600],
                         border: "none",
-                        backgroundColor: activeTab === "bookmarks" ? "#007bff" : "transparent",
-                        color: activeTab === "bookmarks" ? "white" : "#666",
+                        borderRadius: "8px",
                         cursor: "pointer",
-                        borderRadius: "8px 8px 0 0",
-                        fontWeight: "bold"
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === "bookmarks" ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== "bookmarks") {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== "bookmarks") {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     My Bookmarks ({bookmarks.length})

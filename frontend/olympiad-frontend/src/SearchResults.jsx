@@ -319,20 +319,38 @@ const SearchResults = () => {
             {/* Tabs */}
             <div style={{ 
                 display: "flex", 
-                gap: "10px", 
+                gap: "8px", 
                 marginBottom: "30px",
-                borderBottom: "1px solid #ddd",
-                paddingBottom: "10px"
+                backgroundColor: "#f8f9fa",
+                padding: "6px",
+                borderRadius: "12px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
             }}>
                 <button
                     onClick={() => handleTabChange('all')}
                     style={{
-                        padding: "10px 20px",
-                        backgroundColor: activeTab === 'all' ? "#007bff" : "#f8f9fa",
-                        color: activeTab === 'all' ? "white" : "#333",
-                        border: "1px solid #ddd",
-                        borderRadius: "5px",
-                        cursor: "pointer"
+                        padding: "12px 24px",
+                        backgroundColor: activeTab === 'all' ? colors.primary : "transparent",
+                        color: activeTab === 'all' ? "white" : colors.gray[600],
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === 'all' ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== 'all') {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== 'all') {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     All Results
@@ -340,12 +358,28 @@ const SearchResults = () => {
                 <button
                     onClick={() => handleTabChange('users')}
                     style={{
-                        padding: "10px 20px",
-                        backgroundColor: activeTab === 'users' ? "#007bff" : "#f8f9fa",
-                        color: activeTab === 'users' ? "white" : "#333",
-                        border: "1px solid #ddd",
-                        borderRadius: "5px",
-                        cursor: "pointer"
+                        padding: "12px 24px",
+                        backgroundColor: activeTab === 'users' ? colors.primary : "transparent",
+                        color: activeTab === 'users' ? "white" : colors.gray[600],
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === 'users' ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== 'users') {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== 'users') {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     Users ({searchResults.users ? searchResults.users.length : 0})
@@ -353,12 +387,28 @@ const SearchResults = () => {
                 <button
                     onClick={() => handleTabChange('problems')}
                     style={{
-                        padding: "10px 20px",
-                        backgroundColor: activeTab === 'problems' ? "#007bff" : "#f8f9fa",
-                        color: activeTab === 'problems' ? "white" : "#333",
-                        border: "1px solid #ddd",
-                        borderRadius: "5px",
-                        cursor: "pointer"
+                        padding: "12px 24px",
+                        backgroundColor: activeTab === 'problems' ? colors.primary : "transparent",
+                        color: activeTab === 'problems' ? "white" : colors.gray[600],
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === 'problems' ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== 'problems') {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== 'problems') {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
                     }}
                 >
                     Problems ({searchResults.problems ? searchResults.problems.length : 0})

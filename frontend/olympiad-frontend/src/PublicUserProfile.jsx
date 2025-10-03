@@ -206,9 +206,11 @@ const PublicUserProfile = () => {
                 display: 'flex', 
                 alignItems: 'center', 
                 marginBottom: '30px',
-                padding: '20px',
+                padding: '24px',
                 backgroundColor: '#f8f9fa',
-                borderRadius: '10px'
+                borderRadius: '12px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                border: '1px solid #e9ecef'
             }}>
                 <div style={{ 
                     width: '80px', 
@@ -251,13 +253,29 @@ const PublicUserProfile = () => {
                     onClick={handleFollow}
                     disabled={followLoading}
                     style={{
-                        padding: '10px 20px',
-                        backgroundColor: following ? '#28a745' : '#007bff',
+                        padding: '12px 24px',
+                        backgroundColor: following ? colors.primary : '#007bff',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '5px',
+                        borderRadius: '25px',
                         cursor: followLoading ? 'not-allowed' : 'pointer',
-                        opacity: followLoading ? 0.6 : 1
+                        opacity: followLoading ? 0.6 : 1,
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!followLoading) {
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (!followLoading) {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                        }
                     }}
                 >
                     {followLoading ? 'Loading...' : (following ? '✓ Following' : '+ Follow')}
@@ -277,11 +295,20 @@ const PublicUserProfile = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         {userProfile.problems.map(problem => (
                             <div key={problem.id} style={{
-                                border: '1px solid #ddd',
-                                borderRadius: '10px',
-                                padding: '20px',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '12px',
+                                padding: '24px',
                                 backgroundColor: 'white',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
                                     <h4 style={{ margin: 0, color: '#333' }}>{renderMathContent(problem.title)}</h4>

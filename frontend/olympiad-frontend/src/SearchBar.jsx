@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 
 function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuery = "" }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [searchCategory, setSearchCategory] = useState('all');
   const [showAdvancedModal, setShowAdvancedModal] = useState(false);
   const navigate = useNavigate();
 
@@ -12,24 +11,9 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
     if (!searchQuery.trim()) return;
     
     const query = encodeURIComponent(searchQuery.trim());
-    navigate(`/search?q=${query}&category=${searchCategory}`);
+    navigate(`/search?q=${query}&category=all`);
   };
 
-  const handleCategoryChange = (category) => {
-    setSearchCategory(category);
-    if (searchQuery.trim()) {
-      const query = encodeURIComponent(searchQuery.trim());
-      navigate(`/search?q=${query}&category=${category}`);
-    }
-  };
-
-  const handleSearchWithCategory = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    const query = encodeURIComponent(searchQuery.trim());
-    navigate(`/search?q=${query}&category=${searchCategory}`);
-  };
 
   const openAdvancedSearch = () => {
     setShowAdvancedModal(true);
@@ -55,58 +39,7 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      <form onSubmit={handleSearchWithCategory} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-        {/* Category Toggle */}
-        <div style={{ display: 'flex', gap: '5px', marginRight: '10px' }}>
-          <button
-            type="button"
-            onClick={() => handleCategoryChange('all')}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: searchCategory === 'all' ? '#28a745' : 'white',
-              color: searchCategory === 'all' ? 'white' : '#333',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => handleCategoryChange('problems')}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: searchCategory === 'problems' ? '#28a745' : 'white',
-              color: searchCategory === 'problems' ? 'white' : '#333',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}
-          >
-            Problems
-          </button>
-          <button
-            type="button"
-            onClick={() => handleCategoryChange('users')}
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: searchCategory === 'users' ? '#28a745' : 'white',
-              color: searchCategory === 'users' ? 'white' : '#333',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}
-          >
-            Users
-          </button>
-        </div>
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
 
         {/* Search Input */}
         <input
@@ -116,10 +49,20 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
           placeholder={placeholder}
           style={{
             flex: 1,
-            padding: '10px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '16px'
+            padding: '12px 20px',
+            border: '2px solid #e9ecef',
+            borderRadius: '25px',
+            fontSize: '16px',
+            outline: 'none',
+            transition: 'border-color 0.2s ease',
+            backgroundColor: 'white',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = '#1a4d3a';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = '#e9ecef';
           }}
         />
 
@@ -127,14 +70,22 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
         <button
           type="submit"
           style={{
-            padding: '10px 20px',
-            backgroundColor: '#28a745',
+            padding: '12px 24px',
+            backgroundColor: '#1a4d3a',
             color: 'white',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '25px',
             cursor: 'pointer',
             fontSize: '16px',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#2d7a5f';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#1a4d3a';
           }}
         >
           🔍 Search
@@ -146,14 +97,22 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
             type="button"
             onClick={openAdvancedSearch}
             style={{
-              padding: '10px 15px',
+              padding: '12px 24px',
               backgroundColor: '#17a2b8',
               color: 'white',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '25px',
               cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
+              fontSize: '16px',
+              fontWeight: 'bold',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#138496';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#17a2b8';
             }}
           >
             Advanced
@@ -168,7 +127,7 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
           onSearch={handleAdvancedSearch}
           initialData={{
             query: searchQuery,
-            category: searchCategory
+            category: 'all'
           }}
         />
       )}
