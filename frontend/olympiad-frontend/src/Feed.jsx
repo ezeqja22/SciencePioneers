@@ -303,7 +303,9 @@ function Feed() {
   };
 
   const handleFollow = async (authorId, e) => {
-    e.stopPropagation();
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -326,6 +328,40 @@ function Feed() {
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
+    }
+  };
+
+  const handleFollowUser = async (authorId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to follow users");
+        return;
+      }
+
+      await axios.post(`http://127.0.0.1:8000/auth/follow/${authorId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFollowStatus(prev => ({ ...prev, [authorId]: true }));
+    } catch (error) {
+      console.error("Error following user:", error);
+    }
+  };
+
+  const handleUnfollowUser = async (authorId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to follow users");
+        return;
+      }
+
+      await axios.delete(`http://127.0.0.1:8000/auth/follow/${authorId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFollowStatus(prev => ({ ...prev, [authorId]: false }));
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
     }
   };
 
@@ -453,7 +489,7 @@ function Feed() {
           style={{
             flex: 1,
             padding: `${spacing.sm} ${spacing.md}`,
-            border: "none",
+            border: "none", 
             backgroundColor: activeTab === "trending" ? colors.primary : "transparent",
             color: activeTab === "trending" ? colors.white : colors.gray[600],
             cursor: "pointer",
@@ -463,7 +499,7 @@ function Feed() {
           }}
         >
           Trending
-        </button>
+          </button>
       </div>
 
       {problems.length === 0 ? (
@@ -550,7 +586,7 @@ function Feed() {
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
                     <div>
                       <div 
-                        style={{ 
+            style={{
                           fontWeight: "bold", 
                           fontSize: "14px", 
                           color: "#007bff",
@@ -578,10 +614,11 @@ function Feed() {
                     {currentUser && problem.author.id !== currentUser.id && (
                       <FollowButton
                         isFollowing={followStatus[problem.author.id]}
-                        onFollow={() => handleFollow(problem.author.id)}
-                        onUnfollow={() => handleFollow(problem.author.id)}
+                        onFollow={() => handleFollowUser(problem.author.id)}
+                        onUnfollow={() => handleUnfollowUser(problem.author.id)}
                         size="sm"
                         style={{ marginLeft: "auto" }}
+                        isDeletedUser={problem.author.username.startsWith('__deleted_user_')}
                       />
                     )}
                   </div>

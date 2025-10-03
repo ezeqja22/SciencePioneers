@@ -7,7 +7,9 @@ const FollowButton = ({
     onUnfollow, 
     loading = false, 
     size = 'md',
-    style = {}
+    style = {},
+    isDeletedUser = false,
+    showForDeletedUser = false
 }) => {
     const sizes = {
         sm: {
@@ -30,8 +32,15 @@ const FollowButton = ({
     const currentSize = sizes[size];
 
     const handleClick = (e) => {
-        e.stopPropagation();
+        if (e && e.stopPropagation) {
+            e.stopPropagation();
+        }
         if (loading) return;
+        
+        // For deleted users, only allow unfollow if already following
+        if (isDeletedUser && !isFollowing) {
+            return; // Don't allow following deleted users
+        }
         
         if (isFollowing) {
             onUnfollow();
@@ -39,6 +48,14 @@ const FollowButton = ({
             onFollow();
         }
     };
+
+    // Don't show button for deleted users unless they're already being followed
+    if (isDeletedUser && !isFollowing) {
+        return null;
+    }
+
+    // Debug logging
+    console.log('FollowButton render:', { isFollowing, isDeletedUser, loading });
 
     return (
         <button

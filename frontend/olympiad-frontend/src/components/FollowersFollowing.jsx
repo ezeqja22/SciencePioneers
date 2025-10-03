@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Layout from './Layout';
 import BackButton from './BackButton';
+import FollowButton from './FollowButton';
 import { colors, spacing, typography, borderRadius, shadows } from '../designSystem';
 import { getUserInitial, getDisplayName } from '../utils';
 
@@ -69,6 +70,12 @@ const FollowersFollowing = ({ type }) => {
             const statusMap = {};
             followingResponse.data.forEach(user => {
                 statusMap[user.id] = true; // These users are being followed
+            });
+            // Also initialize followers as not being followed (unless they're in the following list)
+            followersResponse.data.forEach(user => {
+                if (!(user.id in statusMap)) {
+                    statusMap[user.id] = false; // These users are not being followed
+                }
             });
             setFollowingStatus(statusMap);
             
@@ -220,10 +227,17 @@ const FollowersFollowing = ({ type }) => {
                             const isFollowing = followingStatus[user.id];
                             const isCurrentUser = currentUser && currentUser.id === user.id;
                             
-                            // For followers tab: show follow button if not following
-                            // For following tab: show unfollow button since we're already following
-                            const shouldShowFollowButton = activeTab === 'followers' && !isFollowing;
-                            const shouldShowUnfollowButton = activeTab === 'following' && isFollowing;
+                            // Debug logging
+                            console.log('FollowersFollowing user:', { 
+                                username: user.username, 
+                                isFollowing, 
+                                isCurrentUser, 
+                                activeTab,
+                                followingStatus: followingStatus[user.id]
+                            });
+                            
+                            // Show button for all users except current user
+                            // The FollowButton component will handle the logic internally
                             
                             return (
                                 <div
@@ -304,49 +318,14 @@ const FollowersFollowing = ({ type }) => {
                                         </div>
                                     </div>
                                     
-                                    {currentUser && !isCurrentUser && (shouldShowFollowButton || shouldShowUnfollowButton) && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (shouldShowUnfollowButton) {
-                                                    handleUnfollow(user.id);
-                                                } else {
-                                                    handleFollow(user.id);
-                                                }
-                                            }}
-                                            style={{
-                                                padding: `${spacing.sm} ${spacing.md}`,
-                                                backgroundColor: shouldShowUnfollowButton ? colors.gray[200] : colors.primary,
-                                                color: shouldShowUnfollowButton ? colors.gray[700] : colors.white,
-                                                border: "none",
-                                                borderRadius: borderRadius.md,
-                                                cursor: "pointer",
-                                                fontSize: typography.fontSize.sm,
-                                                fontWeight: typography.fontWeight.medium,
-                                                transition: "all 0.2s ease",
-                                                minWidth: "100px"
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (shouldShowUnfollowButton) {
-                                                    e.target.style.backgroundColor = colors.danger;
-                                                    e.target.style.color = colors.white;
-                                                    e.target.textContent = "Unfollow";
-                                                } else {
-                                                    e.target.style.backgroundColor = colors.primaryDark;
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (shouldShowUnfollowButton) {
-                                                    e.target.style.backgroundColor = colors.gray[200];
-                                                    e.target.style.color = colors.gray[700];
-                                                    e.target.textContent = "✓ Following";
-                                                } else {
-                                                    e.target.style.backgroundColor = colors.primary;
-                                                }
-                                            }}
-                                        >
-                                            {shouldShowUnfollowButton ? "✓ Following" : "+ Follow"}
-                                        </button>
+                                    {currentUser && !isCurrentUser && (
+                                        <FollowButton
+                                            isFollowing={isFollowing}
+                                            onFollow={() => handleFollow(user.id)}
+                                            onUnfollow={() => handleUnfollow(user.id)}
+                                            size="md"
+                                            isDeletedUser={user.username.startsWith('__deleted_user_')}
+                                        />
                                     )}
                                 </div>
                             );

@@ -292,6 +292,7 @@ const PublicUserProfile = () => {
                     onUnfollow={handleFollow}
                     loading={followLoading}
                     size="lg"
+                    isDeletedUser={userProfile.user.username.startsWith('__deleted_user_')}
                 />
             </div>
 

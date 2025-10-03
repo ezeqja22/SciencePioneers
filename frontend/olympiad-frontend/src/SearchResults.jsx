@@ -199,6 +199,44 @@ const SearchResults = () => {
         }
     };
 
+    const handleFollowUser = async (userId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(`http://127.0.0.1:8000/auth/follow/${userId}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setFollowStatus(prev => ({
+                ...prev,
+                [userId]: true
+            }));
+            
+            fetchSearchResults();
+        } catch (error) {
+            console.error("Error following user:", error);
+            alert("Error following user");
+        }
+    };
+
+    const handleUnfollowUser = async (userId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.delete(`http://127.0.0.1:8000/auth/follow/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setFollowStatus(prev => ({
+                ...prev,
+                [userId]: false
+            }));
+            
+            fetchSearchResults();
+        } catch (error) {
+            console.error("Error unfollowing user:", error);
+            alert("Error unfollowing user");
+        }
+    };
+
     const fetchVoteData = async (problemsList) => {
         try {
             const token = localStorage.getItem("token");
@@ -482,9 +520,10 @@ const SearchResults = () => {
                                     {currentUser && currentUser.id !== user.id && (
                                         <FollowButton
                                             isFollowing={user.is_following}
-                                            onFollow={() => handleFollow(user.id)}
-                                            onUnfollow={() => handleFollow(user.id)}
+                                            onFollow={() => handleFollowUser(user.id)}
+                                            onUnfollow={() => handleUnfollowUser(user.id)}
                                             size="sm"
+                                            isDeletedUser={user.username.startsWith('__deleted_user_')}
                                         />
                                     )}
                                 </div>
