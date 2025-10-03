@@ -322,11 +322,22 @@ const PublicUserProfile = () => {
                                 <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                                     {problem.tags && problem.tags.split(',').map((tag, index) => (
                                         <span key={index} style={{
-                                            backgroundColor: '#e9ecef',
-                                            color: '#495057',
-                                            padding: '4px 8px',
-                                            borderRadius: '15px',
-                                            fontSize: '12px'
+                                            backgroundColor: colors.tertiary,
+                                            color: 'white',
+                                            padding: '8px 16px',
+                                            borderRadius: '20px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            boxShadow: '0 2px 8px rgba(124, 58, 237, 0.3)',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.transform = 'translateY(-1px)';
+                                            e.target.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.4)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.transform = 'translateY(0)';
+                                            e.target.style.boxShadow = '0 2px 8px rgba(124, 58, 237, 0.3)';
                                         }}>
                                             {tag.trim()}
                                         </span>

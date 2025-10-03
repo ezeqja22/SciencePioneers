@@ -210,12 +210,18 @@ function CreateProblem() {
         <p style={{ color: "#666" }}>Share a science problem with the community</p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Title *
           </label>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <input
               type="text"
               name="title"
@@ -224,10 +230,19 @@ function CreateProblem() {
               required
               style={{
                 flex: 1,
-                padding: "10px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                fontSize: "16px"
+                padding: "12px 16px",
+                border: "2px solid #e9ecef",
+                borderRadius: "8px",
+                fontSize: "16px",
+                outline: "none",
+                transition: "border-color 0.2s ease",
+                fontFamily: "inherit"
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = colors.primary;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "#e9ecef";
               }}
               placeholder="Enter a descriptive title for your problem"
             />
@@ -235,15 +250,25 @@ function CreateProblem() {
               type="button"
               onClick={() => openMathEditor('title')}
               style={{
-                padding: "10px 12px",
-                backgroundColor: "#007bff",
+                padding: "12px 16px",
+                backgroundColor: colors.secondary,
                 color: "white",
                 border: "none",
-                borderRadius: "4px",
+                borderRadius: "8px",
                 cursor: "pointer",
                 fontSize: "14px",
-                fontWeight: "500",
-                whiteSpace: "nowrap"
+                fontWeight: "600",
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(30, 64, 175, 0.3)",
+                transition: "all 0.2s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 12px rgba(30, 64, 175, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 8px rgba(30, 64, 175, 0.3)";
               }}
             >
               📐 Math
@@ -252,11 +277,17 @@ function CreateProblem() {
         </div>
 
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Description *
           </label>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
               <textarea
                 name="description"
                 value={formData.description}
@@ -265,11 +296,20 @@ function CreateProblem() {
                 rows="6"
                 style={{
                   flex: 1,
-                  padding: "10px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
+                  padding: "12px 16px",
+                  border: "2px solid #e9ecef",
+                  borderRadius: "8px",
                   fontSize: "16px",
-                  resize: "vertical"
+                  resize: "vertical",
+                  outline: "none",
+                  transition: "border-color 0.2s ease",
+                  fontFamily: "inherit"
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colors.primary;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e9ecef";
                 }}
                 placeholder="Describe the problem in detail. Include any relevant information, constraints, or context."
               />
@@ -277,16 +317,26 @@ function CreateProblem() {
                 type="button"
                 onClick={() => openMathEditor('description')}
                 style={{
-                  padding: "10px 12px",
-                  backgroundColor: "#007bff",
+                  padding: "12px 16px",
+                  backgroundColor: colors.secondary,
                   color: "white",
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "8px",
                   cursor: "pointer",
                   fontSize: "14px",
-                  fontWeight: "500",
+                  fontWeight: "600",
                   whiteSpace: "nowrap",
-                  alignSelf: "flex-start"
+                  alignSelf: "flex-start",
+                  boxShadow: "0 2px 8px rgba(30, 64, 175, 0.3)",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow = "0 4px 12px rgba(30, 64, 175, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 2px 8px rgba(30, 64, 175, 0.3)";
                 }}
               >
                 📐 Math
@@ -296,7 +346,13 @@ function CreateProblem() {
         </div>
 
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Subject *
           </label>
           <select
@@ -306,10 +362,20 @@ function CreateProblem() {
             required
             style={{
               width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
+              padding: "12px 16px",
+              border: "2px solid #e9ecef",
+              borderRadius: "8px",
+              fontSize: "16px",
+              outline: "none",
+              transition: "border-color 0.2s ease",
+              fontFamily: "inherit",
+              backgroundColor: "white"
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = colors.primary;
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "#e9ecef";
             }}
           >
             <option value="">Select a subject</option>
@@ -324,7 +390,13 @@ function CreateProblem() {
         </div>
 
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Level
           </label>
           <input
@@ -334,20 +406,35 @@ function CreateProblem() {
             onChange={handleChange}
             style={{
               width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
+              padding: "12px 16px",
+              border: "2px solid #e9ecef",
+              borderRadius: "8px",
+              fontSize: "16px",
+              outline: "none",
+              transition: "border-color 0.2s ease",
+              fontFamily: "inherit"
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = colors.primary;
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "#e9ecef";
             }}
             placeholder="e.g., National Albanian Olympiad 5th Class Phase 1, EGMO Phase 2, IMO, etc."
           />
-          <small style={{ color: "#666", fontSize: "12px" }}>
+          <small style={{ color: colors.gray[600], fontSize: "14px", marginTop: "4px", display: "block" }}>
             Specify the competition level or difficulty (defaults to "Any Level" if left blank)
           </small>
         </div>
 
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Year (Optional)
           </label>
           <input
@@ -357,16 +444,25 @@ function CreateProblem() {
             onChange={handleChange}
             style={{
               width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
+              padding: "12px 16px",
+              border: "2px solid #e9ecef",
+              borderRadius: "8px",
+              fontSize: "16px",
+              outline: "none",
+              transition: "border-color 0.2s ease",
+              fontFamily: "inherit"
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = colors.primary;
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "#e9ecef";
             }}
             placeholder="e.g., 2024, 2023, 2022..."
             min="1900"
             max="2030"
           />
-          <small style={{ color: "#666", fontSize: "12px" }}>
+          <small style={{ color: colors.gray[600], fontSize: "14px", marginTop: "4px", display: "block" }}>
             Year of the olympiad or competition (optional)
           </small>
         </div>
@@ -518,19 +614,34 @@ function CreateProblem() {
           </small>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+        <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
           <button
             type="submit"
             disabled={loading || uploadingImages}
             style={{
-              padding: "12px 24px",
-              backgroundColor: loading ? "#ccc" : "#007bff",
+              padding: "16px 32px",
+              backgroundColor: loading ? colors.gray[400] : colors.primary,
               color: "white",
               border: "none",
-              borderRadius: "4px",
+              borderRadius: "8px",
               fontSize: "16px",
+              fontWeight: "600",
               cursor: loading ? "not-allowed" : "pointer",
-              flex: 1
+              flex: 1,
+              boxShadow: loading ? "none" : "0 4px 12px rgba(26, 77, 58, 0.3)",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              if (!loading && !uploadingImages) {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 16px rgba(26, 77, 58, 0.4)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading && !uploadingImages) {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.3)";
+              }
             }}
           >
             {loading ? "Creating..." : uploadingImages ? "Uploading Images..." : "Create Problem"}
@@ -539,13 +650,24 @@ function CreateProblem() {
             type="button"
             onClick={() => navigate("/homepage")}
             style={{
-              padding: "12px 24px",
-              backgroundColor: "#6c757d",
+              padding: "16px 32px",
+              backgroundColor: colors.gray[500],
               color: "white",
               border: "none",
-              borderRadius: "4px",
+              borderRadius: "8px",
               fontSize: "16px",
-              cursor: "pointer"
+              fontWeight: "600",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
             }}
           >
             Cancel

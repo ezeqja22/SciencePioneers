@@ -490,7 +490,7 @@ function ProblemDetail() {
         <Layout showHomeButton={true}>
             {editingProblem ? (
                 <div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px" }}>
+                    <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "16px" }}>
                         <input
                             type="text"
                             value={editProblemData.title}
@@ -498,26 +498,45 @@ function ProblemDetail() {
                             placeholder="Problem title"
                             style={{ 
                                 flex: 1,
-                                padding: "10px", 
-                                border: "1px solid #ddd", 
-                                borderRadius: "4px",
+                                padding: "12px 16px", 
+                                border: "2px solid #e9ecef", 
+                                borderRadius: "8px",
                                 fontSize: "24px",
-                                fontWeight: "bold"
+                                fontWeight: "bold",
+                                outline: "none",
+                                transition: "border-color 0.2s ease",
+                                fontFamily: "inherit"
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = colors.primary;
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = "#e9ecef";
                             }}
                         />
                         <button
                             type="button"
                             onClick={() => openMathEditor('title')}
                             style={{
-                                padding: "10px 12px",
-                                backgroundColor: "#007bff",
+                                padding: "12px 16px",
+                                backgroundColor: colors.secondary,
                                 color: "white",
                                 border: "none",
-                                borderRadius: "4px",
+                                borderRadius: "8px",
                                 cursor: "pointer",
                                 fontSize: "14px",
-                                fontWeight: "500",
-                                whiteSpace: "nowrap"
+                                fontWeight: "600",
+                                whiteSpace: "nowrap",
+                                boxShadow: "0 2px 8px rgba(30, 64, 175, 0.3)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow = "0 4px 12px rgba(30, 64, 175, 0.4)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 8px rgba(30, 64, 175, 0.3)";
                             }}
                         >
                             📐 Math
@@ -530,11 +549,20 @@ function ProblemDetail() {
                             onChange={(e) => setEditProblemData({...editProblemData, subject: e.target.value})}
                             placeholder="Subject"
                             style={{ 
-                                padding: "4px 8px", 
+                                padding: "8px 12px", 
                                 marginRight: "10px", 
-                                border: "1px solid #ddd", 
-                                borderRadius: "4px",
-                                fontSize: "12px"
+                                border: "2px solid #e9ecef", 
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                outline: "none",
+                                transition: "border-color 0.2s ease",
+                                fontFamily: "inherit"
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = colors.primary;
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = "#e9ecef";
                             }}
                         />
                         <input
@@ -543,11 +571,20 @@ function ProblemDetail() {
                             onChange={(e) => setEditProblemData({...editProblemData, level: e.target.value})}
                             placeholder="Level (e.g., IMO, EGMO Phase 2, etc.)"
                             style={{ 
-                                padding: "4px 8px", 
+                                padding: "8px 12px", 
                                 marginRight: "10px", 
-                                border: "1px solid #ddd", 
-                                borderRadius: "4px",
-                                fontSize: "12px"
+                                border: "2px solid #e9ecef", 
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                outline: "none",
+                                transition: "border-color 0.2s ease",
+                                fontFamily: "inherit"
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = colors.primary;
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = "#e9ecef";
                             }}
                         />
                         <input
@@ -558,11 +595,20 @@ function ProblemDetail() {
                             min="1900"
                             max="2030"
                             style={{ 
-                                padding: "4px 8px", 
+                                padding: "8px 12px", 
                                 marginRight: "10px", 
-                                border: "1px solid #ddd", 
-                                borderRadius: "4px",
-                                fontSize: "12px"
+                                border: "2px solid #e9ecef", 
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                outline: "none",
+                                transition: "border-color 0.2s ease",
+                                fontFamily: "inherit"
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = colors.primary;
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = "#e9ecef";
                             }}
                         />
                         <div style={{ display: "flex", flexDirection: "column", gap: "5px", flex: 1 }}>
@@ -814,12 +860,24 @@ function ProblemDetail() {
                         <button 
                             onClick={handleSaveProblem} 
                             style={{ 
-                                padding: "8px 16px", 
-                                backgroundColor: "#28a745", 
+                                padding: "12px 24px", 
+                                backgroundColor: colors.primary, 
                                 color: "white", 
                                 border: "none", 
-                                borderRadius: "4px", 
-                                cursor: "pointer" 
+                                borderRadius: "8px", 
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(26, 77, 58, 0.3)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
                             }}
                         >
                             Save Problem
@@ -827,12 +885,24 @@ function ProblemDetail() {
                         <button 
                             onClick={handleCancelProblemEdit} 
                             style={{ 
-                                padding: "8px 16px", 
-                                backgroundColor: "#6c757d", 
+                                padding: "12px 24px", 
+                                backgroundColor: colors.gray[500], 
                                 color: "white", 
                                 border: "none", 
-                                borderRadius: "4px", 
-                                cursor: "pointer" 
+                                borderRadius: "8px", 
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                fontWeight: "600",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
                             }}
                         >
                             Cancel
@@ -848,8 +918,6 @@ function ProblemDetail() {
                     
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
                         <div>
-            <h1 style={{ color: "#333", marginBottom: "20px" }}>{renderMathContent(problem.title)}</h1>
-                            
                             {/* Author Information */}
                             {problem.author && (
                                 <div style={{ 
@@ -919,18 +987,33 @@ function ProblemDetail() {
                                     (Edited)
                                 </div>
                             )}
+                            
+                            {/* Problem Title */}
+                            <h1 style={{ color: "#333", marginBottom: "20px", marginTop: "20px" }}>{renderMathContent(problem.title)}</h1>
                         </div>
                         {currentUser && currentUser.id === problem.author_id && (
-                            <div style={{ display: "flex", gap: "10px" }}>
+                            <div style={{ display: "flex", gap: "12px" }}>
                                 <button
                                     onClick={handleEditProblem}
                                     style={{
-                                        padding: "8px 16px",
-                                        backgroundColor: "#007bff",
+                                        padding: "10px 20px",
+                                        backgroundColor: colors.secondary,
                                         color: "white",
                                         border: "none",
-                                        borderRadius: "4px",
-                                        cursor: "pointer"
+                                        borderRadius: "8px",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        boxShadow: "0 2px 8px rgba(30, 64, 175, 0.3)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(30, 64, 175, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 2px 8px rgba(30, 64, 175, 0.3)";
                                     }}
                                 >
                                     Edit Problem
@@ -938,12 +1021,24 @@ function ProblemDetail() {
                                 <button
                                     onClick={handleDeleteProblem}
                                     style={{
-                                        padding: "8px 16px",
-                                        backgroundColor: "#dc3545",
+                                        padding: "10px 20px",
+                                        backgroundColor: colors.danger,
                                         color: "white",
                                         border: "none",
-                                        borderRadius: "4px",
-                                        cursor: "pointer"
+                                        borderRadius: "8px",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        boxShadow: "0 2px 8px rgba(220, 38, 38, 0.3)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(220, 38, 38, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 2px 8px rgba(220, 38, 38, 0.3)";
                                     }}
                                 >
                                     Delete Problem
@@ -954,41 +1049,50 @@ function ProblemDetail() {
 
             <div style={{ marginBottom: "20px" }}>
                 <span style={{
-                    backgroundColor: "#e3f2fd",
-                    color: "#1976d2",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
+                    backgroundColor: "#e0e7ff",
+                    color: "#3730a3",
+                    padding: "6px 12px",
+                    borderRadius: "16px",
                     fontSize: "12px",
-                    marginRight: "10px"
+                    fontWeight: "600",
+                    marginRight: "8px",
+                    boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                    transition: "all 0.2s ease"
                 }}>
                     {problem.subject}
                 </span>
                         {problem.level && problem.level.trim() && (
                             <span style={{
-                                backgroundColor: "#fff3e0",
-                                color: "#f57c00",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
+                                backgroundColor: "#fef3c7",
+                                color: "#92400e",
+                                padding: "6px 12px",
+                                borderRadius: "16px",
                                 fontSize: "12px",
-                                marginRight: "10px"
+                                fontWeight: "600",
+                                marginRight: "8px",
+                                boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
+                                transition: "all 0.2s ease"
                             }}>
                                 {problem.level}
                             </span>
                         )}
                         {problem.year && (
                     <span style={{
-                                backgroundColor: "#e8f5e8", 
-                                color: "#2e7d32",
-                                padding: "4px 8px",
-                                borderRadius: "4px",
+                                backgroundColor: "#dcfce7", 
+                                color: "#166534",
+                                padding: "6px 12px",
+                                borderRadius: "16px",
                                 fontSize: "12px",
-                                marginRight: "10px"
+                                fontWeight: "600",
+                                marginRight: "8px",
+                                boxShadow: "0 2px 6px rgba(26, 77, 58, 0.2)",
+                                transition: "all 0.2s ease"
                             }}>
                                 Year: {problem.year}
                             </span>
                         )}
                 {problem.tags && problem.tags.trim() && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                         {problem.tags.split(",").map((tag, index) => {
                             const trimmedTag = tag.trim();
                             if (!trimmedTag) return null;
@@ -996,16 +1100,27 @@ function ProblemDetail() {
                                 <span
                                     key={index}
                                     style={{
-                        backgroundColor: "#f3e5f5",
-                        color: "#7b1fa2",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
+                                        backgroundColor: colors.tertiary,
+                                        color: "white",
+                                        padding: "6px 12px",
+                                        borderRadius: "16px",
                                         fontSize: "12px",
-                                        whiteSpace: "nowrap"
+                                        fontWeight: "600",
+                                        whiteSpace: "nowrap",
+                                        boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                                     }}
                                 >
                                     {trimmedTag}
-                    </span>
+                                </span>
                             );
                         })}
                     </div>

@@ -1,13 +1,14 @@
 // Design System - SciencePioneers
 export const colors = {
   primary: "#1a4d3a",        // Dark green
-  secondary: "#2d7a5f",       // Lighter green
-  accent: "#28a745",          // Success green
-  danger: "#dc3545",          // Red
-  warning: "#ffc107",         // Yellow
-  info: "#007bff",            // Blue
+  secondary: "#1e40af",      // Deep blue
+  accent: "#28a745",         // Success green
+  tertiary: "#7c3aed",       // Purple
+  danger: "#dc2626",         // Red
+  warning: "#f59e0b",        // Amber
+  info: "#0ea5e9",           // Sky blue
   light: "#f8f9fa",          // Light gray
-  dark: "#343a40",            // Dark gray
+  dark: "#343a40",           // Dark gray
   white: "#ffffff",
   black: "#000000",
   gray: {

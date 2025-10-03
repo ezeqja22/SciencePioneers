@@ -411,23 +411,29 @@ function SubjectPage() {
                                         flexWrap: "wrap"
                                     }}>
                                         <span style={{
-                                            backgroundColor: "#e3f2fd",
-                                            color: "#1976d2",
-                                            padding: "4px 8px",
-                                            borderRadius: "4px",
+                                            backgroundColor: "#e0e7ff",
+                                            color: "#3730a3",
+                                            padding: "6px 12px",
+                                            borderRadius: "16px",
                                             fontSize: "12px",
-                                            fontWeight: "500"
+                                            fontWeight: "600",
+                                            marginRight: "8px",
+                                            boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                                            transition: "all 0.2s ease"
                                         }}>
                                             {problem.subject}
                                         </span>
                                         {problem.level && problem.level.trim() && (
                                             <span style={{
-                                                backgroundColor: "#fff3e0",
-                                                color: "#f57c00",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
+                                                backgroundColor: "#fef3c7",
+                                                color: "#92400e",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
                                                 fontSize: "12px",
-                                                fontWeight: "500"
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 {problem.level}
                                             </span>
@@ -435,12 +441,22 @@ function SubjectPage() {
                                         {problem.tags && problem.tags.trim() && (
                                             problem.tags.split(',').map((tag, index) => (
                                                 <span key={index} style={{
-                                                    backgroundColor: "#f3e5f5",
-                                                    color: "#7b1fa2",
-                                                    padding: "4px 8px",
-                                                    borderRadius: "4px",
+                                                    backgroundColor: colors.tertiary,
+                                                    color: "white",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "16px",
                                                     fontSize: "12px",
-                                                    fontWeight: "500"
+                                                    fontWeight: "600",
+                                                    boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                                    transition: "all 0.2s ease"
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.transform = "translateY(-1px)";
+                                                    e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.transform = "translateY(0)";
+                                                    e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                                                 }}>
                                                     {tag.trim()}
                                                 </span>
@@ -448,12 +464,15 @@ function SubjectPage() {
                                         )}
                                         {problem.year && (
                                             <span style={{ 
-                                                backgroundColor: "#e8f5e8", 
-                                                color: "#2e7d32",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
+                                                backgroundColor: "#dcfce7", 
+                                                color: "#166534",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
                                                 fontSize: "12px",
-                                                fontWeight: "500"
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(26, 77, 58, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 Year: {problem.year}
                                             </span>

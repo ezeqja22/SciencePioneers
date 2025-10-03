@@ -342,14 +342,29 @@ function UserProfile() {
                         onClick={() => fileInputRef.current.click()}
                         disabled={uploading}
                         style={{
-                            padding: "8px 16px",
-                            backgroundColor: uploading ? "#ccc" : "#007bff",
+                            padding: "10px 20px",
+                            backgroundColor: uploading ? colors.gray[400] : colors.primary,
                             color: "white",
                             border: "none",
-                            borderRadius: "5px",
+                            borderRadius: "25px",
                             cursor: uploading ? "not-allowed" : "pointer",
-                            fontSize: "12px",
-                            marginTop: "10px"
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            marginTop: "12px",
+                            boxShadow: uploading ? "none" : "0 2px 8px rgba(26, 77, 58, 0.3)",
+                            transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!uploading) {
+                                e.target.style.transform = "translateY(-1px)";
+                                e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!uploading) {
+                                e.target.style.transform = "translateY(0)";
+                                e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
+                            }
                         }}
                     >
                         {uploading ? "Uploading..." : "📷 Change Profile Picture"}
@@ -361,13 +376,24 @@ function UserProfile() {
                             <button
                                 onClick={handleEditProfile}
                                 style={{
-                                    padding: "5px 15px",
-                                    backgroundColor: "#007bff",
+                                    padding: "8px 16px",
+                                    backgroundColor: colors.primary,
                                     color: "white",
                                     border: "none",
-                                    borderRadius: "5px",
+                                    borderRadius: "20px",
                                     cursor: "pointer",
-                                    fontSize: "12px"
+                                    fontSize: "14px",
+                                    fontWeight: "600",
+                                    boxShadow: "0 2px 8px rgba(26, 77, 58, 0.3)",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = "translateY(-1px)";
+                                    e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
                                 }}
                             >
                                 Edit Profile
@@ -402,15 +428,16 @@ function UserProfile() {
             {isEditingProfile && (
                 <div style={{
                     backgroundColor: "#f8f9fa",
-                    padding: "30px",
-                    borderRadius: "10px",
+                    padding: "32px",
+                    borderRadius: "12px",
                     marginBottom: "30px",
-                    border: "1px solid #e9ecef"
+                    border: "1px solid #e9ecef",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)"
                 }}>
-                    <h3 style={{ margin: "0 0 20px 0", color: "#333" }}>Edit Profile</h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                    <h3 style={{ margin: "0 0 24px 0", color: "#333", fontSize: "20px", fontWeight: "600" }}>Edit Profile</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                         <div>
-                            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+                            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#333", fontSize: "16px" }}>
                                 Bio:
                             </label>
                             <textarea
@@ -419,28 +446,48 @@ function UserProfile() {
                                 placeholder="Tell us about yourself..."
                                 style={{
                                     width: "100%",
-                                    padding: "10px",
-                                    border: "1px solid #ddd",
-                                    borderRadius: "5px",
-                                    fontSize: "14px",
-                                    minHeight: "80px",
-                                    resize: "vertical"
+                                    padding: "12px 16px",
+                                    border: "2px solid #e9ecef",
+                                    borderRadius: "8px",
+                                    fontSize: "16px",
+                                    minHeight: "100px",
+                                    resize: "vertical",
+                                    outline: "none",
+                                    transition: "border-color 0.2s ease",
+                                    fontFamily: "inherit"
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = colors.primary;
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = "#e9ecef";
                                 }}
                             />
                         </div>
                         
                         
-                        <div style={{ display: "flex", gap: "10px" }}>
+                        <div style={{ display: "flex", gap: "12px" }}>
                             <button
                                 onClick={handleSaveProfile}
                                 style={{
-                                    padding: "10px 20px",
-                                    backgroundColor: "#28a745",
+                                    padding: "12px 24px",
+                                    backgroundColor: colors.primary,
                                     color: "white",
                                     border: "none",
-                                    borderRadius: "5px",
+                                    borderRadius: "8px",
                                     cursor: "pointer",
-                                    fontSize: "14px"
+                                    fontSize: "16px",
+                                    fontWeight: "600",
+                                    boxShadow: "0 2px 8px rgba(26, 77, 58, 0.3)",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = "translateY(-1px)";
+                                    e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
                                 }}
                             >
                                 Save Changes
@@ -448,13 +495,24 @@ function UserProfile() {
                             <button
                                 onClick={handleCancelEdit}
                                 style={{
-                                    padding: "10px 20px",
-                                    backgroundColor: "#6c757d",
+                                    padding: "12px 24px",
+                                    backgroundColor: colors.gray[500],
                                     color: "white",
                                     border: "none",
-                                    borderRadius: "5px",
+                                    borderRadius: "8px",
                                     cursor: "pointer",
-                                    fontSize: "14px"
+                                    fontSize: "16px",
+                                    fontWeight: "600",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = "translateY(-1px)";
+                                    e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
                                 }}
                             >
                                 Cancel
@@ -594,12 +652,24 @@ function UserProfile() {
                                 <p>You haven't created any problems yet.</p>
                                 <Link to="/create-problem">
                                     <button style={{
-                                        padding: "10px 20px",
-                                        backgroundColor: "#007bff",
+                                        padding: "12px 24px",
+                                        backgroundColor: colors.primary,
                                         color: "white",
                                         border: "none",
-                                        borderRadius: "5px",
-                                        cursor: "pointer"
+                                        borderRadius: "8px",
+                                        cursor: "pointer",
+                                        fontSize: "16px",
+                                        fontWeight: "600",
+                                        boxShadow: "0 2px 8px rgba(26, 77, 58, 0.3)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
                                     }}>
                                         Create Your First Problem
                                     </button>
@@ -609,11 +679,21 @@ function UserProfile() {
                             <div>
                                 {problems.map((problem) => (
                                     <div key={problem.id} style={{
-                                        border: "1px solid #ddd",
-                                        borderRadius: "8px",
-                                        padding: "20px",
-                                        marginBottom: "15px",
-                                        backgroundColor: "#f9f9f9"
+                                        border: "1px solid #e9ecef",
+                                        borderRadius: "12px",
+                                        padding: "24px",
+                                        marginBottom: "20px",
+                                        backgroundColor: "white",
+                                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-2px)";
+                                        e.target.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
                                     }}>
                                         <Link to={`/problem/${problem.id}`} style={{ textDecoration: "none" }}>
                                             <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(problem.title)}</h4>
@@ -621,31 +701,50 @@ function UserProfile() {
                                         <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
-                                                backgroundColor: "#e3f2fd",
-                                                color: "#1976d2",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
-                                                fontSize: "12px"
+                                                backgroundColor: "#e0e7ff",
+                                                color: "#3730a3",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 {problem.subject}
                                             </span>
                                             <span style={{
-                                                backgroundColor: "#fff3e0",
-                                                color: "#f57c00",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
-                                                fontSize: "12px"
+                                                backgroundColor: "#fef3c7",
+                                                color: "#92400e",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 {problem.level}
                                             </span>
                                             {problem.tags && problem.tags.trim() && (
                                                 problem.tags.split(',').map((tag, index) => (
                                                     <span key={index} style={{
-                                                        backgroundColor: "#f3e5f5",
-                                                        color: "#7b1fa2",
-                                                        padding: "4px 8px",
-                                                        borderRadius: "4px",
-                                                        fontSize: "12px"
+                                                        backgroundColor: colors.tertiary,
+                                                        color: "white",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                                        transition: "all 0.2s ease"
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.transform = "translateY(-1px)";
+                                                        e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.transform = "translateY(0)";
+                                                        e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                                                     }}>
                                                         {tag.trim()}
                                                     </span>
@@ -803,31 +902,50 @@ function UserProfile() {
                                         <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(bookmark.problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
-                                                backgroundColor: "#e3f2fd",
-                                                color: "#1976d2",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
-                                                fontSize: "12px"
+                                                backgroundColor: "#e0e7ff",
+                                                color: "#3730a3",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 {bookmark.problem.subject}
                                             </span>
                                             <span style={{
-                                                backgroundColor: "#fff3e0",
-                                                color: "#f57c00",
-                                                padding: "4px 8px",
-                                                borderRadius: "4px",
-                                                fontSize: "12px"
+                                                backgroundColor: "#fef3c7",
+                                                color: "#92400e",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
+                                                transition: "all 0.2s ease"
                                             }}>
                                                 {bookmark.problem.level}
                                             </span>
                                             {bookmark.problem.tags && bookmark.problem.tags.trim() && (
                                                 bookmark.problem.tags.split(',').map((tag, index) => (
                                                     <span key={index} style={{
-                                                        backgroundColor: "#f3e5f5",
-                                                        color: "#7b1fa2",
-                                                        padding: "4px 8px",
-                                                        borderRadius: "4px",
-                                                        fontSize: "12px"
+                                                        backgroundColor: colors.tertiary,
+                                                        color: "white",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                                        transition: "all 0.2s ease"
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.target.style.transform = "translateY(-1px)";
+                                                        e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.transform = "translateY(0)";
+                                                        e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                                                     }}>
                                                         {tag.trim()}
                                                     </span>
