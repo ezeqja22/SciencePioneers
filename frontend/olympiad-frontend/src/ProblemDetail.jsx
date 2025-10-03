@@ -68,6 +68,9 @@ function ProblemDetail() {
     const [showMathEditor, setShowMathEditor] = useState(false);
     const [mathEditorTarget, setMathEditorTarget] = useState(null);
     const [showCommentMathEditor, setShowCommentMathEditor] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [hoveredImageIndex, setHoveredImageIndex] = useState(null);
     const [editProblemData, setEditProblemData] = useState({
         title: "",
         description: "",
@@ -113,6 +116,55 @@ function ProblemDetail() {
     const closeCommentMathEditor = () => {
         setShowCommentMathEditor(false);
     };
+
+    // Image modal functions
+    const openImageModal = (index) => {
+        setCurrentImageIndex(index);
+        setShowImageModal(true);
+    };
+
+    const closeImageModal = () => {
+        setShowImageModal(false);
+    };
+
+    const nextImage = () => {
+        setCurrentImageIndex((prev) => (prev + 1) % problemImages.length);
+    };
+
+    const prevImage = () => {
+        setCurrentImageIndex((prev) => (prev - 1 + problemImages.length) % problemImages.length);
+    };
+
+    // Keyboard navigation for image modal
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (!showImageModal) return;
+            
+            switch (event.key) {
+                case 'Escape':
+                    closeImageModal();
+                    break;
+                case 'ArrowLeft':
+                    if (problemImages.length > 1) prevImage();
+                    break;
+                case 'ArrowRight':
+                    if (problemImages.length > 1) nextImage();
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        if (showImageModal) {
+            document.addEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'unset';
+        };
+    }, [showImageModal, problemImages.length]);
 
     const fetchProblem = async () => {
         try {
@@ -618,8 +670,9 @@ function ProblemDetail() {
                                 </div>
                                 <div style={{ 
                                     display: "grid", 
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", 
-                                    gap: "10px" 
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, max-content))", 
+                                    gap: "10px",
+                                    justifyContent: "start"
                                 }}>
                                     {problemImages.map((image, index) => (
                                         <div key={index} style={{ 
@@ -627,15 +680,17 @@ function ProblemDetail() {
                                             border: "1px solid #ddd", 
                                             borderRadius: "8px", 
                                             overflow: "hidden",
-                                            backgroundColor: "white"
+                                            backgroundColor: "white",
+                                            maxWidth: "150px"
                                         }}>
                                             <img 
                                                 src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
                                                 alt={`Problem image ${index + 1}`}
                                                 style={{
                                                     width: "100%",
-                                                    height: "100px",
-                                                    objectFit: "cover"
+                                                    height: "auto",
+                                                    objectFit: "contain",
+                                                    display: "block"
                                                 }}
                                             />
                                             <button
@@ -977,29 +1032,63 @@ function ProblemDetail() {
                     <h3 style={{ marginBottom: "15px", color: "#333" }}>Problem Images</h3>
                     <div style={{ 
                         display: "grid", 
-                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
-                        gap: "15px" 
+                        gridTemplateColumns: "repeat(auto-fit, minmax(150px, max-content))", 
+                        gap: "15px",
+                        justifyContent: "start"
                     }}>
-                        {problemImages.map((image, index) => (
-                            <div key={index} style={{ 
-                                border: "1px solid #ddd", 
-                                borderRadius: "8px", 
-                                overflow: "hidden",
-                                backgroundColor: "white"
-                            }}>
-                                <img 
-                                    src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
-                                    alt={`Problem image ${index + 1}`}
-                                    style={{
-                                        width: "100%",
-                                        height: "200px",
-                                        objectFit: "cover",
-                                        cursor: "pointer"
-                                    }}
-                                    onClick={() => window.open(`http://127.0.0.1:8000/auth/serve-problem-image/${image}`, '_blank')}
-                                />
-                            </div>
-                        ))}
+                        {problemImages.map((image, index) => {
+                            const isHovered = hoveredImageIndex === index;
+                            
+                            return (
+                                <div key={index} style={{ 
+                                    border: "1px solid #ddd", 
+                                    borderRadius: "8px", 
+                                    overflow: "hidden",
+                                    backgroundColor: "white",
+                                    maxWidth: "200px",
+                                    cursor: "pointer",
+                                    position: "relative",
+                                    transition: "transform 0.2s ease",
+                                    transform: isHovered ? "scale(1.02)" : "scale(1)"
+                                }}
+                                onMouseEnter={() => setHoveredImageIndex(index)}
+                                onMouseLeave={() => setHoveredImageIndex(null)}
+                                onClick={() => openImageModal(index)}
+                                >
+                                    <img 
+                                        src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
+                                        alt={`Problem image ${index + 1}`}
+                                        style={{
+                                            width: "100%",
+                                            height: "auto",
+                                            objectFit: "contain",
+                                            display: "block"
+                                        }}
+                                    />
+                                    <div 
+                                        style={{
+                                            position: "absolute",
+                                            top: "8px",
+                                            right: "8px",
+                                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            padding: "6px 8px",
+                                            cursor: "pointer",
+                                            fontSize: "12px",
+                                            opacity: isHovered ? "1" : "0",
+                                            transition: "opacity 0.2s ease",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "4px"
+                                        }}
+                                    >
+                                        🔍 Fullscreen
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -1253,6 +1342,139 @@ function ProblemDetail() {
                 onInsert={handleCommentMathInsert}
                 initialValue=""
             />
+
+            {/* Fullscreen Image Modal */}
+            {showImageModal && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    backgroundColor: "rgba(0, 0, 0, 0.9)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 9999,
+                    cursor: "pointer"
+                }}
+                onClick={closeImageModal}
+                >
+                    {/* Close button */}
+                    <button
+                        onClick={closeImageModal}
+                        style={{
+                            position: "absolute",
+                            top: "20px",
+                            right: "20px",
+                            backgroundColor: "rgba(255, 255, 255, 0.2)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "40px",
+                            height: "40px",
+                            fontSize: "20px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 10000
+                        }}
+                    >
+                        ✕
+                    </button>
+
+                    {/* Navigation arrows */}
+                    {problemImages.length > 1 && (
+                        <>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    prevImage();
+                                }}
+                                style={{
+                                    position: "absolute",
+                                    left: "20px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    width: "50px",
+                                    height: "50px",
+                                    fontSize: "24px",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 10000
+                                }}
+                            >
+                                ‹
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    nextImage();
+                                }}
+                                style={{
+                                    position: "absolute",
+                                    right: "20px",
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    width: "50px",
+                                    height: "50px",
+                                    fontSize: "24px",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 10000
+                                }}
+                            >
+                                ›
+                            </button>
+                        </>
+                    )}
+
+                    {/* Image counter */}
+                    {problemImages.length > 1 && (
+                        <div style={{
+                            position: "absolute",
+                            bottom: "20px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            backgroundColor: "rgba(0, 0, 0, 0.7)",
+                            color: "white",
+                            padding: "8px 16px",
+                            borderRadius: "20px",
+                            fontSize: "14px",
+                            zIndex: 10000
+                        }}>
+                            {currentImageIndex + 1} / {problemImages.length}
+                        </div>
+                    )}
+
+                    {/* Fullscreen image */}
+                    <img
+                        src={`http://127.0.0.1:8000/auth/serve-problem-image/${problemImages[currentImageIndex]}`}
+                        alt={`Problem image ${currentImageIndex + 1}`}
+                        style={{
+                            maxWidth: "90vw",
+                            maxHeight: "90vh",
+                            objectFit: "contain",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
         </Layout>
     );
 }
