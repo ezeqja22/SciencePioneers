@@ -38,6 +38,26 @@ function CreateProblem() {
   const [mathEditorTarget, setMathEditorTarget] = useState(null); // 'title' or 'description'
   const navigate = useNavigate();
 
+  // Function to determine where to redirect after successful creation
+  const getRedirectPath = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const from = searchParams.get('from');
+    
+    // If there's a specific 'from' parameter, use it
+    if (from) {
+      return from;
+    }
+    
+    // Check if we came from a specific subject page
+    const subject = searchParams.get('subject');
+    if (subject) {
+      return `/subject/${encodeURIComponent(subject)}`;
+    }
+    
+    // Default to feed if no specific referrer
+    return '/feed';
+  };
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -140,6 +160,10 @@ function CreateProblem() {
         year: formData.year ? parseInt(formData.year) : null
       };
       
+      // Debug: Check if line breaks are preserved
+      console.log("Description with line breaks:", JSON.stringify(formData.description));
+      console.log("Description length:", formData.description.length);
+      
       
       const response = await axios.post(
         "http://127.0.0.1:8000/auth/problems/",
@@ -183,7 +207,7 @@ function CreateProblem() {
       }
 
       alert("Problem created successfully!");
-      navigate("/homepage");
+      navigate(getRedirectPath());
     } catch (error) {
       console.error("Error creating problem:", error);
       console.error("Error response:", error.response?.data);
@@ -222,13 +246,13 @@ function CreateProblem() {
             Title *
           </label>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              style={{
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            required
+            style={{
                 flex: 1,
                 padding: "12px 16px",
                 border: "2px solid #e9ecef",
@@ -243,9 +267,9 @@ function CreateProblem() {
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = "#e9ecef";
-              }}
-              placeholder="Enter a descriptive title for your problem"
-            />
+            }}
+            placeholder="Enter a descriptive title for your problem"
+          />
             <button
               type="button"
               onClick={() => openMathEditor('title')}
@@ -288,18 +312,19 @@ function CreateProblem() {
           </label>
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows="6"
-                style={{
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+            rows="6"
+            style={{
                   flex: 1,
                   padding: "12px 16px",
+                  whiteSpace: "pre-wrap",
                   border: "2px solid #e9ecef",
                   borderRadius: "8px",
-                  fontSize: "16px",
+              fontSize: "16px",
                   resize: "vertical",
                   outline: "none",
                   transition: "border-color 0.2s ease",
@@ -310,9 +335,9 @@ function CreateProblem() {
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = "#e9ecef";
-                }}
-                placeholder="Describe the problem in detail. Include any relevant information, constraints, or context."
-              />
+            }}
+            placeholder="Describe the problem in detail. Include any relevant information, constraints, or context."
+          />
               <button
                 type="button"
                 onClick={() => openMathEditor('description')}
@@ -479,11 +504,11 @@ function CreateProblem() {
                 onChange={(e) => handleTagChange(index, e.target.value)}
                 style={{
                   flex: 1,
-                  padding: "10px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "16px"
-                }}
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              fontSize: "16px"
+            }}
                 placeholder={`Tag ${index + 1}`}
               />
               {tags.length > 1 && (
@@ -531,72 +556,125 @@ function CreateProblem() {
         </div>
 
         <div>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+          <label style={{ 
+            display: "block", 
+            marginBottom: "8px", 
+            fontWeight: "600", 
+            color: colors.dark,
+            fontSize: "16px"
+          }}>
             Images (Optional) - {images.length}/10
           </label>
+          
+          {/* Hidden file input */}
           <input
             type="file"
             multiple
             accept="image/*"
             onChange={handleImageUpload}
-            style={{
-              width: "100%",
-              padding: "10px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-              fontSize: "16px"
-            }}
+            style={{ display: "none" }}
+            id="image-upload-input"
           />
-          {images.length > 0 && (
-            <div style={{ marginTop: "10px" }}>
-              <div style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "5px" }}>
-                Selected Images ({images.length}):
-              </div>
-              <div style={{ 
-                display: "grid", 
-                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", 
-                gap: "10px" 
+          
+          {/* Image previews and upload area */}
+          <div style={{ 
+            display: "flex", 
+            flexWrap: "wrap", 
+            gap: "16px",
+            alignItems: "flex-start"
+          }}>
+            {/* Existing images */}
+            {images.map((file, index) => (
+              <div key={index} style={{ 
+                position: "relative",
+                border: "1px solid #ddd", 
+                borderRadius: "8px", 
+                overflow: "hidden",
+                backgroundColor: "white",
+                width: "150px",
+                height: "100px"
               }}>
-                {images.map((file, index) => (
-                  <div key={index} style={{ 
-                    position: "relative",
-                    border: "1px solid #ddd", 
-                    borderRadius: "8px", 
-                    overflow: "hidden",
-                    backgroundColor: "white"
-                  }}>
-                    <img 
-                      src={URL.createObjectURL(file)} 
-                      alt={`Preview ${index + 1}`}
-                      style={{
-                        width: "100%",
-                        height: "80px",
-                        objectFit: "cover"
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      style={{
-                        position: "absolute",
-                        top: "5px",
-                        right: "5px",
-                        padding: "4px 8px",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "12px"
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                <img 
+                  src={URL.createObjectURL(file)} 
+                  alt={`Preview ${index + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover"
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  style={{
+                    position: "absolute",
+                    top: "4px",
+                    right: "4px",
+                    padding: "2px 6px",
+                    backgroundColor: "#dc3545",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "10px",
+                    fontWeight: "600"
+                  }}
+                >
+                  ×
+                </button>
               </div>
-            </div>
-          )}
+            ))}
+            
+            {/* Upload box - only show if under max limit */}
+            {images.length < 10 && (
+              <div
+                onClick={() => document.getElementById('image-upload-input').click()}
+                style={{
+                  width: "150px",
+                  height: "100px",
+                  border: "2px dashed #3b82f6",
+                  borderRadius: "8px",
+                  backgroundColor: "#eff6ff",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  position: "relative"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#dbeafe";
+                  e.target.style.borderColor = "#1d4ed8";
+                  e.target.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "#eff6ff";
+                  e.target.style.borderColor = "#3b82f6";
+                  e.target.style.transform = "scale(1)";
+                }}
+              >
+                <div style={{
+                  fontSize: "32px",
+                  color: "#3b82f6",
+                  fontWeight: "bold",
+                  marginBottom: "6px",
+                  transition: "all 0.2s ease"
+                }}>
+                  +
+                </div>
+                <div style={{
+                  fontSize: "12px",
+                  color: "#3b82f6",
+                  fontWeight: "600",
+                  textAlign: "center"
+                }}>
+                  Add Image
+                </div>
+              </div>
+            )}
+          </div>
+          
           {images.length >= 10 && (
             <div style={{ 
               padding: "10px", 
@@ -648,7 +726,7 @@ function CreateProblem() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/homepage")}
+            onClick={() => navigate(getRedirectPath())}
             style={{
               padding: "16px 32px",
               backgroundColor: colors.gray[500],

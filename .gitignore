@@ -2,5 +2,5 @@
 venv
 __pycache__/
 *.pyc
-pyvenv.cfg
-backend/.env
+backend/pyvenv.cfg
+.env

@@ -680,7 +680,8 @@ function ProblemDetail() {
                                 padding: "20px", 
                                 border: "1px solid #ddd", 
                                 borderRadius: "8px",
-                                lineHeight: "1.6"
+                                lineHeight: "1.6",
+                                whiteSpace: "pre-wrap"
                             }}
                         />
                         <button
@@ -716,8 +717,8 @@ function ProblemDetail() {
                                 </div>
                                 <div style={{ 
                                     display: "grid", 
-                                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, max-content))", 
-                                    gap: "10px",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, max-content))", 
+                                    gap: "16px",
                                     justifyContent: "start"
                                 }}>
                                     {problemImages.map((image, index) => (
@@ -727,15 +728,16 @@ function ProblemDetail() {
                                             borderRadius: "8px", 
                                             overflow: "hidden",
                                             backgroundColor: "white",
-                                            maxWidth: "150px"
+                                            width: "150px",
+                                            height: "100px"
                                         }}>
                                             <img 
                                                 src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
                                                 alt={`Problem image ${index + 1}`}
                                                 style={{
                                                     width: "100%",
-                                                    height: "auto",
-                                                    objectFit: "contain",
+                                                    height: "100%",
+                                                    objectFit: "cover",
                                                     display: "block"
                                                 }}
                                             />
@@ -782,6 +784,7 @@ function ProblemDetail() {
                         {/* Add New Images */}
                         {problemImages.length < 10 && (
                             <div>
+                                {/* Hidden file input */}
                                 <input
                                     type="file"
                                     multiple
@@ -829,15 +832,58 @@ function ProblemDetail() {
                                             alert(`Error uploading images: ${error.response?.data?.detail || error.message}`);
                                         }
                                     }}
-                                    style={{
-                                        width: "100%",
-                                        padding: "8px",
-                                        border: "1px solid #ddd",
-                                        borderRadius: "4px",
-                                        marginBottom: "10px"
-                                    }}
+                                    style={{ display: "none" }}
+                                    id="edit-image-upload-input"
                                 />
-                                <small style={{ color: "#666", fontSize: "12px" }}>
+                                
+                                {/* Upload box */}
+                                <div
+                                    onClick={() => document.getElementById('edit-image-upload-input').click()}
+                                    style={{
+                                        width: "150px",
+                                        height: "100px",
+                                        border: "2px dashed #3b82f6",
+                                        borderRadius: "8px",
+                                        backgroundColor: "#eff6ff",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        cursor: "pointer",
+                                        transition: "all 0.2s ease",
+                                        position: "relative"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = "#dbeafe";
+                                        e.target.style.borderColor = "#1d4ed8";
+                                        e.target.style.transform = "scale(1.02)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = "#eff6ff";
+                                        e.target.style.borderColor = "#3b82f6";
+                                        e.target.style.transform = "scale(1)";
+                                    }}
+                                >
+                                    <div style={{
+                                        fontSize: "32px",
+                                        color: "#3b82f6",
+                                        fontWeight: "bold",
+                                        marginBottom: "6px",
+                                        transition: "all 0.2s ease"
+                                    }}>
+                                        +
+                                    </div>
+                                    <div style={{
+                                        fontSize: "12px",
+                                        color: "#3b82f6",
+                                        fontWeight: "600",
+                                        textAlign: "center"
+                                    }}>
+                                        Add Image
+                                    </div>
+                                </div>
+                                
+                                <small style={{ color: "#666", fontSize: "12px", marginTop: "8px", display: "block" }}>
                                     Add up to {10 - problemImages.length} more images to your problem
                                 </small>
                             </div>
@@ -1133,7 +1179,7 @@ function ProblemDetail() {
                 borderRadius: "8px",
                 marginBottom: "30px"
             }}>
-                <div style={{ lineHeight: "1.6", color: "#333" }}>{renderMathContent(problem.description)}</div>
+                <div style={{ lineHeight: "1.6", color: "#333", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description)}</div>
             </div>
             
             {/* Problem Images */}
@@ -1278,7 +1324,8 @@ function ProblemDetail() {
                                 border: "1px solid #ddd",
                                 borderRadius: "5px",
                                 resize: "vertical",
-                                fontFamily: "inherit"
+                                fontFamily: "inherit",
+                                whiteSpace: "pre-wrap"
                             }}
                         />
                             <button
@@ -1336,6 +1383,7 @@ function ProblemDetail() {
                                             minHeight: "60px",
                                             padding: "8px",
                                             border: "1px solid #ddd",
+                                            whiteSpace: "pre-wrap",
                                             borderRadius: "4px",
                                             resize: "vertical",
                                             fontFamily: "inherit"
@@ -1396,7 +1444,7 @@ function ProblemDetail() {
                             </div>
                         ) : (
                             <div>
-                                <div style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(comment.text)}</div>
+                                <div style={{ margin: "0 0 10px 0", color: "#333", whiteSpace: "pre-wrap" }}>{renderMathContent(comment.text)}</div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
                                         By: {comment.author.username} 

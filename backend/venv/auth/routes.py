@@ -183,6 +183,10 @@ def create_problem(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    # Debug: Check if line breaks are preserved in the received data
+    print(f"Received description: {repr(problem.description)}")
+    print(f"Description length: {len(problem.description)}")
+    
     db_problem = Problem(
         title=problem.title,
         description=problem.description,
@@ -352,6 +356,10 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     if not result:
         raise HTTPException(status_code=404, detail="Problem not found")
     problem, comment_count = result
+    
+    # Debug: Check what's in the database
+    print(f"Database description: {repr(problem.description)}")
+    print(f"Database description length: {len(problem.description)}")
     
     # Fetch the author
     author = db.query(User).filter(User.id == problem.author_id).first()

@@ -294,7 +294,7 @@ function SubjectPage() {
                         <p style={{ color: "#666", marginBottom: "2rem" }}>
                             Be the first to create a {subjectName.toLowerCase()} problem.
                         </p>
-                        <Link to="/create-problem">
+                        <Link to={`/create-problem?from=/subject/${encodeURIComponent(subjectName)}`}>
                             <button style={{
                                 backgroundColor: "#1a4d3a",
                                 color: "white",
@@ -395,7 +395,8 @@ function SubjectPage() {
                                         color: "#666", 
                                         lineHeight: "1.6",
                                         marginBottom: "1rem",
-                                        fontSize: "0.95rem"
+                                        fontSize: "0.95rem",
+                                        whiteSpace: "pre-wrap"
                                     }}>
                                         {renderMathContent(problem.description.length > 150 ? 
                                             problem.description.substring(0, 150) + "..." : 
@@ -624,7 +625,7 @@ function SubjectPage() {
                     right: spacing.xl,
                     zIndex: 1000
                 }}>
-                    <Link to={`/create-problem?subject=${encodeURIComponent(subjectName)}`} style={{ textDecoration: "none" }}>
+                    <Link to={`/create-problem?subject=${encodeURIComponent(subjectName)}&from=/subject/${encodeURIComponent(subjectName)}`} style={{ textDecoration: "none" }}>
                         <div style={{
                             width: "60px",
                             height: "60px",

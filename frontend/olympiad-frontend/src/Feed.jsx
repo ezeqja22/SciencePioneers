@@ -470,7 +470,7 @@ function Feed() {
             <>
           <h3>No problems yet!</h3>
           <p>Be the first to create a science problem.</p>
-          <Link to="/create-problem">
+          <Link to="/create-problem?from=/feed">
             <button style={{ 
               padding: "10px 20px", 
               backgroundColor: "#28a745", 
@@ -495,7 +495,7 @@ function Feed() {
             <>
               <h3>No trending problems yet!</h3>
               <p>Problems with more comments and engagement will appear here.</p>
-              <Link to="/create-problem">
+              <Link to="/create-problem?from=/feed">
                 <button style={{ 
                   padding: "10px 20px", 
                   backgroundColor: "#28a745", 
@@ -633,7 +633,7 @@ function Feed() {
               )}
               
               <h3 style={{ marginTop: 0, color: "#333" }}>{renderMathContent(problem.title)}</h3>
-              <div style={{ color: "#666", lineHeight: "1.5" }}>{renderMathContent(problem.description)}</div>
+              <div style={{ color: "#666", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description)}</div>
               <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
                 <span style={{
                   backgroundColor: "#e0e7ff",
@@ -866,7 +866,7 @@ function Feed() {
         right: spacing.xl,
         zIndex: 1000
       }}>
-        <Link to="/create-problem" style={{ textDecoration: "none" }}>
+        <Link to="/create-problem?from=/feed" style={{ textDecoration: "none" }}>
           <div style={{
             width: "60px",
             height: "60px",

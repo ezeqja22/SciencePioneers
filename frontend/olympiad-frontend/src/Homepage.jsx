@@ -366,7 +366,7 @@ function Homepage() {
                                     Explore Problems
                                 </button>
                             </Link>
-                            <Link to="/create-problem">
+                            <Link to="/create-problem?from=/homepage">
                                 <button style={{
                                     backgroundColor: "transparent",
                                     color: "white",

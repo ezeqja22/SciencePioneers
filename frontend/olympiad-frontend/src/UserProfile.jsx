@@ -650,7 +650,7 @@ function UserProfile() {
                         {problems.length === 0 ? (
                             <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
                                 <p>You haven't created any problems yet.</p>
-                                <Link to="/create-problem">
+                                <Link to="/create-problem?from=/profile">
                                     <button style={{
                                         padding: "12px 24px",
                                         backgroundColor: colors.primary,
@@ -698,7 +698,7 @@ function UserProfile() {
                                         <Link to={`/problem/${problem.id}`} style={{ textDecoration: "none" }}>
                                             <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(problem.title)}</h4>
                                         </Link>
-                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
                                                 backgroundColor: "#e0e7ff",
@@ -899,7 +899,7 @@ function UserProfile() {
                                                 Remove Bookmark
                                             </button>
                                         </div>
-                                        <p style={{ color: "#666", margin: "0 0 15px 0" }}>{renderMathContent(bookmark.problem.description.substring(0, 150))}...</p>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap" }}>{renderMathContent(bookmark.problem.description.substring(0, 150))}...</p>
                                         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                             <span style={{
                                                 backgroundColor: "#e0e7ff",

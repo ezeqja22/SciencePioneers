@@ -575,7 +575,8 @@ const SearchResults = () => {
                                     fontSize: "14px",
                                     maxHeight: "60px",
                                     overflow: "hidden",
-                                    textOverflow: "ellipsis"
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "pre-wrap"
                                 }}>
                                     {renderMathContent(problem.description)}
                                 </p>
