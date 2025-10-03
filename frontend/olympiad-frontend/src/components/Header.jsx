@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography, shadows } from "../designSystem";
 import { getUserInitial } from "../utils";
+import NotificationBell from "./NotificationBell";
 
 function Header({ showHomeButton = false }) {
     const [currentUser, setCurrentUser] = useState(null);
@@ -243,8 +244,13 @@ function Header({ showHomeButton = false }) {
                         </Link>
                     </div>
                 ) : (
-                    /* User Dropdown */
-                    <div style={{ position: "relative" }}>
+                    /* Authenticated User Section */
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
+                        {/* Notification Bell */}
+                        <NotificationBell />
+                        
+                        {/* User Dropdown */}
+                        <div style={{ position: "relative" }}>
                         <button
                             onClick={() => setShowUserDropdown(!showUserDropdown)}
                             style={{
@@ -354,6 +360,7 @@ function Header({ showHomeButton = false }) {
                                 </button>
                             </div>
                         )}
+                        </div>
                     </div>
                 )}
             </nav>

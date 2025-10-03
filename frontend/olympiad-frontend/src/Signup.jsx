@@ -10,6 +10,8 @@ function Signup() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState(""); // Add email state
   const [password, setPassword] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [marketingEmails, setMarketingEmails] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -26,6 +28,8 @@ function Signup() {
         username,
         email, // Send email
         password,
+        email_notifications: emailNotifications,
+        marketing_emails: marketingEmails,
       });
       
       // Check if we received a token (automatic login)
@@ -176,6 +180,98 @@ function Signup() {
                 onFocus={(e) => e.target.style.borderColor = colors.primary}
                 onBlur={(e) => e.target.style.borderColor = colors.gray[300]}
               />
+            </div>
+
+            {/* Notification Preferences */}
+            <div style={{ marginBottom: spacing.lg }}>
+              <h3 style={{
+                fontSize: typography.fontSize.lg,
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.dark,
+                marginBottom: spacing.md
+              }}>
+                Notification Preferences
+              </h3>
+              
+              <div style={{ marginBottom: spacing.md }}>
+                <label style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: spacing.sm,
+                  cursor: "pointer",
+                  padding: spacing.sm,
+                  borderRadius: borderRadius.md,
+                  transition: "background-color 0.2s ease"
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={emailNotifications}
+                    onChange={(e) => setEmailNotifications(e.target.checked)}
+                    style={{
+                      marginTop: "2px",
+                      transform: "scale(1.2)",
+                      accentColor: colors.primary
+                    }}
+                  />
+                  <div>
+                    <div style={{
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.dark,
+                      fontSize: typography.fontSize.base,
+                      marginBottom: spacing.xs
+                    }}>
+                      Email Notifications
+                    </div>
+                    <div style={{
+                      color: colors.gray[600],
+                      fontSize: typography.fontSize.sm,
+                      lineHeight: 1.4
+                    }}>
+                      Get notified via email when someone likes, comments, or follows you (You can change this later in Settings)
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div style={{ marginBottom: spacing.md }}>
+                <label style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: spacing.sm,
+                  cursor: "pointer",
+                  padding: spacing.sm,
+                  borderRadius: borderRadius.md,
+                  transition: "background-color 0.2s ease"
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={marketingEmails}
+                    onChange={(e) => setMarketingEmails(e.target.checked)}
+                    style={{
+                      marginTop: "2px",
+                      transform: "scale(1.2)",
+                      accentColor: colors.primary
+                    }}
+                  />
+                  <div>
+                    <div style={{
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.dark,
+                      fontSize: typography.fontSize.base,
+                      marginBottom: spacing.xs
+                    }}>
+                      Marketing Updates
+                    </div>
+                    <div style={{
+                      color: colors.gray[600],
+                      fontSize: typography.fontSize.sm,
+                      lineHeight: 1.4
+                    }}>
+                      Receive occasional updates about new features and improvements (You can change this later in Settings)
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <Button 

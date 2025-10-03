@@ -6,6 +6,8 @@ class RegisterRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+    email_notifications: bool = False  # Default to False, user opts in
+    marketing_emails: bool = False    # Default to False, user opts in
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -94,3 +96,47 @@ class BookmarkResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Notification schemas
+class NotificationPreferencesCreate(BaseModel):
+    email_likes: bool = True
+    email_comments: bool = True
+    email_follows: bool = True
+    email_marketing: bool = False
+    in_app_likes: bool = True
+    in_app_comments: bool = True
+    in_app_follows: bool = True
+
+class NotificationPreferencesResponse(BaseModel):
+    id: int
+    user_id: int
+    email_likes: bool
+    email_comments: bool
+    email_follows: bool
+    email_marketing: bool
+    in_app_likes: bool
+    in_app_comments: bool
+    in_app_follows: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    type: str
+    title: str
+    message: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class NotificationCreate(BaseModel):
+    user_id: int
+    type: str
+    title: str
+    message: str

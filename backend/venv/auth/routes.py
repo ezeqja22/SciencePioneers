@@ -3,11 +3,13 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
+from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
+from notification_service import NotificationService
 from typing import List
 from datetime import datetime
 from fastapi import UploadFile, File
@@ -139,11 +141,26 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
         password_hash=hashed, 
         is_verified=False,
         verification_code=verification_code,
-        verification_expires=verification_expires
+        verification_expires=verification_expires,
+        marketing_emails=req.marketing_emails
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Create notification preferences
+    notification_preferences = NotificationPreferences(
+        user_id=user.id,
+        email_likes=req.email_notifications,
+        email_comments=req.email_notifications,
+        email_follows=req.email_notifications,
+        email_marketing=req.marketing_emails,
+        in_app_likes=True,  # In-app notifications default to True
+        in_app_comments=True,
+        in_app_follows=True
+    )
+    db.add(notification_preferences)
+    db.commit()
     
     # Debug: Verify the user was created with the correct verification code
     print(f"DEBUG: User created with ID: {user.id}")
@@ -530,6 +547,15 @@ def create_comment(
     db.commit()
     db.refresh(db_comment)
     
+    # Send notification if not the author commenting on their own problem
+    if problem.author_id != current_user.id:
+        notification_service = NotificationService(db)
+        notification_service.send_comment_notification(
+            user_id=problem.author_id,
+            commenter_username=current_user.username,
+            problem_title=problem.title
+        )
+    
     # Fetch the comment with author relationship
     db_comment = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.id == db_comment.id).first()
     return db_comment
@@ -725,6 +751,15 @@ def vote_problem(
         )
         db.add(new_vote)
         db.commit()
+        
+        # Send notification if it's a like and not the author liking their own problem
+        if vote_type == "like" and problem.author_id != current_user.id:
+            notification_service = NotificationService(db)
+            notification_service.send_like_notification(
+                user_id=problem.author_id,
+                liker_username=current_user.username,
+                problem_title=problem.title
+            )
     
     # STEP 3: Get the current state from database
     current_vote = db.query(Vote).filter(
@@ -1013,6 +1048,13 @@ def follow_user(
     follow = Follow(follower_id=current_user.id, following_id=user_id)
     db.add(follow)
     db.commit()
+    
+    # Send notification to the user being followed
+    notification_service = NotificationService(db)
+    notification_service.send_follow_notification(
+        user_id=user_id,
+        follower_username=current_user.username
+    )
     
     return {"message": f"Now following {target_user.username}"}
 
@@ -1811,5 +1853,125 @@ async def increment_view_count(
     db.commit()
     
     return {"message": "View count incremented", "view_count": problem.view_count}
+
+# Notification endpoints
+@router.get("/notifications", response_model=List[NotificationResponse])
+def get_notifications(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all notifications for the current user"""
+    notifications = db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).order_by(Notification.created_at.desc()).all()
+    
+    return notifications
+
+@router.get("/notifications/unread-count")
+def get_unread_notifications_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get count of unread notifications"""
+    count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).count()
+    
+    return {"unread_count": count}
+
+@router.put("/notifications/{notification_id}/read")
+def mark_notification_as_read(
+    notification_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a notification as read"""
+    notification = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+    
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    notification.is_read = True
+    db.commit()
+    
+    return {"message": "Notification marked as read"}
+
+@router.put("/notifications/mark-all-read")
+def mark_all_notifications_as_read(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark all notifications as read"""
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({"is_read": True})
+    
+    db.commit()
+    return {"message": "All notifications marked as read"}
+
+@router.get("/notification-preferences", response_model=NotificationPreferencesResponse)
+def get_notification_preferences(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's notification preferences"""
+    preferences = db.query(NotificationPreferences).filter(
+        NotificationPreferences.user_id == current_user.id
+    ).first()
+    
+    if not preferences:
+        # Create default preferences if they don't exist
+        preferences = NotificationPreferences(
+            user_id=current_user.id,
+            email_likes=True,
+            email_comments=True,
+            email_follows=True,
+            email_marketing=current_user.marketing_emails,
+            in_app_likes=True,
+            in_app_comments=True,
+            in_app_follows=True
+        )
+        db.add(preferences)
+        db.commit()
+        db.refresh(preferences)
+    
+    return preferences
+
+@router.put("/notification-preferences", response_model=NotificationPreferencesResponse)
+def update_notification_preferences(
+    preferences: NotificationPreferencesCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user's notification preferences"""
+    db_preferences = db.query(NotificationPreferences).filter(
+        NotificationPreferences.user_id == current_user.id
+    ).first()
+    
+    if not db_preferences:
+        # Create new preferences
+        db_preferences = NotificationPreferences(
+            user_id=current_user.id,
+            **preferences.dict()
+        )
+        db.add(db_preferences)
+    else:
+        # Update existing preferences
+        for field, value in preferences.dict().items():
+            setattr(db_preferences, field, value)
+        db_preferences.updated_at = datetime.utcnow()
+    
+    # Also update marketing_emails in user table
+    current_user.marketing_emails = preferences.email_marketing
+    
+    db.commit()
+    db.refresh(db_preferences)
+    
+    return db_preferences
 
 

@@ -18,12 +18,15 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     verification_code = Column(String, nullable=True)
     verification_expires = Column(DateTime, nullable=True)
+    marketing_emails = Column(Boolean, default=False)
     problems = relationship("Problem", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     votes = relationship("Vote", back_populates="user")
     bookmarks = relationship("Bookmark", back_populates="user")
     following = relationship("Follow", foreign_keys="Follow.follower_id", back_populates="follower")
     followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
+    notifications = relationship("Notification", back_populates="user")
+    notification_preferences = relationship("NotificationPreferences", back_populates="user", uselist=False)
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -93,3 +96,29 @@ class ProblemImage(Base):
     filename = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     problem = relationship("Problem", back_populates="images")
+
+class NotificationPreferences(Base):
+    __tablename__ = "notification_preferences"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    email_likes = Column(Boolean, default=True)
+    email_comments = Column(Boolean, default=True)
+    email_follows = Column(Boolean, default=True)
+    email_marketing = Column(Boolean, default=False)
+    in_app_likes = Column(Boolean, default=True)
+    in_app_comments = Column(Boolean, default=True)
+    in_app_follows = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User", back_populates="notification_preferences")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    type = Column(String, nullable=False)  # 'like', 'comment', 'follow', etc.
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User", back_populates="notifications")

@@ -210,6 +210,51 @@ class EmailService:
         except Exception as e:
             print(f"Error sending account deletion email to {to_email}: {str(e)}")
             return False
+    
+    def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
+        """Send notification email to user"""
+        try:
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = self.sender_email
+            msg['To'] = to_email
+            
+            # Create HTML content
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: #2d7a5f; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                        <h1>🔬 Science Pioneers</h1>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <h2>Notification</h2>
+                        <p>{body}</p>
+                        <p>Visit <a href="http://localhost:3000">SciencePioneers</a> to see more!</p>
+                        <p>Best regards,<br>SciencePioneers Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Attach HTML content
+            html_part = MIMEText(html_content, 'html')
+            msg.attach(html_part)
+            
+            # Connect to SMTP server and send email
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()  # Enable TLS encryption
+                server.login(self.sender_email, self.sender_password)
+                server.send_message(msg)
+            
+            print(f"Notification email sent to {to_email}")
+            return True
+            
+        except Exception as e:
+            print(f"Error sending notification email to {to_email}: {str(e)}")
+            return False
 
 # Create global email service instance
 email_service = EmailService()

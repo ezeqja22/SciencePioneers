@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors } from "./designSystem";
 import { getUserInitial } from "./utils";
+import NotificationBell from "./components/NotificationBell";
 
 function Homepage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -213,8 +214,13 @@ function Homepage() {
                             </Link>
                         </div>
                     ) : (
-                        /* User Dropdown */
-                        <div style={{ position: "relative" }}>
+                        /* Authenticated User Section */
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {/* Notification Bell */}
+                            <NotificationBell />
+                            
+                            {/* User Dropdown */}
+                            <div style={{ position: "relative" }}>
                             <button
                                 onClick={() => setShowUserDropdown(!showUserDropdown)}
                                 style={{
@@ -325,6 +331,7 @@ function Homepage() {
                                     </button>
                                 </div>
                             )}
+                            </div>
                         </div>
                     )}
                 </nav>

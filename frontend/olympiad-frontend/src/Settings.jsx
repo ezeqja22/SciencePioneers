@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
 import BackButton from "./components/BackButton";
+import Switch from "./components/Switch";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 function Settings() {
@@ -15,10 +16,18 @@ function Settings() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    
+    // Notification preferences state
+    const [notificationPrefs, setNotificationPrefs] = useState(null);
+    const [prefsLoading, setPrefsLoading] = useState(false);
+    const [prefsError, setPrefsError] = useState("");
+    const [prefsSuccess, setPrefsSuccess] = useState(false);
+    
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchCurrentUser();
+        fetchNotificationPreferences();
     }, []);
 
     const fetchCurrentUser = async () => {
@@ -37,6 +46,55 @@ function Settings() {
             console.error("Error fetching current user:", error);
             navigate("/login");
         }
+    };
+
+    const fetchNotificationPreferences = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get("http://127.0.0.1:8000/auth/notification-preferences", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setNotificationPrefs(response.data);
+        } catch (error) {
+            console.error("Error fetching notification preferences:", error);
+            setPrefsError("Failed to load notification preferences");
+        }
+    };
+
+    const updateNotificationPreferences = async (updatedPrefs) => {
+        try {
+            setPrefsLoading(true);
+            setPrefsError("");
+            setPrefsSuccess(false);
+
+            const token = localStorage.getItem("token");
+            const response = await axios.put("http://127.0.0.1:8000/auth/notification-preferences", updatedPrefs, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setNotificationPrefs(response.data);
+            setPrefsSuccess(true);
+            setTimeout(() => setPrefsSuccess(false), 3000);
+        } catch (error) {
+            console.error("Error updating notification preferences:", error);
+            setPrefsError("Failed to update notification preferences");
+        } finally {
+            setPrefsLoading(false);
+        }
+    };
+
+    const handlePreferenceChange = (field, value) => {
+        if (!notificationPrefs) return;
+        
+        const updatedPrefs = {
+            ...notificationPrefs,
+            [field]: value
+        };
+        
+        setNotificationPrefs(updatedPrefs);
+        updateNotificationPreferences(updatedPrefs);
     };
 
     const handleDeleteAccount = () => {
@@ -202,6 +260,243 @@ function Settings() {
                                 {currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString() : "Unknown"}
                             </span>
                         </div>
+                    </div>
+
+                    {/* Notification Preferences Section */}
+                    <div style={{ 
+                        borderTop: `1px solid ${colors.gray[300]}`, 
+                        paddingTop: spacing.xl,
+                        marginBottom: spacing.xl
+                    }}>
+                        <h2 style={{ 
+                            fontSize: typography.fontSize.xl, 
+                            fontWeight: typography.fontWeight.semibold,
+                            color: colors.dark,
+                            marginBottom: spacing.md
+                        }}>
+                            Notification Preferences
+                        </h2>
+                        
+                        {prefsError && (
+                            <div style={{
+                                backgroundColor: colors.error + "20",
+                                color: colors.error,
+                                padding: spacing.md,
+                                borderRadius: borderRadius.md,
+                                marginBottom: spacing.md,
+                                border: `1px solid ${colors.error}40`
+                            }}>
+                                {prefsError}
+                            </div>
+                        )}
+                        
+                        {prefsSuccess && (
+                            <div style={{
+                                backgroundColor: colors.success + "20",
+                                color: colors.success,
+                                padding: spacing.md,
+                                borderRadius: borderRadius.md,
+                                marginBottom: spacing.md,
+                                border: `1px solid ${colors.success}40`
+                            }}>
+                                ✅ Notification preferences updated successfully!
+                            </div>
+                        )}
+
+                        {notificationPrefs ? (
+                            <div>
+                                {/* Email Notifications */}
+                                <div style={{ marginBottom: spacing.xl }}>
+                                    <h3 style={{
+                                        fontSize: typography.fontSize.lg,
+                                        fontWeight: typography.fontWeight.semibold,
+                                        color: colors.dark,
+                                        marginBottom: spacing.md
+                                    }}>
+                                        📧 Email Notifications
+                                    </h3>
+                                    
+                                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Likes & Comments
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Get notified when someone likes or comments on your problems
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_likes}
+                                                onChange={(e) => handlePreferenceChange('email_likes', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Follows
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Get notified when someone follows you
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_follows}
+                                                onChange={(e) => handlePreferenceChange('email_follows', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Marketing Updates
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Receive occasional updates about new features and improvements
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_marketing}
+                                                onChange={(e) => handlePreferenceChange('email_marketing', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {/* In-App Notifications */}
+                                <div>
+                                    <h3 style={{
+                                        fontSize: typography.fontSize.lg,
+                                        fontWeight: typography.fontWeight.semibold,
+                                        color: colors.dark,
+                                        marginBottom: spacing.md
+                                    }}>
+                                        🔔 In-App Notifications
+                                    </h3>
+                                    
+                                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Likes & Comments
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Show notifications in the bell icon when someone likes or comments
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.in_app_likes}
+                                                onChange={(e) => handlePreferenceChange('in_app_likes', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Follows
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Show notifications in the bell icon when someone follows you
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.in_app_follows}
+                                                onChange={(e) => handlePreferenceChange('in_app_follows', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{
+                                textAlign: "center",
+                                padding: spacing.xl,
+                                color: colors.gray[600]
+                            }}>
+                                {prefsLoading ? "Loading preferences..." : "Failed to load notification preferences"}
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ 
