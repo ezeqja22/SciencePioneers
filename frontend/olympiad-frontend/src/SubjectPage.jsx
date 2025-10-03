@@ -322,7 +322,7 @@ function SubjectPage() {
                             {paginatedProblems.map((problem) => (
                                 <div 
                                     key={problem.id} 
-                                    onClick={() => navigate(`/problem/${problem.id}`)}
+                                    onClick={() => navigate(`/problem/${problem.id}?from=subject&subject=${encodeURIComponent(subject)}`)}
                                     style={{
                                         backgroundColor: "white",
                                         border: "1px solid #e9ecef",

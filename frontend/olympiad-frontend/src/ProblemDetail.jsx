@@ -45,6 +45,9 @@ function ProblemDetail() {
         const urlParams = new URLSearchParams(location.search);
         const from = urlParams.get('from');
         const tab = urlParams.get('tab');
+        const subject = urlParams.get('subject');
+        const searchQuery = urlParams.get('q');
+        const searchTab = urlParams.get('searchTab');
         
         if (from === 'feed' && tab) {
             // Return to specific feed tab
@@ -54,6 +57,25 @@ function ProblemDetail() {
         if (from === '/profile') {
             // Return to user profile
             return '/profile';
+        }
+        
+        if (from === 'search' && searchQuery) {
+            // Return to search results with query and tab
+            let searchPath = `/search?q=${encodeURIComponent(searchQuery)}`;
+            if (searchTab) {
+                searchPath += `&tab=${searchTab}`;
+            }
+            return searchPath;
+        }
+        
+        if (from === 'subject' && subject) {
+            // Return to subject page
+            return `/subject/${encodeURIComponent(subject)}`;
+        }
+        
+        if (from === 'user' && urlParams.get('username')) {
+            // Return to user profile
+            return `/user/${encodeURIComponent(urlParams.get('username'))}`;
         }
         
         // Default fallback
@@ -446,16 +468,9 @@ function ProblemDetail() {
                 }
             });
             
-            // Smart navigation: go back to the previous page
-            // Check if user came from a specific page, otherwise default to feed
-            const referrer = document.referrer;
-            if (referrer.includes('/feed') || referrer.includes('/profile') || referrer.includes('/user/')) {
-                // Go back to the previous page
-                window.history.back();
-            } else {
-                // Default to feed if no specific referrer
-                navigate('/feed');
-            }
+            // Smart navigation: redirect to the previous page with context
+            const smartPath = getSmartFallbackPath();
+            navigate(smartPath);
         } catch (error) {
             console.error("Error deleting problem:", error);
             alert("Error deleting problem. Please try again.");

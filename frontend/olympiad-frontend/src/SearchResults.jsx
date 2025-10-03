@@ -554,7 +554,7 @@ const SearchResults = () => {
                         {searchResults.problems.map((problem) => (
                             <div
                                 key={problem.id}
-                                onClick={() => navigate(`/problem/${problem.id}`)}
+                                onClick={() => navigate(`/problem/${problem.id}?from=search&q=${encodeURIComponent(query)}&searchTab=${activeTab}`)}
                                 style={{
                                     border: "1px solid #ddd",
                                     borderRadius: "10px",

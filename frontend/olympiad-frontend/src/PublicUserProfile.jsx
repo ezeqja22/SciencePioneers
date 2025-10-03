@@ -430,7 +430,7 @@ const PublicUserProfile = () => {
                                         <span>💬 {problem.comment_count}</span>
                                     </div>
                                     <button 
-                                        onClick={() => navigate(`/problem/${problem.id}`)}
+                                        onClick={() => navigate(`/problem/${problem.id}?from=user&username=${encodeURIComponent(username)}`)}
                                         style={{
                                             padding: '8px 16px',
                                             backgroundColor: '#007bff',
