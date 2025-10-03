@@ -117,6 +117,11 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     verification_code = email_service.generate_verification_code()
     verification_expires = email_service.get_verification_expiry()
     
+    # Debug prints
+    print(f"DEBUG: Generated verification code: {verification_code}")
+    print(f"DEBUG: Verification expires at: {verification_expires}")
+    print(f"DEBUG: Creating user for email: {req.email}")
+    
     # Try to send email BEFORE creating user
     success = await email_service.send_verification_email(
         req.email, req.username, verification_code
@@ -140,18 +145,31 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     
+    # Debug: Verify the user was created with the correct verification code
+    print(f"DEBUG: User created with ID: {user.id}")
+    print(f"DEBUG: User verification_code in DB: {user.verification_code}")
+    print(f"DEBUG: User verification_expires in DB: {user.verification_expires}")
+    
+    # Generate JWT token for automatic login
+    from auth.utils import create_jwt
+    access_token = create_jwt(user.id)
+    
     if not success:
         return {
             "message": "Registration successful! Email sending failed, but user created for testing.",
             "debug_code": verification_code,
             "email": req.email,
-            "username": req.username
+            "username": req.username,
+            "access_token": access_token,
+            "token_type": "bearer"
         }
     
     return {
         "message": "Registration successful! Please check your email for verification code.",
         "email": req.email,
-        "username": req.username
+        "username": req.username,
+        "access_token": access_token,
+        "token_type": "bearer"
     }
 
 @router.post("/login", response_model=TokenResponse)
@@ -1470,6 +1488,11 @@ def verify_email(
     email = request.get("email")
     verification_code = request.get("verification_code")
     
+    # Debug prints
+    print(f"DEBUG: Received verification request for email: {email}")
+    print(f"DEBUG: Received verification code: {verification_code}")
+    print(f"DEBUG: Request data: {request}")
+    
     if not email or not verification_code:
         raise HTTPException(status_code=400, detail="Email and verification code are required")
     
@@ -1477,7 +1500,13 @@ def verify_email(
     # Find user
     user = db.query(User).filter(User.email == email).first()
     if not user:
+        print(f"DEBUG: User not found for email: {email}")
         raise HTTPException(status_code=404, detail="User not found")
+    
+    print(f"DEBUG: Found user: {user.username}")
+    print(f"DEBUG: User's stored verification code: {user.verification_code}")
+    print(f"DEBUG: User is_verified: {user.is_verified}")
+    print(f"DEBUG: User verification_expires: {user.verification_expires}")
     
     # Check if already verified
     if user.is_verified:
@@ -1485,10 +1514,17 @@ def verify_email(
     
     # Check verification code
     if not user.verification_code or user.verification_code != verification_code:
+        print(f"DEBUG: Verification code mismatch!")
+        print(f"DEBUG: Expected: {user.verification_code}")
+        print(f"DEBUG: Received: {verification_code}")
+        print(f"DEBUG: Codes match: {user.verification_code == verification_code}")
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if code has expired
     if user.verification_expires and user.verification_expires < datetime.utcnow():
+        print(f"DEBUG: Verification code has expired!")
+        print(f"DEBUG: Current time: {datetime.utcnow()}")
+        print(f"DEBUG: Expiry time: {user.verification_expires}")
         raise HTTPException(status_code=400, detail="Verification code has expired")
     
     # Verify user
@@ -1497,6 +1533,7 @@ def verify_email(
     user.verification_expires = None
     db.commit()
     
+    print(f"DEBUG: Email verification successful for {email}")
     return {"message": "Email verified successfully"}
 
 @router.get("/verification-status/{email}")

@@ -28,14 +28,30 @@ function Signup() {
         password,
       });
       
-      // Redirect to verification page with email, username, and redirect path
-      navigate("/verify-email", { 
-        state: { 
-          email: email, 
-          username: username,
-          redirectTo: redirectTo
-        } 
-      });
+      // Check if we received a token (automatic login)
+      if (response.data.access_token) {
+        // Store the token for automatic login
+        localStorage.setItem("token", response.data.access_token);
+        
+        // Redirect to verification page with email, username, redirect path, and token
+        navigate("/verify-email", { 
+          state: { 
+            email: email, 
+            username: username,
+            redirectTo: redirectTo,
+            token: response.data.access_token
+          } 
+        });
+      } else {
+        // Fallback: redirect to verification page without token
+        navigate("/verify-email", { 
+          state: { 
+            email: email, 
+            username: username,
+            redirectTo: redirectTo
+          } 
+        });
+      }
     } catch (err) {
       alert("Signup failed: " + (err.response?.data?.detail || err.message));
     }

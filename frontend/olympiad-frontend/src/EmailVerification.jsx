@@ -11,6 +11,7 @@ const EmailVerification = () => {
   const email = location.state?.email || '';
   const username = location.state?.username || '';
   const redirectTo = location.state?.redirectTo || '/homepage';
+  const token = location.state?.token || null;
   
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,12 @@ const EmailVerification = () => {
 
       if (response.status === 200) {
         setSuccess(true);
+        
+        // If we have a token from signup, ensure it's stored for automatic login
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+        
         setTimeout(() => {
           navigate(redirectTo);
         }, 2000);
@@ -108,10 +115,10 @@ const EmailVerification = () => {
           <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
           <h2 style={{ color: '#28a745', marginBottom: '20px' }}>Email Verified!</h2>
           <p style={{ color: '#666', marginBottom: '20px' }}>
-            Your email has been successfully verified. You can now log in to your account.
+            Your email has been successfully verified. You are now automatically logged in!
           </p>
           <p style={{ color: '#999', fontSize: '14px' }}>
-            Redirecting to login page...
+            Redirecting to your dashboard...
           </p>
         </div>
       </div>
