@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import Card from './components/Card';
 import Button from './components/Button';
 import BackButton from './components/BackButton';
+import FollowButton from './components/FollowButton';
 import { colors, spacing, typography, borderRadius } from './designSystem';
 import { getUserInitial, getDisplayName } from './utils';
 import { InlineMath, BlockMath } from 'react-katex';
@@ -479,23 +480,12 @@ const SearchResults = () => {
                                         </p>
                                     </div>
                                     {currentUser && currentUser.id !== user.id && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleFollow(user.id);
-                                            }}
-                                            style={{
-                                                padding: "8px 16px",
-                                                backgroundColor: user.is_following ? "#28a745" : "#007bff",
-                                                color: "white",
-                                                border: "none",
-                                                borderRadius: "5px",
-                                                cursor: "pointer",
-                                                fontSize: "12px"
-                                            }}
-                                        >
-                                            {user.is_following ? "✓ Following" : "+ Follow"}
-                                        </button>
+                                        <FollowButton
+                                            isFollowing={user.is_following}
+                                            onFollow={() => handleFollow(user.id)}
+                                            onUnfollow={() => handleFollow(user.id)}
+                                            size="sm"
+                                        />
                                     )}
                                 </div>
                                 {user.bio && (

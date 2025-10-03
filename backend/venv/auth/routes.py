@@ -1974,4 +1974,53 @@ def update_notification_preferences(
     
     return db_preferences
 
+# Follow/Following endpoints
+@router.get("/followers/{user_id}")
+def get_followers(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of users who follow the specified user"""
+    # Get all users who follow this user
+    followers = db.query(User).join(Follow, Follow.follower_id == User.id).filter(
+        Follow.following_id == user_id,
+        User.is_active == True
+    ).all()
+    
+    return followers
+
+@router.get("/following/{user_id}")
+def get_following(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of users that the specified user follows"""
+    # Get all users that this user follows
+    following = db.query(User).join(Follow, Follow.following_id == User.id).filter(
+        Follow.follower_id == user_id,
+        User.is_active == True
+    ).all()
+    
+    return following
+
+@router.get("/followers/count/{user_id}")
+def get_followers_count(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get count of followers for a user"""
+    count = db.query(Follow).filter(Follow.following_id == user_id).count()
+    return {"followers_count": count}
+
+@router.get("/following/count/{user_id}")
+def get_following_count(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get count of users that a user follows"""
+    count = db.query(Follow).filter(Follow.follower_id == user_id).count()
+    return {"following_count": count}
+
 

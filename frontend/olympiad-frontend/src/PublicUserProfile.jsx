@@ -6,6 +6,7 @@ import Card from './components/Card';
 import Button from './components/Button';
 import BackButton from './components/BackButton';
 import AnimatedLoader from './components/AnimatedLoader';
+import FollowButton from './components/FollowButton';
 import { colors, spacing, typography, borderRadius } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -244,42 +245,54 @@ const PublicUserProfile = () => {
                         </p>
                     )}
                     <div style={{ display: 'flex', gap: '20px', color: '#666' }}>
-                        <span><strong>{userProfile.follower_count}</strong> followers</span>
-                        <span><strong>{userProfile.following_count}</strong> following</span>
+                        <span 
+                            style={{ 
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onClick={() => navigate(`/followers/${userProfile.user.id}`)}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.gray[100];
+                                e.currentTarget.style.color = colors.primary;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = '#666';
+                            }}
+                        >
+                            <strong>{userProfile.follower_count}</strong> followers
+                        </span>
+                        <span 
+                            style={{ 
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onClick={() => navigate(`/following/${userProfile.user.id}`)}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.gray[100];
+                                e.currentTarget.style.color = colors.primary;
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = '#666';
+                            }}
+                        >
+                            <strong>{userProfile.following_count}</strong> following
+                        </span>
                         <span><strong>{userProfile.problems.length}</strong> problems</span>
                     </div>
                 </div>
-                <button
-                    onClick={handleFollow}
-                    disabled={followLoading}
-                    style={{
-                        padding: '12px 24px',
-                        backgroundColor: following ? colors.primary : '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '25px',
-                        cursor: followLoading ? 'not-allowed' : 'pointer',
-                        opacity: followLoading ? 0.6 : 1,
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!followLoading) {
-                            e.target.style.transform = 'translateY(-1px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                        }
-                    }}
-                    onMouseLeave={(e) => {
-                        if (!followLoading) {
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                        }
-                    }}
-                >
-                    {followLoading ? 'Loading...' : (following ? '✓ Following' : '+ Follow')}
-                </button>
+                <FollowButton
+                    isFollowing={following}
+                    onFollow={handleFollow}
+                    onUnfollow={handleFollow}
+                    loading={followLoading}
+                    size="lg"
+                />
             </div>
 
             {/* Problems */}

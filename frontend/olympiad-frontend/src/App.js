@@ -15,6 +15,7 @@ import SearchResults from "./SearchResults";
 import Forums from "./Forums";
 import SubjectPage from "./SubjectPage";
 import Settings from "./Settings";
+import FollowersFollowing from "./components/FollowersFollowing";
 import AuthGuard from "./AuthGuard";
 
 function App() {
@@ -92,6 +93,20 @@ function App() {
           element={
             <ProtectedRoute>
           <Settings />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/followers/:userId" 
+          element={
+            <ProtectedRoute>
+          <FollowersFollowing type="followers" />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/following/:userId" 
+          element={
+            <ProtectedRoute>
+          <FollowersFollowing type="following" />
           </ProtectedRoute>
           } />
         </Routes>

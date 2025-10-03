@@ -11,6 +11,7 @@ import Card from "./components/Card";
 import Button from "./components/Button";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
+import FollowButton from "./components/FollowButton";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { getUserInitial, getDisplayName } from "./utils";
 
@@ -575,34 +576,13 @@ function Feed() {
                     
                     {/* Follow Button - Hide for own posts */}
                     {currentUser && problem.author.id !== currentUser.id && (
-                      <button
-                        onClick={(e) => handleFollow(problem.author.id, e)}
-            style={{
-                          padding: "4px 12px",
-                          backgroundColor: followStatus[problem.author.id] ? "#28a745" : "#007bff",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "15px",
-                          cursor: "pointer",
-                          fontSize: "12px",
-                          marginLeft: "auto",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px"
-                        }}
-                      >
-                        {followStatus[problem.author.id] ? (
-                          <>
-                            <span>✓</span>
-                            <span>Following</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>+</span>
-                            <span>Follow</span>
-                          </>
-                        )}
-                      </button>
+                      <FollowButton
+                        isFollowing={followStatus[problem.author.id]}
+                        onFollow={() => handleFollow(problem.author.id)}
+                        onUnfollow={() => handleFollow(problem.author.id)}
+                        size="sm"
+                        style={{ marginLeft: "auto" }}
+                      />
                     )}
                   </div>
                 </div>

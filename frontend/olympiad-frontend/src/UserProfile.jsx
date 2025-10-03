@@ -404,13 +404,43 @@ function UserProfile() {
                         
                         {/* Follower/Following Counts */}
                         <div style={{ display: "flex", gap: "20px", margin: "10px 0" }}>
-                            <div style={{ textAlign: "center" }}>
+                            <div 
+                                style={{ 
+                                    textAlign: "center", 
+                                    cursor: "pointer",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onClick={() => navigate(`/followers/${user.id}`)}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = colors.gray[100];
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                            >
                                 <div style={{ fontWeight: "bold", fontSize: "18px", color: "#333" }}>
                                     {user.follower_count || 0}
                                 </div>
                                 <div style={{ fontSize: "12px", color: "#666" }}>Followers</div>
                             </div>
-                            <div style={{ textAlign: "center" }}>
+                            <div 
+                                style={{ 
+                                    textAlign: "center", 
+                                    cursor: "pointer",
+                                    padding: "8px 12px",
+                                    borderRadius: "8px",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onClick={() => navigate(`/following/${user.id}`)}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = colors.gray[100];
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = "transparent";
+                                }}
+                            >
                                 <div style={{ fontWeight: "bold", fontSize: "18px", color: "#333" }}>
                                     {user.following_count || 0}
                                 </div>
@@ -696,7 +726,7 @@ function UserProfile() {
                                         e.target.style.transform = "translateY(0)";
                                         e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
                                     }}>
-                                        <Link to={`/problem/${problem.id}`} style={{ textDecoration: "none" }}>
+                                        <Link to={`/problem/${problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
                                             <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(problem.title)}</h4>
                                         </Link>
                                         <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
@@ -848,7 +878,7 @@ function UserProfile() {
                                         backgroundColor: "#f9f9f9"
                                     }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                                            <Link to={`/problem/${comment.problem.id}`} style={{ textDecoration: "none" }}>
+                                            <Link to={`/problem/${comment.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
                                                 <h5 style={{ margin: "0", color: "#007bff" }}>{renderMathContent(comment.problem.title)}</h5>
                                             </Link>
                                             <span style={{ fontSize: "12px", color: "#666" }}>
@@ -882,7 +912,7 @@ function UserProfile() {
                                         backgroundColor: "#f9f9f9"
                                     }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                                            <Link to={`/problem/${bookmark.problem.id}`} style={{ textDecoration: "none" }}>
+                                            <Link to={`/problem/${bookmark.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
                                                 <h4 style={{ margin: "0", color: "#333" }}>{renderMathContent(bookmark.problem.title)}</h4>
                                             </Link>
                                             <button

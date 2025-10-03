@@ -51,6 +51,11 @@ function ProblemDetail() {
             return `/feed?tab=${tab}`;
         }
         
+        if (from === '/profile') {
+            // Return to user profile
+            return '/profile';
+        }
+        
         // Default fallback
         return '/feed';
     };
@@ -1106,7 +1111,7 @@ function ProblemDetail() {
                         )}
                     </div>
 
-            <div style={{ marginBottom: "20px" }}>
+            <div style={{ marginBottom: "20px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <span style={{
                     backgroundColor: "#e0e7ff",
                     color: "#3730a3",
@@ -1114,7 +1119,6 @@ function ProblemDetail() {
                     borderRadius: "16px",
                     fontSize: "12px",
                     fontWeight: "600",
-                    marginRight: "8px",
                     boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
                     transition: "all 0.2s ease"
                 }}>
@@ -1128,7 +1132,6 @@ function ProblemDetail() {
                                 borderRadius: "16px",
                                 fontSize: "12px",
                                 fontWeight: "600",
-                                marginRight: "8px",
                                 boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
                                 transition: "all 0.2s ease"
                             }}>
@@ -1143,7 +1146,6 @@ function ProblemDetail() {
                                 borderRadius: "16px",
                                 fontSize: "12px",
                                 fontWeight: "600",
-                                marginRight: "8px",
                                 boxShadow: "0 2px 6px rgba(26, 77, 58, 0.2)",
                                 transition: "all 0.2s ease"
                             }}>
