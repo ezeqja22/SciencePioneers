@@ -10,6 +10,7 @@ import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
 import BackButton from "./components/BackButton";
+import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content
@@ -35,6 +36,7 @@ function Feed() {
   const location = useLocation();
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLoading, setShowLoading] = useState(false);
   const [voteData, setVoteData] = useState({});
   const [followStatus, setFollowStatus] = useState({});
   const [activeTab, setActiveTab] = useState("all"); // "all", "following", "trending"
@@ -51,20 +53,40 @@ function Feed() {
     // Only fetch data if user is authenticated
     const token = localStorage.getItem("token");
     if (token) {
-      fetchProblems();
+    fetchProblems();
       fetchCurrentUser();
     }
   }, []);
 
   useEffect(() => {
     // Fetch data when tab changes
+    let loadingTimeout;
+    
+    // Show loading after a short delay to allow animation to be visible
+    loadingTimeout = setTimeout(() => {
+      setShowLoading(true);
+    }, 300); // 300ms delay to see the sliding animation
+    
     if (activeTab === "all") {
-      fetchProblems();
+      fetchProblems().finally(() => {
+        clearTimeout(loadingTimeout);
+        setShowLoading(false);
+      });
     } else if (activeTab === "following") {
-      fetchFollowingProblems();
+      fetchFollowingProblems().finally(() => {
+        clearTimeout(loadingTimeout);
+        setShowLoading(false);
+      });
     } else if (activeTab === "trending") {
-      fetchTrendingProblems();
+      fetchTrendingProblems().finally(() => {
+        clearTimeout(loadingTimeout);
+        setShowLoading(false);
+      });
     }
+    
+    return () => {
+      clearTimeout(loadingTimeout);
+    };
   }, [activeTab]);
 
   // Handle URL parameters for tab navigation
@@ -349,11 +371,15 @@ function Feed() {
     }
   };
 
-  if (loading) {
+  if (showLoading) {
     return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h2>Loading problems...</h2>
-      </div>
+      <Layout showHomeButton={true}>
+        <AnimatedLoader 
+          type="problems" 
+          message="Loading problems..." 
+          size="large"
+        />
+      </Layout>
     );
   }
 
@@ -379,19 +405,20 @@ function Feed() {
         {/* Removed old search results - now handled by SearchBar component */}
 
       {/* Tab Navigation */}
-      <div style={{ 
-        display: "flex", 
-        borderBottom: `2px solid ${colors.gray[300]}`, 
-        marginBottom: spacing.xl,
-        gap: 0,
+      <div style={{
+        display: "flex",
+        marginBottom: spacing.lg,
         backgroundColor: colors.white,
-        borderRadius: `${borderRadius.md} ${borderRadius.md} 0 0`,
-        overflow: "hidden"
+        borderRadius: borderRadius.md,
+        overflow: "hidden",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+        border: `1px solid ${colors.gray[200]}`
       }}>
         <button
           onClick={() => setActiveTab("all")}
           style={{
-            padding: `${spacing.md} ${spacing.lg}`,
+            flex: 1,
+            padding: `${spacing.sm} ${spacing.md}`,
             border: "none",
             backgroundColor: activeTab === "all" ? colors.primary : "transparent",
             color: activeTab === "all" ? colors.white : colors.gray[600],
@@ -406,7 +433,8 @@ function Feed() {
         <button
           onClick={() => setActiveTab("following")}
           style={{
-            padding: `${spacing.md} ${spacing.lg}`,
+            flex: 1,
+            padding: `${spacing.sm} ${spacing.md}`,
             border: "none",
             backgroundColor: activeTab === "following" ? colors.primary : "transparent",
             color: activeTab === "following" ? colors.white : colors.gray[600],
@@ -421,7 +449,8 @@ function Feed() {
         <button
           onClick={() => setActiveTab("trending")}
           style={{
-            padding: `${spacing.md} ${spacing.lg}`,
+            flex: 1,
+            padding: `${spacing.sm} ${spacing.md}`,
             border: "none",
             backgroundColor: activeTab === "trending" ? colors.primary : "transparent",
             color: activeTab === "trending" ? colors.white : colors.gray[600],
@@ -439,20 +468,20 @@ function Feed() {
         <div style={{ textAlign: "center", marginTop: "50px" }}>
           {activeTab === "all" && (
             <>
-              <h3>No problems yet!</h3>
-              <p>Be the first to create a science problem.</p>
-              <Link to="/create-problem">
-                <button style={{ 
-                  padding: "10px 20px", 
-                  backgroundColor: "#28a745", 
-                  color: "white", 
-                  border: "none", 
-                  borderRadius: "5px",
-                  cursor: "pointer"
-                }}>
-                  Create First Problem
-                </button>
-              </Link>
+          <h3>No problems yet!</h3>
+          <p>Be the first to create a science problem.</p>
+          <Link to="/create-problem">
+            <button style={{ 
+              padding: "10px 20px", 
+              backgroundColor: "#28a745", 
+              color: "white", 
+              border: "none", 
+              borderRadius: "5px",
+              cursor: "pointer"
+            }}>
+              Create First Problem
+            </button>
+          </Link>
             </>
           )}
           {activeTab === "following" && (
@@ -547,7 +576,7 @@ function Feed() {
                     {currentUser && problem.author.id !== currentUser.id && (
                       <button
                         onClick={(e) => handleFollow(problem.author.id, e)}
-                        style={{
+            style={{
                           padding: "4px 12px",
                           backgroundColor: followStatus[problem.author.id] ? "#28a745" : "#007bff",
                           color: "white",
@@ -627,7 +656,7 @@ function Feed() {
                   </span>
                 )}
                 {problem.year && (
-                  <span style={{ 
+                  <span style={{
                     backgroundColor: "#e8f5e8", 
                     color: "#2e7d32",
                     padding: "4px 8px",
@@ -856,7 +885,7 @@ function Feed() {
             +
           </div>
         </Link>
-      </div>
+    </div>
     </Layout>
   );
 }

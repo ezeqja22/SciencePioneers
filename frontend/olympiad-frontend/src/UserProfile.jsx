@@ -5,6 +5,7 @@ import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
 import BackButton from "./components/BackButton";
+import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -259,9 +260,13 @@ function UserProfile() {
 
     if (loading) {
         return (
-            <div style={{ textAlign: "center", marginTop: "50px" }}>
-                <h2>Loading profile...</h2>
-            </div>
+            <Layout showHomeButton={true}>
+                <AnimatedLoader 
+                    type="profile" 
+                    message="Loading profile..." 
+                    size="large"
+                />
+            </Layout>
         );
     }
 

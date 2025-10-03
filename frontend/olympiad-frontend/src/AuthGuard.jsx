@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import LoginPopup from "./LoginPopup";
+import AnimatedLoader from "./components/AnimatedLoader";
 
 function AuthGuard({ children }) {
   const [isValidating, setIsValidating] = useState(true);
@@ -114,9 +115,11 @@ function AuthGuard({ children }) {
 
   if (isValidating) {
     return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h2>Validating session...</h2>
-      </div>
+      <AnimatedLoader 
+        type="verify" 
+        message="Validating session..." 
+        size="large"
+      />
     );
   }
 

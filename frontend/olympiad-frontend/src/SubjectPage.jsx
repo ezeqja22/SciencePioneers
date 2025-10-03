@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography } from "./designSystem";
 import BackButton from "./components/BackButton";
+import AnimatedLoader from "./components/AnimatedLoader";
+import Layout from "./components/Layout";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -31,7 +33,6 @@ function SubjectPage() {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [currentUser, setCurrentUser] = useState(null);
     const [voteData, setVoteData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
@@ -46,7 +47,6 @@ function SubjectPage() {
         const token = localStorage.getItem("token");
         if (token) {
             fetchProblems();
-            fetchCurrentUser();
         }
     }, [subject, currentPage]);
 
@@ -72,17 +72,6 @@ function SubjectPage() {
         }
     };
 
-    const fetchCurrentUser = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setCurrentUser(response.data);
-        } catch (error) {
-            console.error("Error fetching current user:", error);
-        }
-    };
 
     const fetchVoteData = async (problemsList) => {
         try {
@@ -183,139 +172,16 @@ function SubjectPage() {
 
     if (loading) {
         return (
-            <div style={{ 
-                minHeight: "100vh", 
-                backgroundColor: "#f8f9fa",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-            }}>
-                <h2 style={{ color: "#1a4d3a" }}>Loading {subjectName} problems...</h2>
-            </div>
+            <AnimatedLoader 
+                type="subject" 
+                message={`Loading ${subjectName} problems...`} 
+                size="large"
+            />
         );
     }
 
     return (
-        <div style={{ 
-            minHeight: "100vh", 
-            backgroundColor: "#f8f9fa",
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-        }}>
-            {/* Header */}
-            <header style={{
-                backgroundColor: "#1a4d3a",
-                color: "white",
-                padding: "1rem 2rem",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
-            }}>
-                <Link to="/" style={{ textDecoration: "none", color: "white" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{
-                            width: "40px",
-                            height: "40px",
-                            backgroundColor: "#2d7a5f",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "20px",
-                            fontWeight: "bold"
-                        }}>
-                            SP
-                        </div>
-                        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                            SciencePioneers
-                        </h1>
-                    </div>
-                </Link>
-
-
-                <nav style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <Link to="/feed" style={{ 
-                        color: "white", 
-                        textDecoration: "none", 
-                        fontWeight: "500",
-                        padding: "8px 16px",
-                        borderRadius: "6px",
-                        transition: "background-color 0.2s"
-                    }}>
-                        Feed
-                    </Link>
-                    <Link to="/" style={{ 
-                        color: "white", 
-                        textDecoration: "none", 
-                        fontWeight: "500",
-                        padding: "8px 16px",
-                        borderRadius: "6px",
-                        transition: "background-color 0.2s"
-                    }}>
-                        Home
-                    </Link>
-                    
-                    {/* Subject Dropdown */}
-                    <div style={{ position: "relative" }}>
-                        <select 
-                            value={subjectName}
-                            onChange={(e) => {
-                                if (e.target.value !== subjectName) {
-                                    navigate(`/subject/${e.target.value.toLowerCase().replace(/\s+/g, '-')}`);
-                                }
-                            }}
-                            style={{
-                                backgroundColor: "#2d7a5f",
-                                color: "white",
-                                border: "1px solid #4a9d7a",
-                                borderRadius: "6px",
-                                padding: "8px 12px",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                cursor: "pointer",
-                                outline: "none"
-                            }}
-                        >
-                            <option value="Mathematics">Mathematics</option>
-                            <option value="Physics">Physics</option>
-                            <option value="Chemistry">Chemistry</option>
-                            <option value="Biology">Biology</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Engineering">Engineering</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    
-                    {currentUser && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <div style={{
-                                width: "32px",
-                                height: "32px",
-                                borderRadius: "50%",
-                                backgroundColor: "#2d7a5f",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "white",
-                                fontSize: "14px",
-                                fontWeight: "bold",
-                                backgroundImage: currentUser.profile_picture ? 
-                                    `url(http://127.0.0.1:8000/auth/serve-image/${currentUser.profile_picture.split('/').pop()})` : "none",
-                                backgroundSize: "cover",
-                                backgroundPosition: "center"
-                            }}>
-                                {!currentUser.profile_picture && currentUser.username.charAt(0).toUpperCase()}
-                            </div>
-                            <span style={{ fontSize: "14px", fontWeight: "500" }}>
-                                {currentUser.username}
-                            </span>
-                        </div>
-                    )}
-                </nav>
-            </header>
-
-            {/* Main Content */}
-            <main style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+        <Layout showHomeButton={true}>
                 <div style={{ marginBottom: "2rem" }}>
                     {/* Back Button */}
                     <div style={{ marginBottom: "1rem" }}>
@@ -782,8 +648,7 @@ function SubjectPage() {
                         </div>
                     </Link>
                 </div>
-            </main>
-        </div>
+        </Layout>
     );
 }
 

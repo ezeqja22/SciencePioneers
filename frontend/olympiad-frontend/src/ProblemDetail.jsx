@@ -10,6 +10,7 @@ import Layout from "./components/Layout";
 import Card from "./components/Card";
 import Button from "./components/Button";
 import BackButton from "./components/BackButton";
+import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 
 // Helper function to render math content
@@ -413,7 +414,15 @@ function ProblemDetail() {
     }, [id]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <Layout showHomeButton={true}>
+                <AnimatedLoader 
+                    type="problems" 
+                    message="Loading problem..." 
+                    size="large"
+                />
+            </Layout>
+        );
     }
 
     if (!problem) {
