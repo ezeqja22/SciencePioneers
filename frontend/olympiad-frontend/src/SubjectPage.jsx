@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography } from "./designSystem";
+import { getUserInitial, getDisplayName } from "./utils";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import Layout from "./components/Layout";
@@ -364,7 +365,7 @@ function SubjectPage() {
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center"
                                             }}>
-                                                {!problem.author.profile_picture && problem.author.username.charAt(0).toUpperCase()}
+                                                {!problem.author.profile_picture && getUserInitial(problem.author.username)}
                                             </div>
                                             <div>
                                                 <div style={{ 
@@ -372,7 +373,7 @@ function SubjectPage() {
                                                     fontSize: "14px", 
                                                     color: "#1a4d3a"
                                                 }}>
-                                                    {problem.author.username}
+                                                    {getDisplayName(problem.author.username)}
                                                 </div>
                                                 <div style={{ fontSize: "12px", color: "#666" }}>
                                                     {new Date(problem.created_at).toLocaleDateString()}

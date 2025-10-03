@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { colors } from "./designSystem";
+import { getUserInitial } from "./utils";
 
 function Homepage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -234,7 +236,7 @@ function Homepage() {
                                     width: "32px",
                                     height: "32px",
                                     borderRadius: "50%",
-                                    backgroundColor: "#2d7a5f",
+                                    backgroundColor: colors.secondary,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -246,7 +248,7 @@ function Homepage() {
                                     backgroundSize: "cover",
                                     backgroundPosition: "center"
                                 }}>
-                                    {!currentUser.profile_picture && currentUser.username.charAt(0).toUpperCase()}
+                                    {!currentUser.profile_picture && getUserInitial(currentUser.username)}
                                 </div>
                                 <span style={{ fontSize: "14px", fontWeight: "500" }}>
                                     {currentUser.username}
@@ -283,6 +285,24 @@ function Homepage() {
                                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                         >
                                             My Profile
+                                        </button>
+                                    </Link>
+                                    <Link to="/settings" style={{ textDecoration: "none" }}>
+                                        <button style={{
+                                            width: "100%",
+                                            padding: "12px 16px",
+                                            border: "none",
+                                            backgroundColor: "transparent",
+                                            color: "#333",
+                                            textAlign: "left",
+                                            cursor: "pointer",
+                                            fontSize: "14px",
+                                            transition: "background-color 0.2s"
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                                        >
+                                            ⚙️ Settings
                                         </button>
                                     </Link>
                                     <button

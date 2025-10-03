@@ -101,15 +101,15 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     # Check if email is already registered (verified or not)
     existing_user = db.query(User).filter(User.email == req.email).first()
     if existing_user:
-        if existing_user.is_verified:
+        if existing_user.is_verified and existing_user.is_active:
             raise HTTPException(status_code=400, detail="Email already registered")
         else:
-            # User exists but not verified - delete the old record and create new one
+            # User exists but not verified or is deleted - delete the old record and create new one
             db.delete(existing_user)
             db.commit()
     
-    # Check if username is already taken
-    if db.query(User).filter(User.username == req.username).first():
+    # Check if username is already taken (only for active users)
+    if db.query(User).filter(User.username == req.username, User.is_active == True).first():
         raise HTTPException(status_code=400, detail="Username already taken")
     
     # Generate verification code first
@@ -541,7 +541,23 @@ def get_comments(problem_id: int, db: Session = Depends(get_db)):
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    comments = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
+    # Get comments first, then manually load author info to handle inactive users
+    comments = db.query(Comment).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
+    
+    # Manually load author info for each comment to handle inactive users
+    for comment in comments:
+        if comment.author_id:
+            # Query for user regardless of is_active status
+            author = db.query(User).filter(User.id == comment.author_id).first()
+            comment.author = author
+    
+    # Debug: Print comment info
+    print(f"DEBUG: Found {len(comments)} comments for problem {problem_id}")
+    for comment in comments:
+        print(f"DEBUG: Comment {comment.id} by user {comment.author_id}: {comment.author.username if comment.author else 'No author'}")
+        if comment.author:
+            print(f"DEBUG: Author is_active: {comment.author.is_active}, username: {comment.author.username}")
+    
     return comments
 
 
@@ -1548,6 +1564,94 @@ def get_verification_status(email: str, db: Session = Depends(get_db)):
         "is_verified": user.is_verified,
         "verification_expires": user.verification_expires.isoformat() if user.verification_expires else None
     }
+
+@router.post("/delete-account-request")
+async def delete_account_request(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Send verification code for account deletion"""
+    from email_service import email_service
+    
+    # Debug logging
+    print(f"DEBUG: Delete account request for user {current_user.id} ({current_user.username})")
+    
+    # Generate verification code for account deletion
+    verification_code = email_service.generate_verification_code()
+    verification_expires = email_service.get_verification_expiry()
+    
+    print(f"DEBUG: Generated verification code: {verification_code}")
+    print(f"DEBUG: Verification expires at: {verification_expires}")
+    
+    # Store the verification code in user record
+    current_user.verification_code = verification_code
+    current_user.verification_expires = verification_expires
+    db.commit()
+    
+    print(f"DEBUG: Stored verification code in database for user {current_user.id}")
+    
+    # Send account deletion verification email
+    success = await email_service.send_account_deletion_email(
+        current_user.email, 
+        current_user.username, 
+        verification_code
+    )
+    
+    if not success:
+        return {
+            "message": "Failed to send verification email. Please try again.",
+            "debug_code": verification_code  # For testing
+        }
+    
+    return {"message": "Verification code sent to your email address"}
+
+@router.post("/delete-account")
+def delete_account(
+    request: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete user account after verification"""
+    verification_code = request.get("verification_code")
+    
+    # Debug logging
+    print(f"DEBUG: Delete account request for user {current_user.id}")
+    print(f"DEBUG: Received verification code: {verification_code}")
+    print(f"DEBUG: User's stored verification code: {current_user.verification_code}")
+    print(f"DEBUG: User's verification expires: {current_user.verification_expires}")
+    
+    if not verification_code:
+        raise HTTPException(status_code=400, detail="Verification code is required")
+    
+    # Check verification code
+    if not current_user.verification_code or current_user.verification_code != verification_code:
+        print(f"DEBUG: Verification code mismatch!")
+        print(f"DEBUG: Expected: {current_user.verification_code}")
+        print(f"DEBUG: Received: {verification_code}")
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # Check if code has expired
+    if current_user.verification_expires and current_user.verification_expires < datetime.utcnow():
+        print(f"DEBUG: Verification code has expired!")
+        print(f"DEBUG: Current time: {datetime.utcnow()}")
+        print(f"DEBUG: Expiry time: {current_user.verification_expires}")
+        raise HTTPException(status_code=400, detail="Verification code has expired")
+    
+    # Instead of deleting the user, mark them as deleted
+    # Store unique username in database but display as "[deleted user]" to users
+    current_user.username = f"__deleted_user_{current_user.id}__"
+    current_user.email = f"deleted_{current_user.id}@example.com"
+    current_user.is_active = False
+    current_user.verification_code = None
+    current_user.verification_expires = None
+    
+    # Clear sensitive data but keep content
+    current_user.bio = None
+    current_user.profile_picture = None
+    
+    db.commit()
+    
+    return {"message": "Account successfully deleted"}
 
 @router.post("/cleanup-expired-users")
 def cleanup_expired_users(db: Session = Depends(get_db)):

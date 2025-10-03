@@ -12,6 +12,7 @@ import Button from "./components/Button";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
+import { getUserInitial, getDisplayName } from "./utils";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -541,7 +542,7 @@ function Feed() {
                     backgroundSize: "cover",
                     backgroundPosition: "center"
                   }}>
-                    {!problem.author.profile_picture && problem.author.username.charAt(0).toUpperCase()}
+                    {!problem.author.profile_picture && getUserInitial(problem.author.username)}
                   </div>
                   
                   {/* Author Name and Follow Button */}
@@ -565,7 +566,7 @@ function Feed() {
                           }
                         }}
                       >
-                        {problem.author.username}
+                        {getDisplayName(problem.author.username)}
                       </div>
                       <div style={{ fontSize: "12px", color: "#666" }}>
                         {new Date(problem.created_at).toLocaleDateString()}

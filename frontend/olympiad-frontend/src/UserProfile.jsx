@@ -7,6 +7,7 @@ import Button from "./components/Button";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
+import { getUserInitial } from "./utils";
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -334,7 +335,7 @@ function UserProfile() {
                         backgroundSize: "cover",
                         backgroundPosition: "center"
                     }}>
-                        {!user.profile_picture && user.username.charAt(0).toUpperCase()}
+                        {!user.profile_picture && getUserInitial(user.username)}
                     </div>
                     
                     {/* Change Profile Picture Button */}

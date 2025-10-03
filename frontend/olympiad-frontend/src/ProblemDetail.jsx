@@ -12,6 +12,7 @@ import Button from "./components/Button";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
+import { getUserInitial, getDisplayName } from "./utils";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -464,6 +465,18 @@ function ProblemDetail() {
         fetchVoteStatus();
         fetchCurrentUser();
     }, [id]);
+
+    // Refresh comments when page becomes visible (handles navigation back)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                fetchComments();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
 
     if (loading) {
         return (
@@ -993,7 +1006,7 @@ function ProblemDetail() {
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
-                                        {!problem.author.profile_picture && (problem.author.username ? problem.author.username[0].toUpperCase() : "?")}
+                                        {!problem.author.profile_picture && getUserInitial(problem.author.username)}
                                     </div>
                                     <div>
                                         <div 
@@ -1012,7 +1025,7 @@ function ProblemDetail() {
                                                 }
                                             }}
                                         >
-                                            {problem.author.username || "Unknown Author"}
+                                            {getDisplayName(problem.author.username) || "Unknown Author"}
                                         </div>
                                         <div style={{ fontSize: "12px", color: "#666" }}>
                                             {(() => {
@@ -1447,7 +1460,7 @@ function ProblemDetail() {
                                 <div style={{ margin: "0 0 10px 0", color: "#333", whiteSpace: "pre-wrap" }}>{renderMathContent(comment.text)}</div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
-                                        By: {comment.author.username} 
+                                        By: {getDisplayName(comment.author.username)} 
                                         {comment.updated_at && new Date(comment.updated_at).getTime() > new Date(comment.created_at).getTime() && " (Edited)"}
                                         • {new Date(comment.created_at).toLocaleDateString()}
                                     </div>

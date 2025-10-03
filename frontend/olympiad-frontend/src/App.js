@@ -14,6 +14,7 @@ import EmailVerification from "./EmailVerification";
 import SearchResults from "./SearchResults";
 import Forums from "./Forums";
 import SubjectPage from "./SubjectPage";
+import Settings from "./Settings";
 import AuthGuard from "./AuthGuard";
 
 function App() {
@@ -84,6 +85,13 @@ function App() {
           element={
             <ProtectedRoute>
           <SubjectPage />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+          <Settings />
           </ProtectedRoute>
           } />
         </Routes>

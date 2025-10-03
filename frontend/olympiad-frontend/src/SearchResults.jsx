@@ -7,6 +7,7 @@ import Card from './components/Card';
 import Button from './components/Button';
 import BackButton from './components/BackButton';
 import { colors, spacing, typography, borderRadius } from './designSystem';
+import { getUserInitial, getDisplayName } from './utils';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -469,10 +470,10 @@ const SearchResults = () => {
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
-                                        {!user.profile_picture && user.username.charAt(0).toUpperCase()}
+                                        {!user.profile_picture && getUserInitial(user.username)}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>{user.username}</h3>
+                                        <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>{getDisplayName(user.username)}</h3>
                                         <p style={{ margin: "0", color: "#666", fontSize: "14px" }}>
                                             {user.follower_count} follower{user.follower_count !== 1 ? 's' : ''}
                                         </p>
@@ -559,12 +560,12 @@ const SearchResults = () => {
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
-                                        {!problem.author.profile_picture && problem.author.username.charAt(0).toUpperCase()}
+                                        {!problem.author.profile_picture && getUserInitial(problem.author.username)}
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <h3 style={{ margin: "0 0 5px 0", color: "#333" }}>{renderMathContent(problem.title)}</h3>
                                         <p style={{ margin: "0", color: "#666", fontSize: "14px" }}>
-                                            by {problem.author.username} • {new Date(problem.created_at).toLocaleDateString()}
+                                            by {getDisplayName(problem.author.username)} • {new Date(problem.created_at).toLocaleDateString()}
                                         </p>
                                     </div>
                                 </div>

@@ -1,7 +1,7 @@
 // Design System - SciencePioneers
 export const colors = {
   primary: "#1a4d3a",        // Dark green
-  secondary: "#1e40af",      // Deep blue
+  secondary: "#2d7a5f",      // Green (matching homepage)
   accent: "#28a745",         // Success green
   tertiary: "#7c3aed",       // Purple
   danger: "#dc2626",         // Red

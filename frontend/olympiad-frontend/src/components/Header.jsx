@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography, shadows } from "../designSystem";
+import { getUserInitial } from "../utils";
 
 function Header({ showHomeButton = false }) {
     const [currentUser, setCurrentUser] = useState(null);
@@ -284,7 +285,7 @@ function Header({ showHomeButton = false }) {
                                     fontSize: typography.fontSize.sm,
                                     fontWeight: typography.fontWeight.bold
                                 }}>
-                                    {currentUser.username.charAt(0).toUpperCase()}
+                                    {getUserInitial(currentUser.username)}
                                 </div>
                             )}
                             <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>
@@ -318,6 +319,20 @@ function Header({ showHomeButton = false }) {
                                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                     >
                                     My Profile
+                                    </div>
+                                </Link>
+                                <Link to="/settings" style={{ textDecoration: "none" }}>
+                                    <div style={{
+                                        padding: `${spacing.md} ${spacing.md}`,
+                                        color: colors.dark,
+                                        cursor: "pointer",
+                                        transition: "background-color 0.2s",
+                                        borderBottom: `1px solid ${colors.gray[200]}`
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                                    >
+                                    ⚙️ Settings
                                     </div>
                                 </Link>
                                 <button
