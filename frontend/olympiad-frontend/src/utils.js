@@ -7,19 +7,23 @@
 export const getUserInitial = (username) => {
     if (!username) return "?";
     
+    // Convert to string if it's a number
+    const usernameStr = String(username);
+    
     // Handle deleted users (database format: __deleted_user_{id}__)
-    if (username.startsWith("__deleted_user_")) {
+    if (usernameStr.startsWith("__deleted_user_")) {
         return "?";
     }
     
-    return username.charAt(0).toUpperCase();
+    return usernameStr.charAt(0).toUpperCase();
 };
 
 /**
  * Check if a user is deleted
  */
 export const isDeletedUser = (username) => {
-    return username.startsWith("__deleted_user_");
+    if (!username) return false;
+    return String(username).startsWith("__deleted_user_");
 };
 
 /**
@@ -27,8 +31,9 @@ export const isDeletedUser = (username) => {
  * Shows clean "[deleted user]" to users regardless of database format
  */
 export const getDisplayName = (username) => {
+    if (!username) return "Unknown";
     if (isDeletedUser(username)) {
         return "[deleted user]";
     }
-    return username;
+    return String(username);
 };

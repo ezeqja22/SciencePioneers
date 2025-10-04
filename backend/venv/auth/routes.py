@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumProblem, ForumMessage, ForumInvitation, ForumJoinRequest
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
+from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumProblemCreate, ForumProblem as ForumProblemSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime
@@ -2022,5 +2023,849 @@ def get_following_count(
     """Get count of users that a user follows"""
     count = db.query(Follow).filter(Follow.follower_id == user_id).count()
     return {"following_count": count}
+
+
+# Forum Endpoints
+@router.post("/forums", response_model=ForumSchema)
+def create_forum(
+    forum: ForumCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new forum"""
+    db_forum = Forum(
+        title=forum.title,
+        description=forum.description,
+        creator_id=current_user.id,
+        is_private=forum.is_private,
+        max_members=forum.max_members
+    )
+    db.add(db_forum)
+    db.commit()
+    db.refresh(db_forum)
+    
+    # Add creator as a member with 'creator' role
+    membership = ForumMembership(
+        forum_id=db_forum.id,
+        user_id=current_user.id,
+        role="creator"
+    )
+    db.add(membership)
+    db.commit()
+    
+    return db_forum
+
+@router.get("/forums", response_model=List[ForumSchema])
+def get_forums(
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of forums (all public forums and all private forums for discovery)"""
+    # Get all forums - public forums for everyone, private forums for discovery
+    forums = db.query(Forum).offset(skip).limit(limit).all()
+    
+    # Add member count and membership status to each forum
+    for forum in forums:
+        member_count = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum.id,
+            ForumMembership.is_active == True
+        ).count()
+        forum.member_count = member_count
+        
+        # Check if current user is a member of this forum
+        user_membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum.id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        forum.is_member = user_membership is not None
+        forum.user_role = user_membership.role if user_membership else None
+        
+        # Check if current user has a pending join request
+        pending_request = db.query(ForumJoinRequest).filter(
+            ForumJoinRequest.forum_id == forum.id,
+            ForumJoinRequest.user_id == current_user.id,
+            ForumJoinRequest.status == "pending"
+        ).first()
+        forum.has_pending_request = pending_request is not None
+        print(f"DEBUG: Forum {forum.id} '{forum.title}' - has_pending_request: {forum.has_pending_request} for user {current_user.id}")
+    
+    return forums
+
+@router.get("/forums/{forum_id}", response_model=ForumSchema)
+def get_forum(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific forum"""
+    print(f"DEBUG: Getting forum {forum_id} for user {current_user.username}")
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        print(f"DEBUG: Forum {forum_id} not found")
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if user can access this forum
+    if forum.is_private:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied to private forum")
+    
+    # Add member count
+    member_count = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).count()
+    forum.member_count = member_count
+    
+    print(f"DEBUG: Returning forum {forum_id}: {forum.title}")
+    return forum
+
+@router.post("/forums/{forum_id}/join")
+def join_forum(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Join a forum (public forums only)"""
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    if forum.is_private:
+        raise HTTPException(status_code=403, detail="Cannot join private forum directly")
+    
+    # Check if user is already a member
+    existing_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id
+    ).first()
+    
+    if existing_membership:
+        if existing_membership.is_active:
+            raise HTTPException(status_code=400, detail="Already a member of this forum")
+        else:
+            # Reactivate membership
+            existing_membership.is_active = True
+            db.commit()
+            return {"message": "Successfully joined forum"}
+    
+    # Check if forum is full
+    member_count = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).count()
+    
+    if member_count >= forum.max_members:
+        raise HTTPException(status_code=400, detail="Forum is full")
+    
+    # Add user as member
+    membership = ForumMembership(
+        forum_id=forum_id,
+        user_id=current_user.id,
+        role="member"
+    )
+    db.add(membership)
+    db.commit()
+    
+    return {"message": "Successfully joined forum"}
+
+
+@router.delete("/forums/{forum_id}/leave")
+def leave_forum(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Leave a forum"""
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=404, detail="Not a member of this forum")
+    
+    if membership.role == "creator":
+        raise HTTPException(status_code=400, detail="Creator cannot leave forum")
+    
+    membership.is_active = False
+    db.commit()
+    
+    return {"message": "Successfully left forum"}
+
+@router.get("/forums/{forum_id}/members", response_model=List[ForumMembershipSchema])
+def get_forum_members(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get members of a forum"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    members = db.query(ForumMembership).options(
+        selectinload(ForumMembership.user)
+    ).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).all()
+    
+    print(f"DEBUG: Found {len(members)} members for forum {forum_id}")
+    for i, member in enumerate(members):
+        print(f"DEBUG: Member {i}: id={member.id}, user_id={member.user_id}")
+        if hasattr(member, 'user') and member.user:
+            print(f"DEBUG: Member {i} user: {member.user.username}")
+        else:
+            print(f"DEBUG: Member {i} user: None or not loaded")
+    
+    return members
+
+@router.post("/forums/{forum_id}/problems", response_model=ForumProblemSchema)
+def create_forum_problem(
+    forum_id: int,
+    problem: ForumProblemCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a problem in a forum"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Must be a member to post problems")
+    
+    db_problem = ForumProblem(
+        forum_id=forum_id,
+        author_id=current_user.id,
+        title=problem.title,
+        description=problem.description,
+        subject=problem.subject,
+        level=problem.level,
+        year=problem.year,
+        tags=problem.tags
+    )
+    db.add(db_problem)
+    db.commit()
+    db.refresh(db_problem)
+    
+    # Update forum last activity
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    forum.last_activity = datetime.utcnow()
+    db.commit()
+    
+    return db_problem
+
+@router.get("/forums/{forum_id}/problems", response_model=List[ForumProblemSchema])
+def get_forum_problems(
+    forum_id: int,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get problems from a forum"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Must be a member to view problems")
+    
+    problems = db.query(ForumProblem).filter(
+        ForumProblem.forum_id == forum_id,
+        ForumProblem.is_archived == False
+    ).order_by(ForumProblem.posted_at.desc()).offset(skip).limit(limit).all()
+    
+    return problems
+
+# Forum Message Endpoints
+@router.post("/forums/{forum_id}/messages", response_model=ForumMessageSchema)
+def send_message(
+    forum_id: int,
+    message: ForumMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Send a message to a forum"""
+    print(f"DEBUG: Sending message to forum {forum_id}")
+    print(f"DEBUG: Message content: {message.content}")
+    print(f"DEBUG: Message type: {message.message_type}")
+    print(f"DEBUG: Current user: {current_user.username}")
+    
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        print(f"DEBUG: User {current_user.username} is not a member of forum {forum_id}")
+        raise HTTPException(status_code=403, detail="Must be a member to send messages")
+    
+    db_message = ForumMessage(
+        forum_id=forum_id,
+        author_id=current_user.id,
+        content=message.content,
+        message_type=message.message_type,
+        problem_id=message.problem_id
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    
+    # Update forum last activity
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    forum.last_activity = datetime.utcnow()
+    db.commit()
+    
+    return db_message
+
+@router.get("/forums/{forum_id}/messages", response_model=List[ForumMessageSchema])
+def get_messages(
+    forum_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get messages from a forum"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Must be a member to view messages")
+    
+    messages = db.query(ForumMessage).options(
+        selectinload(ForumMessage.author)
+    ).filter(
+        ForumMessage.forum_id == forum_id
+    ).order_by(ForumMessage.created_at.desc()).offset(skip).limit(limit).all()
+    
+    print(f"DEBUG: Found {len(messages)} messages for forum {forum_id}")
+    for i, msg in enumerate(messages):
+        print(f"DEBUG: Message {i}: id={msg.id}, content='{msg.content}', author_id={msg.author_id}")
+        if hasattr(msg, 'author') and msg.author:
+            print(f"DEBUG: Message {i} author: {msg.author.username}")
+        else:
+            print(f"DEBUG: Message {i} author: None or not loaded")
+    
+    return messages
+
+@router.put("/forums/{forum_id}/messages/{message_id}")
+def edit_message(
+    forum_id: int,
+    message_id: int,
+    new_content: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Edit a message"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Must be a member to edit messages")
+    
+    message = db.query(ForumMessage).filter(
+        ForumMessage.id == message_id,
+        ForumMessage.forum_id == forum_id,
+        ForumMessage.author_id == current_user.id
+    ).first()
+    
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    message.content = new_content
+    message.is_edited = True
+    message.edited_at = datetime.utcnow()
+    db.commit()
+    
+    return {"message": "Message updated successfully"}
+
+@router.delete("/forums/{forum_id}/messages/{message_id}")
+def delete_message(
+    forum_id: int,
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a message"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Must be a member to delete messages")
+    
+    message = db.query(ForumMessage).filter(
+        ForumMessage.id == message_id,
+        ForumMessage.forum_id == forum_id,
+        ForumMessage.author_id == current_user.id
+    ).first()
+    
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    db.delete(message)
+    db.commit()
+    
+    return {"message": "Message deleted successfully"}
+
+# Forum Invitation Endpoints
+@router.post("/forums/{forum_id}/invite", response_model=ForumInvitationSchema)
+def invite_user_to_forum(
+    forum_id: int,
+    invitation: ForumInvitationCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Invite a user to a forum (creator only)"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if current user is the creator
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can send invitations")
+    
+    # Check if invitee exists
+    invitee = db.query(User).filter(User.id == invitation.invitee_id).first()
+    if not invitee:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if user is already a member
+    existing_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == invitation.invitee_id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if existing_membership:
+        raise HTTPException(status_code=400, detail="User is already a member of this forum")
+    
+    # Check if invitation already exists and is pending
+    existing_invitation = db.query(ForumInvitation).filter(
+        ForumInvitation.forum_id == forum_id,
+        ForumInvitation.invitee_id == invitation.invitee_id,
+        ForumInvitation.status == "pending"
+    ).first()
+    
+    if existing_invitation:
+        raise HTTPException(status_code=400, detail="Invitation already sent to this user")
+    
+    # Create invitation
+    db_invitation = ForumInvitation(
+        forum_id=forum_id,
+        inviter_id=current_user.id,
+        invitee_id=invitation.invitee_id,
+        status="pending"
+    )
+    db.add(db_invitation)
+    db.commit()
+    db.refresh(db_invitation)
+    
+    # Send notification to invitee
+    notification_service = NotificationService(db)
+    notification_service.send_forum_invitation_notification(
+        user_id=invitation.invitee_id,
+        inviter_username=current_user.username,
+        forum_title=forum.title
+    )
+    
+    return db_invitation
+
+@router.get("/forums/{forum_id}/invitations", response_model=List[ForumInvitationSchema])
+def get_forum_invitations(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all invitations for a forum (creator only)"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if current user is the creator
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can view invitations")
+    
+    invitations = db.query(ForumInvitation).options(
+        selectinload(ForumInvitation.invitee)
+    ).filter(ForumInvitation.forum_id == forum_id).all()
+    
+    return invitations
+
+@router.post("/forums/{forum_id}/invitations/{invitation_id}/accept")
+def accept_forum_invitation(
+    forum_id: int,
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Accept a forum invitation"""
+    # Check if invitation exists and belongs to current user
+    invitation = db.query(ForumInvitation).filter(
+        ForumInvitation.id == invitation_id,
+        ForumInvitation.forum_id == forum_id,
+        ForumInvitation.invitee_id == current_user.id,
+        ForumInvitation.status == "pending"
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or already processed")
+    
+    # Check if forum is full
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    member_count = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).count()
+    
+    if member_count >= forum.max_members:
+        raise HTTPException(status_code=400, detail="Forum is full")
+    
+    # Add user as member
+    membership = ForumMembership(
+        forum_id=forum_id,
+        user_id=current_user.id,
+        role="member"
+    )
+    db.add(membership)
+    
+    # Update invitation status
+    invitation.status = "accepted"
+    invitation.responded_at = datetime.utcnow()
+    
+    db.commit()
+    
+    # Send notification to inviter
+    notification_service = NotificationService(db)
+    notification_service.send_forum_invitation_accepted_notification(
+        user_id=invitation.inviter_id,
+        invitee_username=current_user.username,
+        forum_title=forum.title
+    )
+    
+    return {"message": "Successfully joined the forum"}
+
+@router.post("/forums/{forum_id}/invitations/{invitation_id}/decline")
+def decline_forum_invitation(
+    forum_id: int,
+    invitation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Decline a forum invitation"""
+    # Check if invitation exists and belongs to current user
+    invitation = db.query(ForumInvitation).filter(
+        ForumInvitation.id == invitation_id,
+        ForumInvitation.forum_id == forum_id,
+        ForumInvitation.invitee_id == current_user.id,
+        ForumInvitation.status == "pending"
+    ).first()
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found or already processed")
+    
+    # Update invitation status
+    invitation.status = "declined"
+    invitation.responded_at = datetime.utcnow()
+    
+    db.commit()
+    
+    return {"message": "Invitation declined"}
+
+# Forum Join Request Endpoints
+@router.post("/forums/{forum_id}/request-join", response_model=ForumJoinRequestSchema)
+def request_to_join_forum(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Request to join a private forum"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    if not forum.is_private:
+        raise HTTPException(status_code=400, detail="Forum is public, use join endpoint")
+    
+    # Check if user is already a member
+    existing_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if existing_membership:
+        raise HTTPException(status_code=400, detail="Already a member of this forum")
+    
+    # Check if request already exists and is pending
+    existing_request = db.query(ForumJoinRequest).filter(
+        ForumJoinRequest.forum_id == forum_id,
+        ForumJoinRequest.user_id == current_user.id,
+        ForumJoinRequest.status == "pending"
+    ).first()
+    
+    if existing_request:
+        raise HTTPException(status_code=400, detail="Join request already sent")
+    
+    # Create join request
+    db_request = ForumJoinRequest(
+        forum_id=forum_id,
+        user_id=current_user.id,
+        status="pending"
+    )
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    
+    # Send notification to forum creator
+    notification_service = NotificationService(db)
+    notification_service.send_forum_join_request_notification(
+        user_id=forum.creator_id,
+        requester_username=current_user.username,
+        forum_title=forum.title,
+        forum_id=forum.id,
+        request_id=db_request.id
+    )
+    
+    return db_request
+
+@router.get("/forums/{forum_id}/join-requests", response_model=List[ForumJoinRequestSchema])
+def get_forum_join_requests(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all join requests for a forum (creator only)"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if current user is the creator
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can view join requests")
+    
+    requests = db.query(ForumJoinRequest).options(
+        selectinload(ForumJoinRequest.user)
+    ).filter(ForumJoinRequest.forum_id == forum_id).all()
+    
+    return requests
+
+@router.post("/forums/{forum_id}/join-requests/{request_id}/accept")
+def accept_join_request(
+    forum_id: int,
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Accept a join request (creator only)"""
+    # Check if forum exists and user is creator
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can accept requests")
+    
+    # Check if request exists
+    request = db.query(ForumJoinRequest).filter(
+        ForumJoinRequest.id == request_id,
+        ForumJoinRequest.forum_id == forum_id,
+        ForumJoinRequest.status == "pending"
+    ).first()
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Join request not found or already processed")
+    
+    # Check if forum is full
+    member_count = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).count()
+    
+    if member_count >= forum.max_members:
+        raise HTTPException(status_code=400, detail="Forum is full")
+    
+    # Add user as member
+    membership = ForumMembership(
+        forum_id=forum_id,
+        user_id=request.user_id,
+        role="member"
+    )
+    db.add(membership)
+    
+    # Update request status
+    request.status = "accepted"
+    request.responded_at = datetime.utcnow()
+    
+    db.commit()
+    
+    # Send notification to requester
+    notification_service = NotificationService(db)
+    notification_service.send_forum_join_request_accepted_notification(
+        user_id=request.user_id,
+        forum_title=forum.title
+    )
+    
+    return {"message": "Join request accepted"}
+
+@router.post("/forums/{forum_id}/join-requests/{request_id}/decline")
+def decline_join_request(
+    forum_id: int,
+    request_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Decline a join request (creator only)"""
+    # Check if forum exists and user is creator
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can decline requests")
+    
+    # Check if request exists
+    request = db.query(ForumJoinRequest).filter(
+        ForumJoinRequest.id == request_id,
+        ForumJoinRequest.forum_id == forum_id,
+        ForumJoinRequest.status == "pending"
+    ).first()
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Join request not found or already processed")
+    
+    # Update request status
+    request.status = "declined"
+    request.responded_at = datetime.utcnow()
+    
+    db.commit()
+    
+    # Send notification to requester
+    notification_service = NotificationService(db)
+    notification_service.send_forum_join_request_declined_notification(
+        user_id=request.user_id,
+        forum_title=forum.title
+    )
+    
+    return {"message": "Join request declined"}
+
+@router.get("/forums/{forum_id}/invite-users")
+def get_users_for_invitation(
+    forum_id: int,
+    search: str = "",
+    tab: str = "all",  # "all", "following", "followers"
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get users that can be invited to a forum"""
+    # Check if forum exists and user is creator
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can invite users")
+    
+    # Get existing members to exclude them
+    existing_members = db.query(ForumMembership.user_id).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).all()
+    existing_member_ids = [member[0] for member in existing_members]
+    
+    # Get existing invitations to exclude them
+    existing_invitations = db.query(ForumInvitation.invitee_id).filter(
+        ForumInvitation.forum_id == forum_id,
+        ForumInvitation.status == "pending"
+    ).all()
+    existing_invitation_ids = [invitation[0] for invitation in existing_invitations]
+    
+    # Build query based on tab
+    query = db.query(User).filter(
+        User.id != current_user.id,  # Don't include self
+        User.is_active == True,
+        User.is_verified == True,
+        ~User.id.in_(existing_member_ids + existing_invitation_ids)  # Exclude existing members and pending invitations
+    )
+    
+    if tab == "following":
+        # Only users that current user follows
+        following_ids = db.query(Follow.following_id).filter(Follow.follower_id == current_user.id).all()
+        following_ids = [f[0] for f in following_ids]
+        query = query.filter(User.id.in_(following_ids))
+    elif tab == "followers":
+        # Only users that follow current user
+        follower_ids = db.query(Follow.follower_id).filter(Follow.following_id == current_user.id).all()
+        follower_ids = [f[0] for f in follower_ids]
+        query = query.filter(User.id.in_(follower_ids))
+    # "all" tab includes all users
+    
+    # Apply search filter
+    if search:
+        query = query.filter(User.username.ilike(f"%{search}%"))
+    
+    # Limit to 5 results
+    users = query.limit(5).all()
+    
+    # Format response
+    results = []
+    for user in users:
+        # Check if user is already a member
+        is_member = user.id in existing_member_ids
+        
+        # Check if user has pending invitation
+        has_pending_invitation = user.id in existing_invitation_ids
+        
+        results.append({
+            "id": user.id,
+            "username": user.username,
+            "profile_picture": user.profile_picture,
+            "bio": user.bio,
+            "is_member": is_member,
+            "has_pending_invitation": has_pending_invitation
+        })
+    
+    return {"users": results}
 
 

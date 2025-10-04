@@ -58,6 +58,10 @@ function NotificationBell({ onNotificationClick }) {
                     return userPreferences.in_app_likes;
                 case 'follow':
                     return userPreferences.in_app_follows;
+                case 'forum_join_request':
+                case 'forum_request_accepted':
+                case 'forum_request_declined':
+                    return userPreferences.in_app_follows;
                 default:
                     return true;
             }
@@ -71,7 +75,10 @@ function NotificationBell({ onNotificationClick }) {
             const response = await axios.get("http://127.0.0.1:8000/auth/notifications", {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log("DEBUG: Raw notifications:", response.data);
+            console.log("DEBUG: User preferences:", userPreferences);
             const filteredNotifications = filterNotificationsByPreferences(response.data);
+            console.log("DEBUG: Filtered notifications:", filteredNotifications);
             setNotifications(filteredNotifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
@@ -122,11 +129,103 @@ function NotificationBell({ onNotificationClick }) {
         }
     };
 
+    const handleAcceptJoinRequest = async (notification) => {
+        try {
+            const token = localStorage.getItem("token");
+            const { forum_id, request_id } = notification.data || {};
+            
+            console.log("DEBUG: Accept request - notification:", notification);
+            console.log("DEBUG: Accept request - data:", notification.data);
+            console.log("DEBUG: Accept request - forum_id:", forum_id, "request_id:", request_id);
+            
+            if (!forum_id || !request_id) {
+                // For old notifications without data, try to find the request
+                console.log("DEBUG: Missing data, trying to find request for old notification");
+                
+                // Extract username from message: "xhillda wants to join 'forum test 3'"
+                const message = notification.message;
+                const usernameMatch = message.match(/^(\w+) wants to join/);
+                const forumMatch = message.match(/wants to join '([^']+)'/);
+                
+                if (usernameMatch && forumMatch) {
+                    const username = usernameMatch[1];
+                    const forumTitle = forumMatch[1];
+                    
+                    console.log("DEBUG: Extracted username:", username, "forum title:", forumTitle);
+                    
+                    // We need to find the forum ID and request ID
+                    // For now, show a helpful message
+                    alert(`This is an old notification. Please go to the Forums page and check the join requests for "${forumTitle}" to accept/decline manually.`);
+                    return;
+                } else {
+                    alert("Unable to process this old notification. Please refresh the page.");
+                    return;
+                }
+            }
+            
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/join-requests/${request_id}/accept`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Update notification message
+            setNotifications(prev => 
+                prev.map(notif => 
+                    notif.id === notification.id 
+                        ? { 
+                            ...notif, 
+                            title: "Join Request Accepted",
+                            message: `You accepted ${notification.data?.requester_name || 'user'}'s request to join your forum`,
+                            type: "forum_request_accepted"
+                        }
+                        : notif
+                )
+            );
+            
+            alert("Join request accepted!");
+        } catch (error) {
+            console.error("Error accepting join request:", error);
+            alert("Failed to accept join request");
+        }
+    };
+
+    const handleDeclineJoinRequest = async (notification) => {
+        try {
+            const token = localStorage.getItem("token");
+            const { forum_id, request_id } = notification.data || {};
+            
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/join-requests/${request_id}/decline`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Update notification message
+            setNotifications(prev => 
+                prev.map(notif => 
+                    notif.id === notification.id 
+                        ? { 
+                            ...notif, 
+                            title: "Join Request Declined",
+                            message: `You declined ${notification.data?.requester_name || 'user'}'s request to join your forum`,
+                            type: "forum_request_declined"
+                        }
+                        : notif
+                )
+            );
+            
+            alert("Join request declined");
+        } catch (error) {
+            console.error("Error declining join request:", error);
+            alert("Failed to decline join request");
+        }
+    };
+
     const getNotificationIcon = (type) => {
         switch (type) {
             case 'like': return '👍';
             case 'comment': return '💬';
             case 'follow': return '👥';
+            case 'forum_join_request': return '📝';
+            case 'forum_request_accepted': return '✅';
+            case 'forum_request_declined': return '❌';
             default: return '🔔';
         }
     };
@@ -290,6 +389,57 @@ function NotificationBell({ onNotificationClick }) {
                                             }}>
                                                 {notification.message}
                                             </div>
+                                            
+                                            {/* Show Accept/Decline buttons for forum join requests */}
+                                            {notification.type === 'forum_join_request' && (
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    gap: spacing.xs, 
+                                                    marginBottom: spacing.xs 
+                                                }}>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleAcceptJoinRequest(notification);
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.accent,
+                                                            color: colors.white,
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            padding: `${spacing.xs} ${spacing.sm}`,
+                                                            fontSize: typography.fontSize.xs,
+                                                            cursor: 'pointer',
+                                                            fontWeight: typography.fontWeight.medium
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
+                                                    >
+                                                        Accept
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeclineJoinRequest(notification);
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.danger,
+                                                            color: colors.white,
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            padding: `${spacing.xs} ${spacing.sm}`,
+                                                            fontSize: typography.fontSize.xs,
+                                                            cursor: 'pointer',
+                                                            fontWeight: typography.fontWeight.medium
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.danger}
+                                                    >
+                                                        Decline
+                                                    </button>
+                                                </div>
+                                            )}
+                                            
                                             <div style={{
                                                 color: colors.gray[500],
                                                 fontSize: typography.fontSize.xs

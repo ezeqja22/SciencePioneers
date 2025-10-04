@@ -129,6 +129,7 @@ class NotificationResponse(BaseModel):
     type: str
     title: str
     message: str
+    data: Optional[dict] = None  # Add the missing data field
     is_read: bool
     created_at: datetime
 
@@ -140,3 +141,157 @@ class NotificationCreate(BaseModel):
     type: str
     title: str
     message: str
+
+# Forum Schemas
+class ForumBase(BaseModel):
+    title: str
+    description: str = None
+    is_private: bool = False
+    max_members: int = 100
+
+class ForumCreate(ForumBase):
+    pass
+
+class ForumUpdate(BaseModel):
+    title: str = None
+    description: str = None
+    is_private: bool = None
+
+class Forum(ForumBase):
+    id: int
+    creator_id: int
+    created_at: datetime
+    last_activity: datetime
+    member_count: int = 0
+    
+    class Config:
+        from_attributes = True
+
+class ForumMembershipBase(BaseModel):
+    forum_id: int
+    user_id: int
+    role: str = "member"
+
+class ForumMembershipCreate(ForumMembershipBase):
+    pass
+
+class ForumMembership(ForumMembershipBase):
+    id: int
+    joined_at: datetime
+    is_active: bool = True
+    user: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True
+
+class ForumProblemBase(BaseModel):
+    title: str
+    description: str
+    subject: str = None
+    level: str = None
+    year: int = None
+    tags: str = None
+
+class ForumProblemCreate(ForumProblemBase):
+    forum_id: int
+
+class ForumProblem(ForumProblemBase):
+    id: int
+    forum_id: int
+    author_id: int
+    posted_at: datetime
+    is_archived: bool = False
+    
+    class Config:
+        from_attributes = True
+
+class ForumMessageBase(BaseModel):
+    content: str
+    message_type: str = "text"
+    problem_id: Optional[int] = None
+
+class ForumMessageCreate(ForumMessageBase):
+    pass
+
+class ForumMessage(ForumMessageBase):
+    id: int
+    forum_id: int
+    author_id: int
+    created_at: datetime
+    is_edited: bool = False
+    edited_at: Optional[datetime] = None
+    author: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True
+
+# Forum Invitation Schemas
+class ForumInvitationBase(BaseModel):
+    forum_id: int
+    invitee_id: int
+
+class ForumInvitationCreate(ForumInvitationBase):
+    pass
+
+class ForumInvitation(ForumInvitationBase):
+    id: int
+    inviter_id: int
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    inviter: Optional[UserOut] = None
+    invitee: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True
+
+class ForumInvitationResponse(BaseModel):
+    id: int
+    forum_id: int
+    inviter_id: int
+    invitee_id: int
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    forum: Optional[Forum] = None
+    inviter: Optional[UserOut] = None
+    invitee: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True
+
+# Forum Join Request Schemas
+class ForumJoinRequestBase(BaseModel):
+    forum_id: int
+    user_id: int
+
+class ForumJoinRequestCreate(ForumJoinRequestBase):
+    pass
+
+class ForumJoinRequest(ForumJoinRequestBase):
+    id: int
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    response_message: Optional[str] = None
+    user: Optional[UserOut] = None
+    forum: Optional[Forum] = None
+    
+    class Config:
+        from_attributes = True
+
+class ForumJoinRequestResponse(BaseModel):
+    id: int
+    forum_id: int
+    user_id: int
+    status: str
+    created_at: datetime
+    responded_at: Optional[datetime] = None
+    response_message: Optional[str] = None
+    forum: Optional[Forum] = None
+    user: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True

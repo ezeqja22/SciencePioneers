@@ -13,6 +13,7 @@ import PublicUserProfile from "./PublicUserProfile";
 import EmailVerification from "./EmailVerification";
 import SearchResults from "./SearchResults";
 import Forums from "./Forums";
+import ForumDetail from "./ForumDetail";
 import SubjectPage from "./SubjectPage";
 import Settings from "./Settings";
 import FollowersFollowing from "./components/FollowersFollowing";
@@ -79,6 +80,20 @@ function App() {
           element={
             <ProtectedRoute>
           <Forums />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/forum/:forumId" 
+          element={
+            <ProtectedRoute>
+          <ForumDetail />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/forum/:forumId/info" 
+          element={
+            <ProtectedRoute>
+          <ForumDetail />
           </ProtectedRoute>
           } />
           <Route 

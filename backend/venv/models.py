@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint, Text, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -27,6 +27,9 @@ class User(Base):
     followers = relationship("Follow", foreign_keys="Follow.following_id", back_populates="following")
     notifications = relationship("Notification", back_populates="user")
     notification_preferences = relationship("NotificationPreferences", back_populates="user", uselist=False)
+    sent_invitations = relationship("ForumInvitation", foreign_keys="ForumInvitation.inviter_id", back_populates="inviter")
+    received_invitations = relationship("ForumInvitation", foreign_keys="ForumInvitation.invitee_id", back_populates="invitee")
+    forum_join_requests = relationship("ForumJoinRequest", back_populates="user")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -119,6 +122,113 @@ class Notification(Base):
     type = Column(String, nullable=False)  # 'like', 'comment', 'follow', etc.
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
+    data = Column(JSON, nullable=True)  # Additional data for notifications
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="notifications")
+
+# Forum Models
+class Forum(Base):
+    __tablename__ = "forums"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_private = Column(Boolean, default=False)
+    max_members = Column(Integer, default=100)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_activity = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    creator = relationship("User", foreign_keys=[creator_id])
+    members = relationship("ForumMembership", back_populates="forum")
+    problems = relationship("ForumProblem", back_populates="forum")
+    invitations = relationship("ForumInvitation", back_populates="forum")
+    join_requests = relationship("ForumJoinRequest", back_populates="forum")
+
+class ForumMembership(Base):
+    __tablename__ = "forum_memberships"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    role = Column(String, default="member")  # 'creator', 'moderator', 'member'
+    joined_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    
+    # Relationships
+    forum = relationship("Forum", back_populates="members")
+    user = relationship("User")
+    
+    # Unique constraint to prevent duplicate memberships
+    __table_args__ = (UniqueConstraint('forum_id', 'user_id', name='unique_forum_membership'),)
+
+class ForumProblem(Base):
+    __tablename__ = "forum_problems"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    subject = Column(String, nullable=True)
+    level = Column(String, nullable=True)
+    year = Column(Integer, nullable=True)
+    tags = Column(String, nullable=True)  # JSON string of tags
+    posted_at = Column(DateTime, default=datetime.utcnow)
+    is_archived = Column(Boolean, default=False)
+    
+    # Relationships
+    forum = relationship("Forum", back_populates="problems")
+    author = relationship("User", foreign_keys=[author_id])
+
+class ForumMessage(Base):
+    __tablename__ = "forum_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    message_type = Column(String, default="text")  # 'text', 'problem', 'system'
+    content = Column(String, nullable=False)  # For text messages
+    problem_id = Column(Integer, ForeignKey("forum_problems.id"), nullable=True)  # For problem messages
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_edited = Column(Boolean, default=False)
+    edited_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    forum = relationship("Forum")
+    author = relationship("User", foreign_keys=[author_id])
+    problem = relationship("ForumProblem", foreign_keys=[problem_id])
+
+class ForumInvitation(Base):
+    __tablename__ = "forum_invitations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    inviter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    invitee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String, default="pending")  # pending, accepted, declined, expired
+    created_at = Column(DateTime, default=datetime.utcnow)
+    responded_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    forum = relationship("Forum", back_populates="invitations")
+    inviter = relationship("User", foreign_keys=[inviter_id], back_populates="sent_invitations")
+    invitee = relationship("User", foreign_keys=[invitee_id], back_populates="received_invitations")
+
+class ForumJoinRequest(Base):
+    __tablename__ = "forum_join_requests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String, default="pending")  # pending, accepted, declined
+    created_at = Column(DateTime, default=datetime.utcnow)
+    responded_at = Column(DateTime, nullable=True)
+    response_message = Column(Text, nullable=True)
+    
+    # Relationships
+    forum = relationship("Forum", back_populates="join_requests")
+    user = relationship("User", back_populates="forum_join_requests")
