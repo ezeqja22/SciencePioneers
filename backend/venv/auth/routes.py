@@ -121,9 +121,6 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     verification_expires = email_service.get_verification_expiry()
     
     # Debug prints
-    print(f"DEBUG: Generated verification code: {verification_code}")
-    print(f"DEBUG: Verification expires at: {verification_expires}")
-    print(f"DEBUG: Creating user for email: {req.email}")
     
     # Try to send email BEFORE creating user
     success = await email_service.send_verification_email(
@@ -164,9 +161,6 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     
     # Debug: Verify the user was created with the correct verification code
-    print(f"DEBUG: User created with ID: {user.id}")
-    print(f"DEBUG: User verification_code in DB: {user.verification_code}")
-    print(f"DEBUG: User verification_expires in DB: {user.verification_expires}")
     
     # Generate JWT token for automatic login
     from auth.utils import create_jwt
@@ -334,12 +328,8 @@ def get_mathematics_problems_debug(db: Session = Depends(get_db)):
 
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
-    print(f"DEBUG: Searching for problems with subject: '{subject}'")
-    
     # First get problems with comment counts (case-insensitive search)
     problems_with_counts = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(func.lower(Problem.subject) == func.lower(subject)).group_by(Problem.id).order_by(Problem.created_at.desc()).all()
-    
-    print(f"DEBUG: Found {len(problems_with_counts)} problems")
     
     # Then fetch authors for all problems
     authors = db.query(User).filter(User.id.in_([p.author_id for p, _ in problems_with_counts])).all()
@@ -579,11 +569,6 @@ def get_comments(problem_id: int, db: Session = Depends(get_db)):
             comment.author = author
     
     # Debug: Print comment info
-    print(f"DEBUG: Found {len(comments)} comments for problem {problem_id}")
-    for comment in comments:
-        print(f"DEBUG: Comment {comment.id} by user {comment.author_id}: {comment.author.username if comment.author else 'No author'}")
-        if comment.author:
-            print(f"DEBUG: Author is_active: {comment.author.is_active}, username: {comment.author.username}")
     
     return comments
 
@@ -1548,9 +1533,6 @@ def verify_email(
     verification_code = request.get("verification_code")
     
     # Debug prints
-    print(f"DEBUG: Received verification request for email: {email}")
-    print(f"DEBUG: Received verification code: {verification_code}")
-    print(f"DEBUG: Request data: {request}")
     
     if not email or not verification_code:
         raise HTTPException(status_code=400, detail="Email and verification code are required")
@@ -1559,13 +1541,7 @@ def verify_email(
     # Find user
     user = db.query(User).filter(User.email == email).first()
     if not user:
-        print(f"DEBUG: User not found for email: {email}")
         raise HTTPException(status_code=404, detail="User not found")
-    
-    print(f"DEBUG: Found user: {user.username}")
-    print(f"DEBUG: User's stored verification code: {user.verification_code}")
-    print(f"DEBUG: User is_verified: {user.is_verified}")
-    print(f"DEBUG: User verification_expires: {user.verification_expires}")
     
     # Check if already verified
     if user.is_verified:
@@ -1573,17 +1549,10 @@ def verify_email(
     
     # Check verification code
     if not user.verification_code or user.verification_code != verification_code:
-        print(f"DEBUG: Verification code mismatch!")
-        print(f"DEBUG: Expected: {user.verification_code}")
-        print(f"DEBUG: Received: {verification_code}")
-        print(f"DEBUG: Codes match: {user.verification_code == verification_code}")
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if code has expired
     if user.verification_expires and user.verification_expires < datetime.utcnow():
-        print(f"DEBUG: Verification code has expired!")
-        print(f"DEBUG: Current time: {datetime.utcnow()}")
-        print(f"DEBUG: Expiry time: {user.verification_expires}")
         raise HTTPException(status_code=400, detail="Verification code has expired")
     
     # Verify user
@@ -1592,7 +1561,6 @@ def verify_email(
     user.verification_expires = None
     db.commit()
     
-    print(f"DEBUG: Email verification successful for {email}")
     return {"message": "Email verified successfully"}
 
 @router.get("/verification-status/{email}")
@@ -2090,7 +2058,6 @@ def get_forums(
             ForumJoinRequest.status == "pending"
         ).first()
         forum.has_pending_request = pending_request is not None
-        print(f"DEBUG: Forum {forum.id} '{forum.title}' - has_pending_request: {forum.has_pending_request} for user {current_user.id}")
     
     return forums
 
@@ -2101,10 +2068,8 @@ def get_forum(
     db: Session = Depends(get_db)
 ):
     """Get a specific forum"""
-    print(f"DEBUG: Getting forum {forum_id} for user {current_user.username}")
     forum = db.query(Forum).filter(Forum.id == forum_id).first()
     if not forum:
-        print(f"DEBUG: Forum {forum_id} not found")
         raise HTTPException(status_code=404, detail="Forum not found")
     
     # Check if user can access this forum
@@ -2124,7 +2089,6 @@ def get_forum(
     ).count()
     forum.member_count = member_count
     
-    print(f"DEBUG: Returning forum {forum_id}: {forum.title}")
     return forum
 
 @router.post("/forums/{forum_id}/join")
@@ -2225,13 +2189,6 @@ def get_forum_members(
         ForumMembership.is_active == True
     ).all()
     
-    print(f"DEBUG: Found {len(members)} members for forum {forum_id}")
-    for i, member in enumerate(members):
-        print(f"DEBUG: Member {i}: id={member.id}, user_id={member.user_id}")
-        if hasattr(member, 'user') and member.user:
-            print(f"DEBUG: Member {i} user: {member.user.username}")
-        else:
-            print(f"DEBUG: Member {i} user: None or not loaded")
     
     return members
 
@@ -2309,10 +2266,6 @@ def send_message(
     db: Session = Depends(get_db)
 ):
     """Send a message to a forum"""
-    print(f"DEBUG: Sending message to forum {forum_id}")
-    print(f"DEBUG: Message content: {message.content}")
-    print(f"DEBUG: Message type: {message.message_type}")
-    print(f"DEBUG: Current user: {current_user.username}")
     
     # Check if user is a member
     membership = db.query(ForumMembership).filter(
@@ -2322,7 +2275,6 @@ def send_message(
     ).first()
     
     if not membership:
-        print(f"DEBUG: User {current_user.username} is not a member of forum {forum_id}")
         raise HTTPException(status_code=403, detail="Must be a member to send messages")
     
     db_message = ForumMessage(
@@ -2368,13 +2320,6 @@ def get_messages(
         ForumMessage.forum_id == forum_id
     ).order_by(ForumMessage.created_at.desc()).offset(skip).limit(limit).all()
     
-    print(f"DEBUG: Found {len(messages)} messages for forum {forum_id}")
-    for i, msg in enumerate(messages):
-        print(f"DEBUG: Message {i}: id={msg.id}, content='{msg.content}', author_id={msg.author_id}")
-        if hasattr(msg, 'author') and msg.author:
-            print(f"DEBUG: Message {i} author: {msg.author.username}")
-        else:
-            print(f"DEBUG: Message {i} author: None or not loaded")
     
     return messages
 
@@ -2504,7 +2449,9 @@ def invite_user_to_forum(
     notification_service.send_forum_invitation_notification(
         user_id=invitation.invitee_id,
         inviter_username=current_user.username,
-        forum_title=forum.title
+        forum_title=forum.title,
+        forum_id=forum.id,
+        invitation_id=db_invitation.id
     )
     
     return db_invitation
@@ -2826,7 +2773,7 @@ def get_users_for_invitation(
         User.id != current_user.id,  # Don't include self
         User.is_active == True,
         User.is_verified == True,
-        ~User.id.in_(existing_member_ids + existing_invitation_ids)  # Exclude existing members and pending invitations
+        ~User.id.in_(existing_member_ids)  # Only exclude existing members, not pending invitations
     )
     
     if tab == "following":

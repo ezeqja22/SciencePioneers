@@ -61,6 +61,9 @@ function NotificationBell({ onNotificationClick }) {
                 case 'forum_join_request':
                 case 'forum_request_accepted':
                 case 'forum_request_declined':
+                case 'forum_invitation':
+                case 'forum_invitation_accepted':
+                case 'forum_invitation_declined':
                     return userPreferences.in_app_follows;
                 default:
                     return true;
@@ -218,6 +221,76 @@ function NotificationBell({ onNotificationClick }) {
         }
     };
 
+    const handleAcceptInvitation = async (notification) => {
+        try {
+            const token = localStorage.getItem("token");
+            const { forum_id, invitation_id } = notification.data || {};
+
+            if (!forum_id || !invitation_id) {
+                alert("This is an old notification without proper data. Please go to the Forums page to manage your invitations manually.");
+                return;
+            }
+
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/invitations/${invitation_id}/accept`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Update notification message
+            setNotifications(prev => 
+                prev.map(notif => 
+                    notif.id === notification.id 
+                        ? { 
+                            ...notif, 
+                            title: "Invitation Accepted",
+                            message: `You accepted the invitation to join '${notification.data?.forum_title || 'forum'}'`,
+                            type: "forum_invitation_accepted"
+                        }
+                        : notif
+                )
+            );
+            
+            alert("Forum invitation accepted!");
+        } catch (error) {
+            console.error("Error accepting invitation:", error);
+            alert("Failed to accept invitation");
+        }
+    };
+
+    const handleDeclineInvitation = async (notification) => {
+        try {
+            const token = localStorage.getItem("token");
+            const { forum_id, invitation_id } = notification.data || {};
+
+            if (!forum_id || !invitation_id) {
+                alert("This is an old notification without proper data. Please go to the Forums page to manage your invitations manually.");
+                return;
+            }
+
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/invitations/${invitation_id}/decline`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Update notification message
+            setNotifications(prev => 
+                prev.map(notif => 
+                    notif.id === notification.id 
+                        ? { 
+                            ...notif, 
+                            title: "Invitation Declined",
+                            message: `You declined the invitation to join '${notification.data?.forum_title || 'forum'}'`,
+                            type: "forum_invitation_declined"
+                        }
+                        : notif
+                )
+            );
+            
+            alert("Forum invitation declined");
+        } catch (error) {
+            console.error("Error declining invitation:", error);
+            alert("Failed to decline invitation");
+        }
+    };
+
     const getNotificationIcon = (type) => {
         switch (type) {
             case 'like': return '👍';
@@ -226,6 +299,9 @@ function NotificationBell({ onNotificationClick }) {
             case 'forum_join_request': return '📝';
             case 'forum_request_accepted': return '✅';
             case 'forum_request_declined': return '❌';
+            case 'forum_invitation': return '📨';
+            case 'forum_invitation_accepted': return '✅';
+            case 'forum_invitation_declined': return '❌';
             default: return '🔔';
         }
     };
@@ -421,6 +497,56 @@ function NotificationBell({ onNotificationClick }) {
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleDeclineJoinRequest(notification);
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.danger,
+                                                            color: colors.white,
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            padding: `${spacing.xs} ${spacing.sm}`,
+                                                            fontSize: typography.fontSize.xs,
+                                                            cursor: 'pointer',
+                                                            fontWeight: typography.fontWeight.medium
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.danger}
+                                                    >
+                                                        Decline
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Show Accept/Decline buttons for forum invitations */}
+                                            {notification.type === 'forum_invitation' && (
+                                                <div style={{ 
+                                                    display: 'flex', 
+                                                    gap: spacing.xs, 
+                                                    marginBottom: spacing.xs 
+                                                }}>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleAcceptInvitation(notification);
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.accent,
+                                                            color: colors.white,
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            padding: `${spacing.xs} ${spacing.sm}`,
+                                                            fontSize: typography.fontSize.xs,
+                                                            cursor: 'pointer',
+                                                            fontWeight: typography.fontWeight.medium
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = '#218838'}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
+                                                    >
+                                                        Accept
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeclineInvitation(notification);
                                                         }}
                                                         style={{
                                                             backgroundColor: colors.danger,

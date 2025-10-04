@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { colors, spacing, typography, borderRadius } from './designSystem';
+import { colors, spacing, typography, borderRadius, shadows } from './designSystem';
 import { getUserInitial } from './utils';
 
 // Destructure typography properties for easier access
@@ -25,7 +25,7 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `/auth/forums/${forumId}/invite-users?search=${encodeURIComponent(searchQuery)}&tab=${activeTab}`,
+        `http://127.0.0.1:8000/auth/forums/${forumId}/invite-users?search=${encodeURIComponent(searchQuery)}&tab=${activeTab}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -37,9 +37,12 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
+      } else {
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -48,27 +51,28 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
   const handleInvite = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/auth/forums/${forumId}/invite`, {
+      const response = await fetch(`http://127.0.0.1:8000/auth/forums/${forumId}/invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ invitee_id: userId }),
+        body: JSON.stringify({ forum_id: forumId, invitee_id: userId }),
       });
 
       if (response.ok) {
+        const data = await response.json();
         setInvitedUsers(prev => new Set([...prev, userId]));
         if (onInvite) {
           onInvite(userId);
         }
+        alert('User invited successfully!');
       } else {
-        const error = await response.json();
-        alert(error.detail || 'Failed to send invitation');
+        const errorData = await response.json();
+        alert(`Failed to invite user: ${errorData.detail || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error sending invitation:', error);
-      alert('Failed to send invitation');
+      alert(`Error inviting user: ${error.message || 'Network error'}`);
     }
   };
 
@@ -102,42 +106,58 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
   if (!isOpen) return null;
 
   return (
+    <>
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
+      backdropFilter: 'blur(4px)',
     }}>
       <div style={{
         backgroundColor: colors.white,
-        borderRadius: borderRadius.lg,
-        padding: spacing[6],
-        width: '90%',
-        maxWidth: '600px',
-        maxHeight: '80vh',
+        borderRadius: borderRadius.xl,
+        padding: spacing[10],
+        width: '95%',
+        maxWidth: '900px',
+        maxHeight: '90vh',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        boxShadow: shadows.xl,
+        border: `1px solid ${colors.gray[200]}`,
       }}>
         {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: spacing[4],
+          marginBottom: spacing[8],
+          paddingBottom: spacing[6],
+          borderBottom: `3px solid ${colors.primary}`,
         }}>
           <h2 style={{
-            fontSize: fontSize.xl,
+            fontSize: fontSize['2xl'],
             fontWeight: fontWeight.bold,
-            color: colors.gray[900],
+            color: colors.dark,
             margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
           }}>
+            <span style={{ fontSize: fontSize.xl }}>👥</span>
             Invite Users
           </h2>
           <button
@@ -145,9 +165,25 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
             style={{
               background: 'none',
               border: 'none',
-              fontSize: fontSize.xl,
+              fontSize: fontSize['2xl'],
               cursor: 'pointer',
               color: colors.gray[500],
+              padding: spacing[2],
+              borderRadius: borderRadius.full,
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = colors.gray[100];
+              e.target.style.color = colors.dark;
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = 'transparent';
+              e.target.style.color = colors.gray[500];
             }}
           >
             ×
@@ -155,49 +191,103 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
         </div>
 
         {/* Search Bar */}
-        <div style={{ marginBottom: spacing[4] }}>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: spacing[3],
-              border: `1px solid ${colors.gray[300]}`,
-              borderRadius: borderRadius.md,
-              fontSize: fontSize.base,
-            }}
-          />
+        <div style={{ marginBottom: spacing[8] }}>
+          <div style={{ position: 'relative' }}>
+            <input
+              type="text"
+              placeholder="Search users by username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: `${spacing[5]} ${spacing[5]} ${spacing[5]} ${spacing[16]}`,
+                border: `3px solid ${colors.gray[200]}`,
+                borderRadius: borderRadius.xl,
+                fontSize: fontSize.lg,
+                fontWeight: fontWeight.medium,
+                backgroundColor: colors.gray[50],
+                transition: 'all 0.3s ease',
+                outline: 'none',
+                boxShadow: shadows.sm,
+                textIndent: spacing[8],
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = colors.primary;
+                e.target.style.backgroundColor = colors.white;
+                e.target.style.boxShadow = `0 0 0 4px ${colors.primary}20, ${shadows.md}`;
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = colors.gray[200];
+                e.target.style.backgroundColor = colors.gray[50];
+                e.target.style.boxShadow = shadows.sm;
+                e.target.style.transform = 'translateY(0)';
+              }}
+            />
+            <div style={{
+              position: 'absolute',
+              left: spacing[6],
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: fontSize.lg,
+              color: colors.gray[400],
+              zIndex: 1,
+            }}>
+              🔍
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          borderBottom: `1px solid ${colors.gray[200]}`,
-          marginBottom: spacing[4],
+          backgroundColor: colors.gray[100],
+          borderRadius: borderRadius.xl,
+          padding: spacing[2],
+          marginBottom: spacing[8],
+          gap: spacing[2],
+          boxShadow: shadows.sm,
         }}>
           {[
-            { id: 'all', label: 'All Users' },
-            { id: 'following', label: 'Following' },
-            { id: 'followers', label: 'Followers' },
+            { id: 'all', label: 'All Users', icon: '👥' },
+            { id: 'following', label: 'Following', icon: '👤' },
+            { id: 'followers', label: 'Followers', icon: '👥' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: spacing[3],
+                flex: 1,
+                padding: `${spacing[4]} ${spacing[6]}`,
                 border: 'none',
-                background: 'none',
-                borderBottom: `2px solid ${
-                  activeTab === tab.id ? colors.primary : 'transparent'
-                }`,
+                background: activeTab === tab.id ? colors.white : 'transparent',
+                borderRadius: borderRadius.lg,
                 color: activeTab === tab.id ? colors.primary : colors.gray[600],
                 cursor: 'pointer',
-                fontSize: fontSize.sm,
-                fontWeight: activeTab === tab.id ? fontWeight.semibold : fontWeight.normal,
+                fontSize: fontSize.base,
+                fontWeight: activeTab === tab.id ? fontWeight.bold : fontWeight.semibold,
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: spacing[3],
+                boxShadow: activeTab === tab.id ? shadows.md : 'none',
+                transform: activeTab === tab.id ? 'translateY(-1px)' : 'translateY(0)',
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.id) {
+                  e.target.style.backgroundColor = colors.gray[200];
+                  e.target.style.transform = 'translateY(-1px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.id) {
+                  e.target.style.backgroundColor = 'transparent';
+                  e.target.style.transform = 'translateY(0)';
+                }
               }}
             >
+              <span style={{ fontSize: fontSize.lg }}>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
@@ -207,7 +297,9 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
         <div style={{
           flex: 1,
           overflowY: 'auto',
-          minHeight: '300px',
+          minHeight: '400px',
+          maxHeight: '500px',
+          padding: spacing[2],
         }}>
           {loading ? (
             <div style={{
@@ -215,8 +307,18 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
               justifyContent: 'center',
               alignItems: 'center',
               height: '200px',
+              flexDirection: 'column',
+              gap: spacing[3],
             }}>
-              <div>Loading...</div>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                border: `3px solid ${colors.gray[200]}`,
+                borderTop: `3px solid ${colors.primary}`,
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }}></div>
+              <div style={{ color: colors.gray[600], fontWeight: fontWeight.medium }}>Searching users...</div>
             </div>
           ) : users.length === 0 ? (
             <div style={{
@@ -224,9 +326,21 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
               justifyContent: 'center',
               alignItems: 'center',
               height: '200px',
+              flexDirection: 'column',
+              gap: spacing[3],
               color: colors.gray[500],
             }}>
-              {searchQuery.length < 1 ? 'Start typing to search for users...' : 'No users found'}
+              <div style={{ fontSize: fontSize['2xl'] }}>
+                {searchQuery.length < 1 ? '🔍' : '😔'}
+              </div>
+              <div style={{ fontSize: fontSize.base, fontWeight: fontWeight.medium }}>
+                {searchQuery.length < 1 ? 'Start typing to search for users...' : 'No users found'}
+              </div>
+              {searchQuery.length >= 1 && (
+                <div style={{ fontSize: fontSize.sm, color: colors.gray[400] }}>
+                  Try a different search term or check another tab
+                </div>
+              )}
             </div>
           ) : (
             users.map((user) => (
@@ -235,27 +349,44 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: spacing[3],
-                  borderBottom: `1px solid ${colors.gray[100]}`,
+                  padding: spacing[6],
+                  backgroundColor: colors.white,
+                  border: `2px solid ${colors.gray[200]}`,
+                  borderRadius: borderRadius.xl,
+                  marginBottom: spacing[4],
+                  transition: 'all 0.3s ease',
+                  boxShadow: shadows.md,
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = colors.primary;
+                  e.target.style.boxShadow = shadows.lg;
+                  e.target.style.transform = 'translateY(-3px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.borderColor = colors.gray[200];
+                  e.target.style.boxShadow = shadows.md;
+                  e.target.style.transform = 'translateY(0)';
                 }}
               >
                 {/* Profile Picture */}
                 <div style={{
-                  width: '40px',
-                  height: '40px',
+                  width: '60px',
+                  height: '60px',
                   borderRadius: '50%',
                   backgroundColor: colors.secondary,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: colors.white,
-                  fontSize: fontSize.sm,
-                  fontWeight: fontWeight.semibold,
-                  marginRight: spacing[3],
+                  fontSize: fontSize.xl,
+                  fontWeight: fontWeight.bold,
+                  marginRight: spacing[6],
+                  boxShadow: shadows.md,
+                  border: `3px solid ${colors.white}`,
                 }}>
                   {user.profile_picture ? (
                     <img
-                      src={`/auth/serve-image/${user.profile_picture}`}
+                      src={`http://127.0.0.1:8000/auth/serve-image/${user.profile_picture}`}
                       alt={user.username}
                       style={{
                         width: '100%',
@@ -270,19 +401,21 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
                 </div>
 
                 {/* User Info */}
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, marginRight: spacing[12] }}>
                   <div style={{
-                    fontSize: fontSize.base,
-                    fontWeight: fontWeight.semibold,
-                    color: colors.gray[900],
+                    fontSize: fontSize.xl,
+                    fontWeight: fontWeight.bold,
+                    color: colors.dark,
+                    marginBottom: spacing[2],
                   }}>
                     {user.username}
                   </div>
                   {user.bio && (
                     <div style={{
-                      fontSize: fontSize.sm,
+                      fontSize: fontSize.base,
                       color: colors.gray[600],
-                      marginTop: '2px',
+                      lineHeight: 1.5,
+                      fontWeight: fontWeight.medium,
                     }}>
                       {user.bio}
                     </div>
@@ -294,13 +427,28 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
                   onClick={() => handleInvite(user.id)}
                   disabled={user.is_member || user.has_pending_invitation || invitedUsers.has(user.id)}
                   style={{
-                    padding: `${spacing[2]} ${spacing[4]}`,
-                    borderRadius: borderRadius.md,
+                    padding: `${spacing[4]} ${spacing[8]}`,
+                    borderRadius: borderRadius.xl,
                     border: 'none',
-                    fontSize: fontSize.sm,
-                    fontWeight: fontWeight.medium,
+                    fontSize: fontSize.base,
+                    fontWeight: fontWeight.bold,
                     cursor: user.is_member || user.has_pending_invitation || invitedUsers.has(user.id) ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: shadows.lg,
+                    minWidth: '120px',
                     ...getButtonStyle(user),
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!user.is_member && !user.has_pending_invitation && !invitedUsers.has(user.id)) {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = shadows.xl;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!user.is_member && !user.has_pending_invitation && !invitedUsers.has(user.id)) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = shadows.lg;
+                    }
                   }}
                 >
                   {getButtonText(user)}
@@ -309,33 +457,9 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
             ))
           )}
         </div>
-
-        {/* Footer */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginTop: spacing[4],
-          paddingTop: spacing[4],
-          borderTop: `1px solid ${colors.gray[200]}`,
-        }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: `${spacing[2]} ${spacing[4]}`,
-              backgroundColor: colors.gray[300],
-              color: colors.gray[700],
-              border: 'none',
-              borderRadius: borderRadius.md,
-              fontSize: fontSize.sm,
-              fontWeight: fontWeight.medium,
-              cursor: 'pointer',
-            }}
-          >
-            Close
-          </button>
-        </div>
       </div>
     </div>
+    </>
   );
 };
 
