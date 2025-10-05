@@ -32,6 +32,7 @@ async def get_trending_problems(
     from sqlalchemy import desc
     
     # Calculate engagement score: (comments × 2) + (votes × 1) + (views × 0.3) + (bookmarks × 1.5)
+    # EXCLUDE forum problems from trending
     trending_query = db.query(
         Problem,
         (
@@ -40,7 +41,7 @@ async def get_trending_problems(
             func.coalesce(Problem.view_count, 0) * 0.3 +
             func.coalesce(func.count(Bookmark.id), 0) * 1.5
         ).label('engagement_score')
-    ).outerjoin(Comment, Comment.problem_id == Problem.id).outerjoin(
+    ).filter(Problem.forum_id.is_(None)).outerjoin(Comment, Comment.problem_id == Problem.id).outerjoin(
         Vote, Vote.problem_id == Problem.id
     ).outerjoin(
         Bookmark, Bookmark.problem_id == Problem.id
@@ -50,9 +51,9 @@ async def get_trending_problems(
     offset = (page - 1) * limit
     trending_problems = trending_query.offset(offset).limit(limit).all()
     
-    # If no problems with engagement, fall back to recent problems
+    # If no problems with engagement, fall back to recent problems (EXCLUDE forum problems)
     if not trending_problems:
-        fallback_query = db.query(Problem).order_by(desc(Problem.created_at)).offset(offset).limit(limit)
+        fallback_query = db.query(Problem).filter(Problem.forum_id.is_(None)).order_by(desc(Problem.created_at)).offset(offset).limit(limit)
         fallback_problems = fallback_query.all()
         trending_problems = [(problem, 0) for problem in fallback_problems]
     
@@ -259,11 +260,11 @@ def get_problems(
     """Get problems with pagination"""
     offset = (page - 1) * limit
     
-    # Get total count for pagination
-    total_problems = db.query(Problem).count()
+    # Get total count for pagination (EXCLUDE forum problems)
+    total_problems = db.query(Problem).filter(Problem.forum_id.is_(None)).count()
     
-    # Get problems with pagination
-    problems = db.query(Problem).order_by(Problem.created_at.desc()).offset(offset).limit(limit).all()
+    # Get problems with pagination (EXCLUDE forum problems)
+    problems = db.query(Problem).filter(Problem.forum_id.is_(None)).order_by(Problem.created_at.desc()).offset(offset).limit(limit).all()
     
     result = []
     for problem in problems:
@@ -376,12 +377,27 @@ def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
 
 
 @router.get("/problems/id/{problem_id}", response_model=ProblemResponse)
-def get_problem(problem_id: int, db: Session = Depends(get_db)):
+def get_problem(problem_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     from sqlalchemy import func
     result = db.query(Problem, func.count(Comment.id).label('comment_count')).outerjoin(Comment).filter(Problem.id == problem_id).group_by(Problem.id).first()
     if not result:
         raise HTTPException(status_code=404, detail="Problem not found")
     problem, comment_count = result
+    
+    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    if problem.forum_id:
+        # Check if user is a member (active or creator)
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == problem.forum_id,
+            ForumMembership.user_id == current_user.id
+        ).first()
+        
+        # Also check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+        is_creator = forum and forum.creator_id == current_user.id
+        
+        if not membership and not is_creator:
+            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Debug: Check what's in the database
     print(f"Database description: {repr(problem.description)}")
@@ -552,11 +568,26 @@ def create_comment(
     return db_comment
 
 @router.get("/problems/{problem_id}/comments", response_model=List[CommentResponse])
-def get_comments(problem_id: int, db: Session = Depends(get_db)):
+def get_comments(problem_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Check if problem exists
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    if problem.forum_id:
+        # Check if user is a member (active or creator)
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == problem.forum_id,
+            ForumMembership.user_id == current_user.id
+        ).first()
+        
+        # Also check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+        is_creator = forum and forum.creator_id == current_user.id
+        
+        if not membership and not is_creator:
+            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get comments first, then manually load author info to handle inactive users
     comments = db.query(Comment).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
@@ -677,6 +708,21 @@ def get_vote_status(
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    if problem.forum_id:
+        # Check if user is a member (active or creator)
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == problem.forum_id,
+            ForumMembership.user_id == current_user.id
+        ).first()
+        
+        # Also check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+        is_creator = forum and forum.creator_id == current_user.id
+        
+        if not membership and not is_creator:
+            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get user's current vote
     user_vote = db.query(Vote).filter(
@@ -1755,6 +1801,7 @@ async def serve_problem_image(filename: str):
 @router.get("/problems/{problem_id}/images")
 async def get_problem_images(
     problem_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all images for a problem"""
@@ -1762,6 +1809,21 @@ async def get_problem_images(
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    if problem.forum_id:
+        # Check if user is a member (active or creator)
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == problem.forum_id,
+            ForumMembership.user_id == current_user.id
+        ).first()
+        
+        # Also check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+        is_creator = forum and forum.creator_id == current_user.id
+        
+        if not membership and not is_creator:
+            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get images from database
     problem_images = db.query(ProblemImage).filter(ProblemImage.problem_id == problem_id).all()
@@ -2216,17 +2278,45 @@ def create_forum_problem(
     problem_data['forum_id'] = forum_id
     problem_data['author_id'] = current_user.id
     
+    print(f"DEBUG: Creating problem for forum {forum_id} with data: {problem_data}")
+    
     db_problem = Problem(**problem_data)
     db.add(db_problem)
     db.commit()
     db.refresh(db_problem)
+    
+    print(f"DEBUG: Created problem {db_problem.id} with forum_id: {db_problem.forum_id}")
     
     # Update forum last activity
     forum = db.query(Forum).filter(Forum.id == forum_id).first()
     forum.last_activity = datetime.utcnow()
     db.commit()
     
-    return db_problem
+    # Get comment count and author for proper serialization
+    comment_count = db.query(Comment).filter(Comment.problem_id == db_problem.id).count()
+    author = db.query(User).filter(User.id == db_problem.author_id).first()
+    
+    # Create proper response
+    return {
+        "id": db_problem.id,
+        "title": db_problem.title,
+        "description": db_problem.description,
+        "subject": db_problem.subject,
+        "level": db_problem.level,
+        "year": db_problem.year,
+        "tags": db_problem.tags,
+        "created_at": db_problem.created_at,
+        "author_id": db_problem.author_id,
+        "forum_id": db_problem.forum_id,
+        "comment_count": comment_count,
+        "author": {
+            "id": author.id,
+            "username": author.username,
+            "email": author.email,
+            "profile_picture": author.profile_picture,
+            "created_at": author.created_at
+        } if author else None
+    }
 
 @router.get("/forums/{forum_id}/problems", response_model=List[ProblemResponse])
 def get_forum_problems(
@@ -2251,7 +2341,38 @@ def get_forum_problems(
         Problem.forum_id == forum_id
     ).order_by(Problem.created_at.desc()).offset(skip).limit(limit).all()
     
-    return problems
+    print(f"DEBUG: Found {len(problems)} problems for forum {forum_id}")
+    for p in problems:
+        print(f"DEBUG: Problem {p.id}: {p.title} (forum_id: {p.forum_id})")
+    
+    # Serialize problems with comment counts and authors
+    result = []
+    for problem in problems:
+        comment_count = db.query(Comment).filter(Comment.problem_id == problem.id).count()
+        author = db.query(User).filter(User.id == problem.author_id).first()
+        
+        result.append({
+            "id": problem.id,
+            "title": problem.title,
+            "description": problem.description,
+            "subject": problem.subject,
+            "level": problem.level,
+            "year": problem.year,
+            "tags": problem.tags,
+            "created_at": problem.created_at,
+            "author_id": problem.author_id,
+            "forum_id": problem.forum_id,
+            "comment_count": comment_count,
+            "author": {
+                "id": author.id,
+                "username": author.username,
+                "email": author.email,
+                "profile_picture": author.profile_picture,
+                "created_at": author.created_at
+            } if author else None
+        })
+    
+    return result
 
 # Forum Message Endpoints
 @router.post("/forums/{forum_id}/messages", response_model=ForumMessageSchema)

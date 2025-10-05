@@ -196,30 +196,52 @@ function ProblemDetail() {
 
     const fetchProblem = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`);
+            console.log("DEBUG: Fetching problem details...");
+            const token = localStorage.getItem("token");
+            console.log("DEBUG: Token exists:", !!token);
+            console.log("DEBUG: Token preview:", token ? token.substring(0, 20) + "..." : "No token");
+            
+            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("DEBUG: Problem details fetched successfully");
             setProblem(response.data);
             
             // Increment view count
             try {
+                console.log("DEBUG: Incrementing view count...");
                 const token = localStorage.getItem("token");
                 await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/view`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                console.log("DEBUG: View count incremented successfully");
             } catch (viewError) {
+                console.log("DEBUG: View count error (non-critical):", viewError.response?.status);
             }
             
             // Fetch problem images
             try {
+                console.log("DEBUG: Fetching problem images...");
                 const imagesResponse = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/images`);
+                console.log("DEBUG: Problem images fetched successfully");
                 setProblemImages(imagesResponse.data.images || []);
             } catch (error) {
+                console.error("DEBUG: Error fetching problem images:", error.response?.status);
                 console.error("Error fetching problem images:", error);
                 setProblemImages([]);
             }
         } catch (error) {
+            console.error("DEBUG: Error fetching problem details:", error.response?.status);
             console.error("Error fetching problem:", error);
             console.error("Error response:", error.response?.data);
             console.error("Error status:", error.response?.status);
+            
+            // Handle 403 error (Access denied for forum problems)
+            if (error.response?.status === 403) {
+                alert("Access denied: You are not a member of this forum.");
+                navigate('/forums');
+                return;
+            }
         } finally {
             setLoading(false);
         }
@@ -227,9 +249,15 @@ function ProblemDetail() {
 
     const fetchComments = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/comments`);
+            console.log("DEBUG: Fetching comments...");
+            const token = localStorage.getItem("token");
+            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/comments`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("DEBUG: Comments fetched successfully");
             setComments(response.data);
         } catch (error) {
+            console.error("DEBUG: Error fetching comments:", error.response?.status);
             console.error("Error fetching comments:", error);
         }
     }

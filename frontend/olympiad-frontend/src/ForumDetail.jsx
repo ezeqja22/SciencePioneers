@@ -132,6 +132,7 @@ const ForumDetail = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/problems`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            console.log("DEBUG: Forum problems fetched:", response.data);
             setProblems(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
@@ -587,7 +588,28 @@ const ForumDetail = () => {
                                     </p>
                                 ) : (
                                     problems.map((problem) => (
-                                        <Card key={problem.id} style={{ marginBottom: spacing.md }}>
+                                        <Card 
+                                            key={problem.id} 
+                                            style={{ 
+                                                marginBottom: spacing.md,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    backgroundColor: colors.gray[50]
+                                                }
+                                            }}
+                                            onClick={() => navigate(`/problem/${problem.id}`)}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.backgroundColor = colors.gray[50];
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = colors.white;
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = shadows.sm;
+                                            }}
+                                        >
                                             <h4 style={{ margin: "0 0 8px 0", color: colors.gray[800] }}>
                                                 {renderMathContent(problem.title)}
                                             </h4>
@@ -602,7 +624,7 @@ const ForumDetail = () => {
                                                 color: colors.gray[500], 
                                                 fontSize: "0.8rem" 
                                             }}>
-                                                Posted by {getDisplayName(problem.author?.username || 'Unknown')} • {new Date(problem.posted_at).toLocaleDateString()}
+                                                Posted by {getDisplayName(problem.author?.username || 'Unknown')} • {new Date(problem.created_at).toLocaleDateString()}
                                             </div>
                                         </Card>
                                     ))
