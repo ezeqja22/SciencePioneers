@@ -394,6 +394,99 @@ function Settings() {
                                                     color: colors.dark,
                                                     marginBottom: spacing.xs
                                                 }}>
+                                                    Forum Invitations
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Get notified when you're invited to join a forum
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_forum_invitations}
+                                                onChange={(e) => handlePreferenceChange('email_forum_invitations', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Forum Join Requests
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Get notified when someone requests to join your forum
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_forum_join_requests}
+                                                onChange={(e) => handlePreferenceChange('email_forum_join_requests', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Forum Deleted
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Get notified when a forum you're a member of gets deleted
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.email_forum_deleted}
+                                                onChange={(e) => handlePreferenceChange('email_forum_deleted', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
                                                     Marketing Updates
                                                 </div>
                                                 <div style={{
@@ -482,6 +575,37 @@ function Settings() {
                                             <Switch
                                                 checked={notificationPrefs.in_app_follows}
                                                 onChange={(e) => handlePreferenceChange('in_app_follows', e.target.checked)}
+                                                size="md"
+                                            />
+                                        </label>
+
+                                        <label style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            padding: spacing.md,
+                                            backgroundColor: colors.gray[50],
+                                            borderRadius: borderRadius.md,
+                                            cursor: "pointer"
+                                        }}>
+                                            <div>
+                                                <div style={{
+                                                    fontWeight: typography.fontWeight.medium,
+                                                    color: colors.dark,
+                                                    marginBottom: spacing.xs
+                                                }}>
+                                                    Forum Deleted
+                                                </div>
+                                                <div style={{
+                                                    color: colors.gray[600],
+                                                    fontSize: typography.fontSize.sm
+                                                }}>
+                                                    Show notifications in the bell icon when a forum you're a member of gets deleted
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={notificationPrefs.in_app_forum_deleted}
+                                                onChange={(e) => handlePreferenceChange('in_app_forum_deleted', e.target.checked)}
                                                 size="md"
                                             />
                                         </label>

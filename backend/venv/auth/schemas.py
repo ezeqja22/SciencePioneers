@@ -103,9 +103,13 @@ class NotificationPreferencesCreate(BaseModel):
     email_comments: bool = True
     email_follows: bool = True
     email_marketing: bool = False
+    email_forum_invitations: bool = True
+    email_forum_join_requests: bool = True
+    email_forum_deleted: bool = True
     in_app_likes: bool = True
     in_app_comments: bool = True
     in_app_follows: bool = True
+    in_app_forum_deleted: bool = True
 
 class NotificationPreferencesResponse(BaseModel):
     id: int
@@ -114,9 +118,13 @@ class NotificationPreferencesResponse(BaseModel):
     email_comments: bool
     email_follows: bool
     email_marketing: bool
+    email_forum_invitations: bool
+    email_forum_join_requests: bool
+    email_forum_deleted: bool
     in_app_likes: bool
     in_app_comments: bool
     in_app_follows: bool
+    in_app_forum_deleted: bool
     created_at: datetime
     updated_at: datetime
 

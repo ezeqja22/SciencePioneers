@@ -64,8 +64,9 @@ function NotificationBell({ onNotificationClick }) {
                 case 'forum_invitation':
                 case 'forum_invitation_accepted':
                 case 'forum_invitation_declined':
+                    return true; // Always show forum invitations and join requests
                 case 'forum_deleted':
-                    return userPreferences.in_app_follows;
+                    return userPreferences.in_app_forum_deleted;
                 default:
                     return true;
             }
