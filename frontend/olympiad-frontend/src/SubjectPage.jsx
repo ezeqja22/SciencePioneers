@@ -54,9 +54,7 @@ function SubjectPage() {
     const fetchProblems = async () => {
         setLoading(true);
         try {
-            console.log("Fetching problems for subject:", subjectName);
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${subjectName}`);
-            console.log("Response data:", response.data);
             setAllProblems(response.data); // Store all problems
             setProblems(response.data); // Initially show all problems
             // For now, we'll implement simple pagination on frontend

@@ -160,9 +160,6 @@ function CreateProblem() {
         year: formData.year ? parseInt(formData.year) : null
       };
       
-      // Debug: Check if line breaks are preserved
-      console.log("Description with line breaks:", JSON.stringify(formData.description));
-      console.log("Description length:", formData.description.length);
       
       
       const response = await axios.post(

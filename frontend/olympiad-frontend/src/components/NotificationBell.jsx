@@ -78,10 +78,7 @@ function NotificationBell({ onNotificationClick }) {
             const response = await axios.get("http://127.0.0.1:8000/auth/notifications", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("DEBUG: Raw notifications:", response.data);
-            console.log("DEBUG: User preferences:", userPreferences);
             const filteredNotifications = filterNotificationsByPreferences(response.data);
-            console.log("DEBUG: Filtered notifications:", filteredNotifications);
             setNotifications(filteredNotifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
@@ -137,13 +134,8 @@ function NotificationBell({ onNotificationClick }) {
             const token = localStorage.getItem("token");
             const { forum_id, request_id } = notification.data || {};
             
-            console.log("DEBUG: Accept request - notification:", notification);
-            console.log("DEBUG: Accept request - data:", notification.data);
-            console.log("DEBUG: Accept request - forum_id:", forum_id, "request_id:", request_id);
-            
             if (!forum_id || !request_id) {
                 // For old notifications without data, try to find the request
-                console.log("DEBUG: Missing data, trying to find request for old notification");
                 
                 // Extract username from message: "xhillda wants to join 'forum test 3'"
                 const message = notification.message;
@@ -154,7 +146,6 @@ function NotificationBell({ onNotificationClick }) {
                     const username = usernameMatch[1];
                     const forumTitle = forumMatch[1];
                     
-                    console.log("DEBUG: Extracted username:", username, "forum title:", forumTitle);
                     
                     // We need to find the forum ID and request ID
                     // For now, show a helpful message
@@ -185,6 +176,11 @@ function NotificationBell({ onNotificationClick }) {
             );
             
             alert("Join request accepted!");
+            
+            // Refresh the page to update forum membership status
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error("Error accepting join request:", error);
             alert("Failed to accept join request");
@@ -250,6 +246,11 @@ function NotificationBell({ onNotificationClick }) {
             );
             
             alert("Forum invitation accepted!");
+            
+            // Refresh the page to update forum membership status
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } catch (error) {
             console.error("Error accepting invitation:", error);
             alert("Failed to accept invitation");

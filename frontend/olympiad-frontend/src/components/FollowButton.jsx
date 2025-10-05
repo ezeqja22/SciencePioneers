@@ -54,8 +54,6 @@ const FollowButton = ({
         return null;
     }
 
-    // Debug logging
-    console.log('FollowButton render:', { isFollowing, isDeletedUser, loading });
 
     return (
         <button

@@ -2051,6 +2051,7 @@ def get_forums(
         forum.is_member = user_membership is not None
         forum.user_role = user_membership.role if user_membership else None
         
+        
         # Check if current user has a pending join request
         pending_request = db.query(ForumJoinRequest).filter(
             ForumJoinRequest.forum_id == forum.id,

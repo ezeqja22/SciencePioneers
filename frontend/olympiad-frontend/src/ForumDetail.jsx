@@ -102,11 +102,9 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            console.log("Fetching forum:", forumId);
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Forum response:", response.data);
             setForum(response.data);
         } catch (error) {
             console.error("Error fetching forum:", error);
@@ -142,7 +140,6 @@ const ForumDetail = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/members`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Members response:", response.data);
             setMembers(response.data);
         } catch (error) {
             console.error("Error fetching members:", error);
@@ -157,7 +154,6 @@ const ForumDetail = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Messages response:", response.data);
             setMessages(response.data.reverse());
         } catch (error) {
             console.error("Error fetching messages:", error);

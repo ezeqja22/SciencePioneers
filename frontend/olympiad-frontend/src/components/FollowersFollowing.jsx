@@ -227,14 +227,6 @@ const FollowersFollowing = ({ type }) => {
                             const isFollowing = followingStatus[user.id];
                             const isCurrentUser = currentUser && currentUser.id === user.id;
                             
-                            // Debug logging
-                            console.log('FollowersFollowing user:', { 
-                                username: user.username, 
-                                isFollowing, 
-                                isCurrentUser, 
-                                activeTab,
-                                followingStatus: followingStatus[user.id]
-                            });
                             
                             // Show button for all users except current user
                             // The FollowButton component will handle the logic internally

@@ -58,7 +58,7 @@ const Forums = () => {
             const response = await axios.get("http://127.0.0.1:8000/auth/forums", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("DEBUG: Forums response:", response.data);
+            
             setForums(response.data);
         } catch (error) {
             console.error("Error fetching forums:", error);
@@ -413,7 +413,8 @@ const Forums = () => {
                                                 size="sm"
                                                 style={{ 
                                                     backgroundColor: colors.gray[500],
-                                                    cursor: 'not-allowed'
+                                                    cursor: 'not-allowed',
+                                                    border: 'none'
                                                 }}
                                                 disabled
                                             >
@@ -426,7 +427,7 @@ const Forums = () => {
                                                     e.stopPropagation();
                                                     handleRequestToJoin(forum.id);
                                                 }}
-                                                style={{ backgroundColor: colors.warning }}
+                                                style={{ backgroundColor: colors.primary }}
                                             >
                                                 Request to Join
                                             </Button>
@@ -445,19 +446,6 @@ const Forums = () => {
                                     )
                                 )}
                                 
-                                {/* Show member status for members */}
-                                {currentUser && forum.is_member && (
-                                    <Button
-                                        size="sm"
-                                        style={{ 
-                                            backgroundColor: colors.success,
-                                            cursor: 'not-allowed'
-                                        }}
-                                        disabled
-                                    >
-                                        {forum.user_role === 'creator' ? 'Creator' : 'Member'}
-                                    </Button>
-                                )}
                             </div>
                         </Card>
                     ))}

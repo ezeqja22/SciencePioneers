@@ -112,11 +112,9 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            console.log("Fetching messages for forum:", forumId);
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Messages response:", response.data);
             setMessages(response.data.reverse()); // Reverse to show oldest first
         } catch (error) {
             console.error("Error fetching messages:", error);
@@ -149,19 +147,12 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            console.log("Sending message:", {
-                content: newMessage,
-                message_type: "text"
-            });
-
             const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 content: newMessage,
                 message_type: "text"
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            console.log("Message sent successfully:", response.data);
             setNewMessage('');
             fetchMessages(); // Refresh messages
         } catch (error) {

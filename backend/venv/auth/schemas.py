@@ -163,6 +163,9 @@ class Forum(ForumBase):
     created_at: datetime
     last_activity: datetime
     member_count: int = 0
+    is_member: Optional[bool] = None
+    user_role: Optional[str] = None
+    has_pending_request: Optional[bool] = None
     
     class Config:
         from_attributes = True

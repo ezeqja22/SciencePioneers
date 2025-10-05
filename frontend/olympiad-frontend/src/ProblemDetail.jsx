@@ -407,7 +407,6 @@ function ProblemDetail() {
             const processedTags = validTags.join(", ");
             
             const token = localStorage.getItem("token");
-            console.log("Sending request to update problem...");
             
             // Ensure year is a number or null
             const requestData = {
@@ -511,7 +510,7 @@ function ProblemDetail() {
     }
 
     if (!problem) {
-        return (
+    return (
             <div style={{ padding: "20px", textAlign: "center" }}>
                 <h2>Problem not found</h2>
                 <p>This problem may have been deleted or doesn't exist.</p>
@@ -575,7 +574,7 @@ function ProblemDetail() {
                             📐 Math
                         </button>
                     </div>
-                    <div style={{ marginBottom: "20px" }}>
+            <div style={{ marginBottom: "20px" }}>
                         <input
                             type="text"
                             value={editProblemData.subject}
@@ -657,9 +656,9 @@ function ProblemDetail() {
                                         placeholder={`Tag ${index + 1}`}
                                         style={{ 
                                             flex: 1,
-                                            padding: "4px 8px", 
+                    padding: "4px 8px",
                                             border: "1px solid #ddd", 
-                                            borderRadius: "4px",
+                    borderRadius: "4px",
                                             fontSize: "12px"
                                         }}
                                     />
@@ -693,7 +692,7 @@ function ProblemDetail() {
                                         border: "none",
                                         borderRadius: "4px",
                                         cursor: "pointer",
-                                        fontSize: "12px",
+                    fontSize: "12px",
                                         alignSelf: "flex-start"
                                     }}
                                 >
@@ -797,13 +796,13 @@ function ProblemDetail() {
                                                     position: "absolute",
                                                     top: "5px",
                                                     right: "5px",
-                                                    padding: "4px 8px",
+                        padding: "4px 8px",
                                                     backgroundColor: "#dc3545",
                                                     color: "white",
                                                     border: "none",
-                                                    borderRadius: "4px",
+                        borderRadius: "4px",
                                                     cursor: "pointer",
-                                                    fontSize: "12px"
+                        fontSize: "12px"
                                                 }}
                                             >
                                                 ×
@@ -1151,7 +1150,7 @@ function ProblemDetail() {
                                 transition: "all 0.2s ease"
                             }}>
                                 {problem.level}
-                            </span>
+                    </span>
                         )}
                         {problem.year && (
                     <span style={{
@@ -1650,7 +1649,7 @@ function ProblemDetail() {
                             zIndex: 10000
                         }}>
                             {currentImageIndex + 1} / {problemImages.length}
-                        </div>
+        </div>
                     )}
 
                     {/* Fullscreen image */}

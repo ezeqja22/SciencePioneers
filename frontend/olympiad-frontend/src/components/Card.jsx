@@ -23,7 +23,6 @@ function Card({
         borderRadius: borderRadius.lg,
         boxShadow: shadows.md,
         padding: getPadding(),
-        border: `1px solid ${colors.gray[200]}`,
         transition: hover ? "all 0.2s ease" : "none",
         ...style
     };
