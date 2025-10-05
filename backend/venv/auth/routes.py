@@ -2844,11 +2844,16 @@ def delete_forum(
     notification_service = NotificationService(db)
     for member in members:
         if member.user_id != current_user.id:  # Don't notify the creator
-            notification_service.send_forum_deleted_notification(
+            print(f"DEBUG: Sending forum deleted notification to user {member.user_id}")
+            notification = notification_service.send_forum_deleted_notification(
                 user_id=member.user_id,
                 forum_title=forum.title,
                 creator_username=current_user.username
             )
+            if notification:
+                print(f"DEBUG: Notification created successfully for user {member.user_id}")
+            else:
+                print(f"DEBUG: Failed to create notification for user {member.user_id}")
     
     # Explicitly delete related records to avoid foreign key constraint issues
     # Delete forum invitations
