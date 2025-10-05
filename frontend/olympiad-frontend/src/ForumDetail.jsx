@@ -10,6 +10,8 @@ import AnimatedLoader from './components/AnimatedLoader';
 import Header from './components/Header';
 import { colors, spacing, typography, borderRadius, shadows } from './designSystem';
 import { getUserInitial, getDisplayName } from './utils';
+import ForumProblemModal from './ForumProblemModal';
+import ForumProblemCard from './ForumProblemCard';
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -45,6 +47,9 @@ const ForumDetail = () => {
     });
     const [isMobile, setIsMobile] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+    const [showProblemModal, setShowProblemModal] = useState(false);
+    const [problemData, setProblemData] = useState({});
 
     useEffect(() => {
         const checkMobile = () => {
@@ -155,7 +160,33 @@ const ForumDetail = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMessages(response.data.reverse());
+            const messages = response.data.reverse();
+            setMessages(messages);
+
+            // Fetch problem data for problem messages
+            const problemIds = messages
+                .filter(msg => msg.message_type === 'problem' && msg.problem_id)
+                .map(msg => msg.problem_id);
+
+            if (problemIds.length > 0) {
+                const problemPromises = problemIds.map(id => 
+                    axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }).then(res => ({ id, data: res.data }))
+                    .catch(err => {
+                        console.error(`Error fetching problem ${id}:`, err);
+                        return { id, data: null };
+                    })
+                );
+                const problemResults = await Promise.all(problemPromises);
+                const problemMap = {};
+                problemResults.forEach(({ id, data }) => {
+                    if (data && data.id) {
+                        problemMap[id] = data;
+                    }
+                });
+                setProblemData(problemMap);
+            }
         } catch (error) {
             console.error("Error fetching messages:", error);
         }
@@ -220,6 +251,29 @@ const ForumDetail = () => {
 
     const handleDeleteForum = () => {
         setShowDeleteModal(true);
+    };
+
+    const handleAttachmentClick = () => {
+        setShowAttachmentMenu(!showAttachmentMenu);
+    };
+
+    const handleCreateProblem = () => {
+        setShowAttachmentMenu(false);
+        setShowProblemModal(true);
+    };
+
+    const handleUploadImage = () => {
+        setShowAttachmentMenu(false);
+        alert("Image upload coming soon!");
+    };
+
+    const handleMathSymbols = () => {
+        setShowAttachmentMenu(false);
+        alert("Math symbols coming soon!");
+    };
+
+    const handleProblemCreated = (problem) => {
+        fetchMessages(); // Refresh messages to show the new problem
     };
 
     const confirmDeleteForum = async () => {
@@ -566,7 +620,8 @@ const ForumDetail = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         backgroundColor: colors.light,
-                        transition: 'all 0.3s ease-in-out'
+                        transition: 'all 0.3s ease-in-out',
+                        position: 'relative'
                     }}>
                         {/* Chat Header */}
                         <div style={{
@@ -678,8 +733,27 @@ const ForumDetail = () => {
                                                     <div style={{ whiteSpace: "pre-wrap" }}>
                                                         {renderMathContent(message.content)}
                                                     </div>
+                                                ) : message.message_type === 'problem' ? (
+                                                    <div style={{ marginTop: spacing.sm }}>
+                                                        {problemData[message.problem_id] ? (
+                                                            <ForumProblemCard 
+                                                                problem={problemData[message.problem_id]} 
+                                                                author={message.author}
+                                                            />
+                                                        ) : (
+                                                            <div style={{ 
+                                                                padding: spacing.sm, 
+                                                                backgroundColor: colors.gray[100], 
+                                                                borderRadius: borderRadius.md,
+                                                                textAlign: 'center',
+                                                                color: colors.gray[600]
+                                                            }}>
+                                                                Loading problem...
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <div>Problem message</div>
+                                                    <div>Unknown message type</div>
                                                 )}
                                                 
                                                 <div style={{
@@ -703,7 +777,38 @@ const ForumDetail = () => {
                             backgroundColor: colors.white,
                             borderTop: `1px solid ${colors.gray[200]}`
                         }}>
-                            <div style={{ display: 'flex', gap: spacing.sm }}>
+                            <div style={{ display: 'flex', gap: spacing.sm, alignItems: 'flex-end' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleAttachmentClick}
+                                    style={{
+                                        backgroundColor: colors.primary,
+                                        color: colors.white,
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        width: '40px',
+                                        height: '40px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        fontSize: '20px',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = colors.secondary;
+                                        e.target.style.transform = 'scale(1.05)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.primary;
+                                        e.target.style.transform = 'scale(1)';
+                                    }}
+                                >
+                                    +
+                                </button>
+                                
                                 <input
                                     type="text"
                                     value={newMessage}
@@ -735,9 +840,133 @@ const ForumDetail = () => {
                                 </Button>
                             </div>
                         </form>
+
+                        {/* Attachment Menu */}
+                        {showAttachmentMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: '80px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                backgroundColor: colors.white,
+                                borderRadius: borderRadius.lg,
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                                border: `1px solid ${colors.gray[200]}`,
+                                padding: spacing.lg,
+                                zIndex: 1000,
+                                width: '400px',
+                                maxWidth: '90%',
+                                animation: 'slideUp 0.3s ease-out',
+                                marginLeft: '0',
+                                marginRight: '0'
+                            }}>
+                                <div style={{ display: "flex", gap: spacing.md, justifyContent: "center" }}>
+                                    <button 
+                                        onClick={handleCreateProblem}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: spacing.sm,
+                                            padding: spacing.md,
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            minWidth: '80px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        <div style={{ fontSize: "24px", marginBottom: spacing.xs }}>📝</div>
+                                        <span style={{ 
+                                            fontSize: typography.fontSize.sm,
+                                            fontWeight: typography.fontWeight.medium
+                                        }}>
+                                            Problem
+                                        </span>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={handleUploadImage}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: spacing.sm,
+                                            padding: spacing.md,
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            minWidth: '80px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        <div style={{ fontSize: "24px", marginBottom: spacing.xs }}>🖼️</div>
+                                        <span style={{ 
+                                            fontSize: typography.fontSize.sm,
+                                            fontWeight: typography.fontWeight.medium
+                                        }}>
+                                            Image
+                                        </span>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={handleMathSymbols}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: spacing.sm,
+                                            padding: spacing.md,
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            minWidth: '80px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        <div style={{ fontSize: "24px", marginBottom: spacing.xs }}>🧮</div>
+                                        <span style={{ 
+                                            fontSize: typography.fontSize.sm,
+                                            fontWeight: typography.fontWeight.medium
+                                        }}>
+                                            Math
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
+
+            {/* Forum Problem Modal */}
+            <ForumProblemModal
+                isOpen={showProblemModal}
+                onClose={() => setShowProblemModal(false)}
+                forumId={forumId}
+                onProblemCreated={handleProblemCreated}
+            />
             
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
@@ -849,6 +1078,19 @@ const ForumDetail = () => {
                 </div>
             </div>
             )}
+
+            <style jsx>{`
+                @keyframes slideUp {
+                    from {
+                        transform: translateX(-50%) translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(-50%) translateY(0);
+                        opacity: 1;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

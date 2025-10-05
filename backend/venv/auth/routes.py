@@ -3,13 +3,13 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumProblem, ForumMessage, ForumInvitation, ForumJoinRequest
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
-from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumProblemCreate, ForumProblem as ForumProblemSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema
+from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime
@@ -2193,10 +2193,10 @@ def get_forum_members(
     
     return members
 
-@router.post("/forums/{forum_id}/problems", response_model=ForumProblemSchema)
+@router.post("/forums/{forum_id}/problems", response_model=ProblemResponse)
 def create_forum_problem(
     forum_id: int,
-    problem: ForumProblemCreate,
+    problem: ProblemCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -2211,16 +2211,12 @@ def create_forum_problem(
     if not membership:
         raise HTTPException(status_code=403, detail="Must be a member to post problems")
     
-    db_problem = ForumProblem(
-        forum_id=forum_id,
-        author_id=current_user.id,
-        title=problem.title,
-        description=problem.description,
-        subject=problem.subject,
-        level=problem.level,
-        year=problem.year,
-        tags=problem.tags
-    )
+    # Create problem with forum_id
+    problem_data = problem.dict()
+    problem_data['forum_id'] = forum_id
+    problem_data['author_id'] = current_user.id
+    
+    db_problem = Problem(**problem_data)
     db.add(db_problem)
     db.commit()
     db.refresh(db_problem)
@@ -2232,7 +2228,7 @@ def create_forum_problem(
     
     return db_problem
 
-@router.get("/forums/{forum_id}/problems", response_model=List[ForumProblemSchema])
+@router.get("/forums/{forum_id}/problems", response_model=List[ProblemResponse])
 def get_forum_problems(
     forum_id: int,
     skip: int = 0,
@@ -2251,10 +2247,9 @@ def get_forum_problems(
     if not membership:
         raise HTTPException(status_code=403, detail="Must be a member to view problems")
     
-    problems = db.query(ForumProblem).filter(
-        ForumProblem.forum_id == forum_id,
-        ForumProblem.is_archived == False
-    ).order_by(ForumProblem.posted_at.desc()).offset(skip).limit(limit).all()
+    problems = db.query(Problem).filter(
+        Problem.forum_id == forum_id
+    ).order_by(Problem.created_at.desc()).offset(skip).limit(limit).all()
     
     return problems
 

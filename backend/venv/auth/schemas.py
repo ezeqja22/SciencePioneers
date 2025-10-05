@@ -35,6 +35,7 @@ class ProblemCreate(BaseModel):
     subject: str
     level: Optional[str] = "Any Level"
     year: Optional[int] = None
+    forum_id: Optional[int] = None  # Link to forum if posted in forum
 
 class ProblemResponse(BaseModel):
     id: int
@@ -45,6 +46,7 @@ class ProblemResponse(BaseModel):
     level: Optional[str]
     year: Optional[int]
     author_id: int
+    forum_id: Optional[int] = None
     comment_count: int
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -195,26 +197,6 @@ class ForumMembership(ForumMembershipBase):
     class Config:
         from_attributes = True
 
-class ForumProblemBase(BaseModel):
-    title: str
-    description: str
-    subject: str = None
-    level: str = None
-    year: int = None
-    tags: str = None
-
-class ForumProblemCreate(ForumProblemBase):
-    forum_id: int
-
-class ForumProblem(ForumProblemBase):
-    id: int
-    forum_id: int
-    author_id: int
-    posted_at: datetime
-    is_archived: bool = False
-    
-    class Config:
-        from_attributes = True
 
 class ForumMessageBase(BaseModel):
     content: str

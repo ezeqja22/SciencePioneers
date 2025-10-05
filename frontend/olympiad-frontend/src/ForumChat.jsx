@@ -5,6 +5,8 @@ import { colors, spacing, typography, borderRadius, shadows } from './designSyst
 import { getUserInitial, getDisplayName } from './utils';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import ForumProblemModal from './ForumProblemModal';
+import ForumProblemCard from './ForumProblemCard';
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -33,6 +35,9 @@ const ForumChat = () => {
     const [error, setError] = useState(null);
     const [typingUsers, setTypingUsers] = useState([]);
     const [isTyping, setIsTyping] = useState(false);
+    const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+    const [showProblemModal, setShowProblemModal] = useState(false);
+    const [problemData, setProblemData] = useState({});
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const pollingIntervalRef = useRef(null);
@@ -115,7 +120,34 @@ const ForumChat = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMessages(response.data.reverse()); // Reverse to show oldest first
+            const messages = response.data.reverse(); // Reverse to show oldest first
+            setMessages(messages);
+
+            // Fetch problem data for problem messages
+            const problemIds = messages
+                .filter(msg => msg.message_type === 'problem' && msg.problem_id)
+                .map(msg => msg.problem_id);
+
+            if (problemIds.length > 0) {
+                const problemPromises = problemIds.map(id => 
+                    axios.get(`http://127.0.0.1:8000/auth/problems/${id}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    }).then(res => ({ id, data: res.data }))
+                    .catch(err => {
+                        console.error(`Error fetching problem ${id}:`, err);
+                        return { id, data: null };
+                    })
+                );
+
+                const problemResults = await Promise.all(problemPromises);
+                const problemMap = {};
+                problemResults.forEach(({ id, data }) => {
+                    if (data) {
+                        problemMap[id] = data;
+                    }
+                });
+                setProblemData(problemMap);
+            }
         } catch (error) {
             console.error("Error fetching messages:", error);
             console.error("Error response:", error.response);
@@ -181,6 +213,32 @@ const ForumChat = () => {
         typingTimeoutRef.current = setTimeout(() => {
             setIsTyping(false);
         }, 1000);
+    };
+
+    const handleAttachmentClick = () => {
+        setShowAttachmentMenu(!showAttachmentMenu);
+    };
+
+    const handleCreateProblem = () => {
+        setShowAttachmentMenu(false);
+        setShowProblemModal(true);
+    };
+
+    const handleUploadImage = () => {
+        setShowAttachmentMenu(false);
+        // TODO: Implement image upload
+        alert("Image upload coming soon!");
+    };
+
+    const handleMathSymbols = () => {
+        setShowAttachmentMenu(false);
+        // TODO: Implement math symbols
+        alert("Math symbols coming soon!");
+    };
+
+    const handleProblemCreated = (problem) => {
+        // Refresh messages to show the new problem
+        fetchMessages();
     };
 
     const scrollToBottom = () => {
@@ -350,18 +408,24 @@ const ForumChat = () => {
                                         {renderMathContent(message.content)}
                                     </div>
                                 ) : message.message_type === 'problem' ? (
-                                    <div style={{
-                                        backgroundColor: isOwnMessage ? "rgba(255,255,255,0.1)" : colors.light,
-                                        padding: spacing.sm,
-                                        borderRadius: borderRadius.md,
-                                        border: `1px solid ${isOwnMessage ? "rgba(255,255,255,0.2)" : colors.gray[200]}`
-                                    }}>
-                                        <div style={{ fontWeight: "600", marginBottom: spacing.xs }}>
-                                            📐 Problem
-                                        </div>
-                                        <div style={{ fontSize: "14px" }}>
-                                            {renderMathContent(message.content)}
-                                        </div>
+                                    <div style={{ marginTop: spacing.sm }}>
+                                        {problemData[message.problem_id] ? (
+                                            <ForumProblemCard 
+                                                problem={problemData[message.problem_id]} 
+                                                author={message.author}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                backgroundColor: isOwnMessage ? "rgba(255,255,255,0.1)" : colors.light,
+                                                padding: spacing.sm,
+                                                borderRadius: borderRadius.md,
+                                                border: `1px solid ${isOwnMessage ? "rgba(255,255,255,0.2)" : colors.gray[200]}`,
+                                                textAlign: 'center',
+                                                color: colors.gray[500]
+                                            }}>
+                                                Loading problem...
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div style={{ fontStyle: "italic", opacity: 0.8 }}>
@@ -392,7 +456,36 @@ const ForumChat = () => {
                 borderTop: `1px solid ${colors.gray[200]}`,
                 boxShadow: shadows.sm
             }}>
-                <form onSubmit={sendMessage} style={{ display: "flex", gap: spacing.sm }}>
+                <form onSubmit={sendMessage} style={{ display: "flex", gap: spacing.sm, alignItems: "flex-end" }}>
+                    {/* Attachment Button */}
+                    <button
+                        type="button"
+                        onClick={handleAttachmentClick}
+                        style={{
+                            backgroundColor: colors.gray[200],
+                            color: colors.gray[600],
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "40px",
+                            height: "40px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: "18px",
+                            fontWeight: "bold",
+                            transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = colors.gray[300];
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = colors.gray[200];
+                        }}
+                    >
+                        +
+                    </button>
+                    
                     <input
                         type="text"
                         value={newMessage}
@@ -423,7 +516,154 @@ const ForumChat = () => {
                         Send
                     </button>
                 </form>
+                
+                {/* Attachment Menu */}
+                {showAttachmentMenu && (
+                    <div style={{
+                        position: "absolute",
+                        bottom: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: colors.white,
+                        borderTop: `1px solid ${colors.gray[200]}`,
+                        borderLeft: `1px solid ${colors.gray[200]}`,
+                        borderRight: `1px solid ${colors.gray[200]}`,
+                        borderTopLeftRadius: borderRadius.lg,
+                        borderTopRightRadius: borderRadius.lg,
+                        padding: spacing.md,
+                        boxShadow: shadows.lg,
+                        zIndex: 1000
+                    }}>
+                        <div style={{
+                            display: "flex",
+                            gap: spacing.md,
+                            justifyContent: "center"
+                        }}>
+                            {/* Create Problem */}
+                            <button
+                                onClick={handleCreateProblem}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: spacing.xs,
+                                    padding: spacing.md,
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    borderRadius: borderRadius.md,
+                                    cursor: "pointer",
+                                    transition: "background-color 0.2s ease",
+                                    minWidth: "80px"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = colors.gray[50];
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "transparent";
+                                }}
+                            >
+                                <div style={{
+                                    fontSize: "24px",
+                                    marginBottom: spacing.xs
+                                }}>
+                                    📝
+                                </div>
+                                <span style={{
+                                    fontSize: typography.fontSize.sm,
+                                    color: colors.gray[700],
+                                    fontWeight: typography.fontWeight.medium
+                                }}>
+                                    Problem
+                                </span>
+                            </button>
+
+                            {/* Upload Image */}
+                            <button
+                                onClick={handleUploadImage}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: spacing.xs,
+                                    padding: spacing.md,
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    borderRadius: borderRadius.md,
+                                    cursor: "pointer",
+                                    transition: "background-color 0.2s ease",
+                                    minWidth: "80px"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = colors.gray[50];
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "transparent";
+                                }}
+                            >
+                                <div style={{
+                                    fontSize: "24px",
+                                    marginBottom: spacing.xs
+                                }}>
+                                    🖼️
+                                </div>
+                                <span style={{
+                                    fontSize: typography.fontSize.sm,
+                                    color: colors.gray[700],
+                                    fontWeight: typography.fontWeight.medium
+                                }}>
+                                    Image
+                                </span>
+                            </button>
+
+                            {/* Math Symbols */}
+                            <button
+                                onClick={handleMathSymbols}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: spacing.xs,
+                                    padding: spacing.md,
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    borderRadius: borderRadius.md,
+                                    cursor: "pointer",
+                                    transition: "background-color 0.2s ease",
+                                    minWidth: "80px"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = colors.gray[50];
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "transparent";
+                                }}
+                            >
+                                <div style={{
+                                    fontSize: "24px",
+                                    marginBottom: spacing.xs
+                                }}>
+                                    🧮
+                                </div>
+                                <span style={{
+                                    fontSize: typography.fontSize.sm,
+                                    color: colors.gray[700],
+                                    fontWeight: typography.fontWeight.medium
+                                }}>
+                                    Math
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Forum Problem Modal */}
+            <ForumProblemModal
+                isOpen={showProblemModal}
+                onClose={() => setShowProblemModal(false)}
+                forumId={forumId}
+                onProblemCreated={handleProblemCreated}
+            />
 
             <style jsx>{`
                 @keyframes spin {

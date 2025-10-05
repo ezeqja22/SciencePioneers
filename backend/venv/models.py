@@ -42,9 +42,11 @@ class Problem(Base):
     year = Column(Integer, nullable=True)
     view_count = Column(Integer, default=0)
     author_id = Column(Integer, ForeignKey("users.id"))
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=True)  # Link to forum if posted in forum
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="problems")
+    forum = relationship("Forum", back_populates="problems")
     comments = relationship("Comment", back_populates="problem")
     votes = relationship("Vote", back_populates="problem")
     bookmarks = relationship("Bookmark", back_populates="problem")
@@ -149,7 +151,7 @@ class Forum(Base):
     # Relationships
     creator = relationship("User", foreign_keys=[creator_id])
     members = relationship("ForumMembership", back_populates="forum")
-    problems = relationship("ForumProblem", back_populates="forum")
+    problems = relationship("Problem", back_populates="forum")
     invitations = relationship("ForumInvitation", back_populates="forum")
     join_requests = relationship("ForumJoinRequest", back_populates="forum")
 
@@ -170,25 +172,6 @@ class ForumMembership(Base):
     # Unique constraint to prevent duplicate memberships
     __table_args__ = (UniqueConstraint('forum_id', 'user_id', name='unique_forum_membership'),)
 
-class ForumProblem(Base):
-    __tablename__ = "forum_problems"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
-    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-    subject = Column(String, nullable=True)
-    level = Column(String, nullable=True)
-    year = Column(Integer, nullable=True)
-    tags = Column(String, nullable=True)  # JSON string of tags
-    posted_at = Column(DateTime, default=datetime.utcnow)
-    is_archived = Column(Boolean, default=False)
-    
-    # Relationships
-    forum = relationship("Forum", back_populates="problems")
-    author = relationship("User", foreign_keys=[author_id])
-
 class ForumMessage(Base):
     __tablename__ = "forum_messages"
     
@@ -197,7 +180,7 @@ class ForumMessage(Base):
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     message_type = Column(String, default="text")  # 'text', 'problem', 'system'
     content = Column(String, nullable=False)  # For text messages
-    problem_id = Column(Integer, ForeignKey("forum_problems.id"), nullable=True)  # For problem messages
+    problem_id = Column(Integer, ForeignKey("problems.id"), nullable=True)  # For problem messages
     created_at = Column(DateTime, default=datetime.utcnow)
     is_edited = Column(Boolean, default=False)
     edited_at = Column(DateTime, nullable=True)
@@ -205,7 +188,7 @@ class ForumMessage(Base):
     # Relationships
     forum = relationship("Forum")
     author = relationship("User", foreign_keys=[author_id])
-    problem = relationship("ForumProblem", foreign_keys=[problem_id])
+    problem = relationship("Problem", foreign_keys=[problem_id])
 
 class ForumInvitation(Base):
     __tablename__ = "forum_invitations"
