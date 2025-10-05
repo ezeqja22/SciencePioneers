@@ -64,6 +64,7 @@ function NotificationBell({ onNotificationClick }) {
                 case 'forum_invitation':
                 case 'forum_invitation_accepted':
                 case 'forum_invitation_declined':
+                case 'forum_deleted':
                     return userPreferences.in_app_follows;
                 default:
                     return true;
@@ -303,6 +304,7 @@ function NotificationBell({ onNotificationClick }) {
             case 'forum_invitation': return '📨';
             case 'forum_invitation_accepted': return '✅';
             case 'forum_invitation_declined': return '❌';
+            case 'forum_deleted': return '🗑️';
             default: return '🔔';
         }
     };

@@ -44,6 +44,7 @@ const ForumDetail = () => {
         return saved === 'true';
     });
     const [isMobile, setIsMobile] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -217,6 +218,29 @@ const ForumDetail = () => {
         }
     };
 
+    const handleDeleteForum = () => {
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteForum = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            alert("Forum deleted successfully");
+            navigate('/forums');
+        } catch (error) {
+            console.error("Error deleting forum:", error);
+            alert("Failed to delete forum");
+        } finally {
+            setShowDeleteModal(false);
+        }
+    };
+
     const toggleChat = () => {
         const newState = !showChat;
         setShowChat(newState);
@@ -363,6 +387,31 @@ const ForumDetail = () => {
                                     }}
                                 >
                                     Leave Forum
+                                </Button>
+                            )}
+                            
+                            {isCreator && (
+                                <Button
+                                    onClick={handleDeleteForum}
+                                    style={{
+                                        backgroundColor: colors.error,
+                                        color: colors.white,
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        borderRadius: borderRadius.md,
+                                        cursor: 'pointer',
+                                        fontSize: typography.fontSize.base,
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = '#c82333';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.error;
+                                    }}
+                                >
+                                    Delete Forum
                                 </Button>
                             )}
                             
@@ -689,6 +738,117 @@ const ForumDetail = () => {
                     </div>
                 )}
             </div>
+            
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && (
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000
+            }}>
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    padding: '32px',
+                    maxWidth: '500px',
+                    width: '90%',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    position: 'relative'
+                }}>
+                    {/* Close Button */}
+                    <button
+                        onClick={() => setShowDeleteModal(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '16px',
+                            right: '16px',
+                            background: 'none',
+                            border: 'none',
+                            fontSize: '24px',
+                            cursor: 'pointer',
+                            color: '#6B7280',
+                            padding: '4px'
+                        }}
+                    >
+                        ×
+                    </button>
+                    
+                    {/* Modal Content */}
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{
+                            fontSize: '48px',
+                            marginBottom: '16px'
+                        }}>
+                            ⚠️
+                        </div>
+                        
+                        <h2 style={{
+                            fontSize: '24px',
+                            fontWeight: '700',
+                            color: '#DC2626',
+                            marginBottom: '16px',
+                            margin: 0
+                        }}>
+                            Delete Forum
+                        </h2>
+                        
+                        <p style={{
+                            fontSize: '16px',
+                            color: '#6B7280',
+                            marginBottom: '24px',
+                            lineHeight: '1.5'
+                        }}>
+                            Are you sure you want to delete this forum? This will permanently delete all messages, memberships, and forum data. This action cannot be undone.
+                        </p>
+                        
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px',
+                            justifyContent: 'center'
+                        }}>
+                            <Button
+                                onClick={() => setShowDeleteModal(false)}
+                                style={{
+                                    backgroundColor: '#6B7280',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            
+                            <Button
+                                onClick={confirmDeleteForum}
+                                style={{
+                                    backgroundColor: '#DC2626',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Yes, I'm Sure
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            )}
         </div>
     );
 };

@@ -2816,4 +2816,57 @@ def get_users_for_invitation(
     
     return {"users": results}
 
+@router.delete("/forums/{forum_id}")
+def delete_forum(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a forum (creator only)"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if user is the creator
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can delete the forum")
+    
+    # Get all forum members for notifications
+    members = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.is_active == True
+    ).all()
+    
+    # Note: Problems archiving will be implemented when forum problems feature is added
+    
+    # Send notifications to all members
+    notification_service = NotificationService(db)
+    for member in members:
+        if member.user_id != current_user.id:  # Don't notify the creator
+            notification_service.send_forum_deleted_notification(
+                user_id=member.user_id,
+                forum_title=forum.title,
+                creator_username=current_user.username
+            )
+    
+    # Explicitly delete related records to avoid foreign key constraint issues
+    # Delete forum invitations
+    db.query(ForumInvitation).filter(ForumInvitation.forum_id == forum_id).delete()
+    
+    # Delete forum join requests
+    db.query(ForumJoinRequest).filter(ForumJoinRequest.forum_id == forum_id).delete()
+    
+    # Delete forum messages
+    db.query(ForumMessage).filter(ForumMessage.forum_id == forum_id).delete()
+    
+    # Delete forum memberships
+    db.query(ForumMembership).filter(ForumMembership.forum_id == forum_id).delete()
+    
+    # Finally delete the forum
+    db.delete(forum)
+    db.commit()
+    
+    return {"message": "Forum deleted successfully"}
+
 
