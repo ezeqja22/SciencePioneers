@@ -345,7 +345,8 @@ function SubjectPage() {
                                             display: "flex", 
                                             alignItems: "center", 
                                             marginBottom: "1rem", 
-                                            gap: "10px" 
+                                            gap: "10px",
+                                            pointerEvents: "none"
                                         }}>
                                             <div style={{
                                                 width: "32px",
@@ -385,7 +386,8 @@ function SubjectPage() {
                                         color: "#333",
                                         fontSize: "1.25rem",
                                         fontWeight: "600",
-                                        lineHeight: "1.4"
+                                        lineHeight: "1.4",
+                                        pointerEvents: "none"
                                     }}>
                                         {renderMathContent(problem.title)}
                                     </h3>
@@ -395,7 +397,8 @@ function SubjectPage() {
                                         lineHeight: "1.6",
                                         marginBottom: "1rem",
                                         fontSize: "0.95rem",
-                                        whiteSpace: "pre-wrap"
+                                        whiteSpace: "pre-wrap",
+                                        pointerEvents: "none"
                                     }}>
                                         {renderMathContent(problem.description.length > 150 ? 
                                             problem.description.substring(0, 150) + "..." : 
@@ -408,7 +411,8 @@ function SubjectPage() {
                                         gap: "8px", 
                                         marginBottom: "1rem", 
                                         alignItems: "center",
-                                        flexWrap: "wrap"
+                                        flexWrap: "wrap",
+                                        pointerEvents: "none"
                                     }}>
                                         <span style={{
                                             backgroundColor: "#e0e7ff",
@@ -484,7 +488,8 @@ function SubjectPage() {
                                         justifyContent: "space-between", 
                                         alignItems: "center",
                                         fontSize: "12px",
-                                        color: "#666"
+                                        color: "#666",
+                                        pointerEvents: "none"
                                     }}>
                                         <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                                             <button
@@ -504,7 +509,8 @@ function SubjectPage() {
                                                     transition: "all 0.2s ease",
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: "4px"
+                                                    gap: "4px",
+                                                    pointerEvents: "auto"
                                                 }}
                                                 onMouseEnter={(e) => {
                                                     if (voteData[problem.id]?.user_vote !== "like") {
@@ -538,7 +544,8 @@ function SubjectPage() {
                                                     transition: "all 0.2s ease",
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: "4px"
+                                                    gap: "4px",
+                                                    pointerEvents: "auto"
                                                 }}
                                                 onMouseEnter={(e) => {
                                                     if (voteData[problem.id]?.user_vote !== "dislike") {
@@ -555,7 +562,7 @@ function SubjectPage() {
                                             >
                                                 👎 {voteData[problem.id]?.dislike_count || 0}
                                             </button>
-                                            <span>💬 {problem.comment_count || 0}</span>
+                                            <span style={{ pointerEvents: "none" }}>💬 {problem.comment_count || 0}</span>
                                         </div>
                                     </div>
                                 </div>

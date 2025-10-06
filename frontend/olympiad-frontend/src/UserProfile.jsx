@@ -830,11 +830,11 @@ function UserProfile() {
                                         e.target.style.transform = "translateY(0)";
                                         e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
                                     }}>
-                                        <Link to={`/problem/${problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
+                                        <Link to={`/problem/${problem.id}?from=/profile`} style={{ textDecoration: "none", pointerEvents: "none" }}>
                                             <h4 style={{ margin: "0 0 10px 0", color: "#333" }}>{renderMathContent(problem.title)}</h4>
                                         </Link>
-                                        <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
-                                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap", pointerEvents: "none" }}>{renderMathContent(problem.description.substring(0, 150))}...</p>
+                                        <div style={{ display: "flex", gap: "10px", alignItems: "center", pointerEvents: "none" }}>
                                             <span style={{
                                                 backgroundColor: "#e0e7ff",
                                                 color: "#3730a3",
@@ -872,14 +872,6 @@ function UserProfile() {
                                                         fontWeight: "600",
                                                         boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
                                                         transition: "all 0.2s ease"
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.target.style.transform = "translateY(-1px)";
-                                                        e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.target.style.transform = "translateY(0)";
-                                                        e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                                                     }}>
                                                         {tag.trim()}
                                                     </span>

@@ -925,19 +925,31 @@ const ForumDetail = () => {
                                                 e.currentTarget.style.boxShadow = shadows.sm;
                                             }}
                                         >
-                                            <h4 style={{ margin: "0 0 8px 0", color: colors.gray[800] }}>
+                                            <h4 style={{ 
+                                                margin: "0 0 8px 0", 
+                                                color: colors.gray[800],
+                                                pointerEvents: "none"
+                                            }}>
                                                 {renderMathContent(problem.title)}
                                             </h4>
                                             <p style={{ 
                                                 color: colors.gray[600], 
                                                 margin: "0 0 12px 0",
-                                                fontSize: "0.9rem"
+                                                fontSize: "0.9rem",
+                                                pointerEvents: "none"
                                             }}>
                                                 {renderMathContent(problem.description)}
                                             </p>
                                             
                                             {/* Badges */}
-                                            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                                            <div style={{ 
+                                                display: "flex", 
+                                                gap: "8px", 
+                                                marginBottom: "12px", 
+                                                alignItems: "center", 
+                                                flexWrap: "wrap",
+                                                pointerEvents: "none"
+                                            }}>
                                                 <span style={{
                                                     backgroundColor: "#e0e7ff",
                                                     color: "#3730a3",
@@ -979,7 +991,12 @@ const ForumDetail = () => {
                                                     </span>
                                                 )}
                                                 {problem.tags && problem.tags.trim() && (
-                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                                    <div style={{ 
+                                                        display: "flex", 
+                                                        flexWrap: "wrap", 
+                                                        gap: "8px",
+                                                        pointerEvents: "none"
+                                                    }}>
                                                         {problem.tags.split(",").map((tag, index) => {
                                                             const trimmedTag = tag.trim();
                                                             if (!trimmedTag) return null;
@@ -1008,7 +1025,8 @@ const ForumDetail = () => {
                                             
                                             <div style={{ 
                                                 color: colors.gray[500], 
-                                                fontSize: "0.8rem" 
+                                                fontSize: "0.8rem",
+                                                pointerEvents: "none"
                                             }}>
                                                 Posted by {getDisplayName(problem.author?.username || 'Unknown')} • {new Date(problem.created_at).toLocaleDateString()}
                                             </div>

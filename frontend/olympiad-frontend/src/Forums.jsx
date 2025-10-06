@@ -352,7 +352,7 @@ const Forums = () => {
                             }}
                             onClick={() => handleForumClick(forum)}
                         >
-                            <div style={{ marginBottom: spacing.md }}>
+                            <div style={{ marginBottom: spacing.md, pointerEvents: "none" }}>
                                 <h3 style={{ 
                                     margin: "0 0 8px 0", 
                                     color: colors.primary,
@@ -392,14 +392,15 @@ const Forums = () => {
                             <div style={{ 
                                 display: "flex", 
                                 gap: spacing.sm,
-                                justifyContent: "flex-end"
+                                justifyContent: "flex-end",
+                                pointerEvents: "none"
                             }}>
                                 {/* Show invite button for forum creators */}
                                 {currentUser && forum.creator_id === currentUser.id && (
                                     <Button
                                         size="sm"
                                         onClick={(e) => handleInviteClick(forum.id, e)}
-                                        style={{ backgroundColor: colors.secondary }}
+                                        style={{ backgroundColor: colors.secondary, pointerEvents: "auto" }}
                                     >
                                         Invite Users
                                     </Button>
@@ -414,7 +415,8 @@ const Forums = () => {
                                                 style={{ 
                                                     backgroundColor: colors.gray[500],
                                                     cursor: 'not-allowed',
-                                                    border: 'none'
+                                                    border: 'none',
+                                                    pointerEvents: "auto"
                                                 }}
                                                 disabled
                                             >
@@ -427,7 +429,7 @@ const Forums = () => {
                                                     e.stopPropagation();
                                                     handleRequestToJoin(forum.id);
                                                 }}
-                                                style={{ backgroundColor: colors.primary }}
+                                                style={{ backgroundColor: colors.primary, pointerEvents: "auto" }}
                                             >
                                                 Request to Join
                                             </Button>
@@ -439,7 +441,7 @@ const Forums = () => {
                                                 e.stopPropagation();
                                                 handleJoinForum(forum.id);
                                             }}
-                                            style={{ backgroundColor: colors.primary }}
+                                            style={{ backgroundColor: colors.primary, pointerEvents: "auto" }}
                                         >
                                             Join Forum
                                         </Button>

@@ -101,7 +101,8 @@ const ForumProblemCard = ({ problem, author, forumId }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
-                marginBottom: spacing.sm
+                marginBottom: spacing.sm,
+                pointerEvents: 'none'
             }}>
                 <h3 style={{
                     fontSize: typography.fontSize.base,
@@ -124,7 +125,8 @@ const ForumProblemCard = ({ problem, author, forumId }) => {
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                pointerEvents: 'none'
             }}>
                 {renderMathContent(problem.description)}
             </p>
@@ -135,7 +137,8 @@ const ForumProblemCard = ({ problem, author, forumId }) => {
                 flexWrap: 'wrap',
                 gap: spacing.xs,
                 alignItems: 'center',
-                marginBottom: spacing.sm
+                marginBottom: spacing.sm,
+                pointerEvents: 'none'
             }}>
                 {/* Subject Badge */}
                 {problem.subject && (
@@ -186,7 +189,8 @@ const ForumProblemCard = ({ problem, author, forumId }) => {
                     display: 'flex',
                     flexWrap: 'wrap',
                     gap: spacing.xs,
-                    marginBottom: spacing.sm
+                    marginBottom: spacing.sm,
+                    pointerEvents: 'none'
                 }}>
                     {problem.tags.split(',').map((tag, index) => (
                         <span
@@ -212,7 +216,8 @@ const ForumProblemCard = ({ problem, author, forumId }) => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontSize: typography.fontSize.xs,
-                color: colors.gray[500]
+                color: colors.gray[500],
+                pointerEvents: 'none'
             }}>
                 <span>
                     Click to view full problem

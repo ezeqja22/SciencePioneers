@@ -621,13 +621,18 @@ function Header({ showHomeButton = false }) {
                                     <div style={{
                                         fontSize: "20px",
                                         marginTop: "2px",
-                                        flexShrink: 0
+                                        flexShrink: 0,
+                                        pointerEvents: "none"
                                     }}>
                                         {getForumIcon(forum.subject)}
                                     </div>
                                     
                                     {/* Forum Content */}
-                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ 
+                                        flex: 1, 
+                                        minWidth: 0,
+                                        pointerEvents: "none"
+                                    }}>
                                         <div style={{
                                             fontWeight: typography.fontWeight.semibold,
                                             marginBottom: spacing.xs,
@@ -667,19 +672,6 @@ function Header({ showHomeButton = false }) {
                                             </div>
                                         )}
                                     </div>
-                                    
-                                    {/* Hover Glow Effect */}
-                                    <div style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        background: "linear-gradient(90deg, transparent, rgba(26, 77, 58, 0.1), transparent)",
-                                        opacity: 0,
-                                        transition: "opacity 0.2s ease",
-                                        pointerEvents: "none"
-                                    }} />
                                 </button>
                             );
                         })}

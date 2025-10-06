@@ -562,7 +562,7 @@ function Feed() {
           >
               {/* Author Info Section - Twitter Style */}
               {problem.author ? (
-                <div style={{ display: "flex", alignItems: "center", marginBottom: "15px", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "15px", gap: "10px", pointerEvents: "none" }}>
                   {/* Profile Picture */}
                   <div style={{
                     width: "40px",
@@ -591,7 +591,8 @@ function Feed() {
                           fontSize: "14px", 
                           color: "#007bff",
                           cursor: "pointer",
-                          textDecoration: "underline"
+                          textDecoration: "underline",
+                          pointerEvents: "auto"
                         }}
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent bubbling to problem card
@@ -605,7 +606,7 @@ function Feed() {
                       >
                         {getDisplayName(problem.author.username)}
                       </div>
-                      <div style={{ fontSize: "12px", color: "#666" }}>
+                      <div style={{ fontSize: "12px", color: "#666", pointerEvents: "none" }}>
                         {new Date(problem.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -650,9 +651,9 @@ function Feed() {
                 </div>
               )}
               
-              <h3 style={{ marginTop: 0, color: "#333" }}>{renderMathContent(problem.title)}</h3>
-              <div style={{ color: "#666", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>{renderMathContent(problem.description)}</div>
-              <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
+              <h3 style={{ marginTop: 0, color: "#333", pointerEvents: "none" }}>{renderMathContent(problem.title)}</h3>
+              <div style={{ color: "#666", lineHeight: "1.5", whiteSpace: "pre-wrap", pointerEvents: "none" }}>{renderMathContent(problem.description)}</div>
+              <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center", pointerEvents: "none" }}>
                 <span style={{
                   backgroundColor: "#e0e7ff",
                   color: "#3730a3",
@@ -714,14 +715,6 @@ function Feed() {
                             whiteSpace: "nowrap",
                             boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
                             transition: "all 0.2s ease"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = "translateY(-1px)";
-                            e.target.style.boxShadow = "0 4px 12px rgba(124, 58, 237, 0.4)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = "translateY(0)";
-                            e.target.style.boxShadow = "0 2px 8px rgba(124, 58, 237, 0.3)";
                           }}
                         >
                           {trimmedTag}
