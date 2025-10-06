@@ -27,6 +27,13 @@ const Forums = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [selectedForumId, setSelectedForumId] = useState(null);
+    const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+    const [filters, setFilters] = useState({
+        subjects: [],
+        level: '',
+        tags: [],
+        isPrivate: null
+    });
 
     const navigate = useNavigate();
 
@@ -186,7 +193,7 @@ const Forums = () => {
         fetchForums(); // Refresh forums to update member counts
     };
 
-    // Filter forums based on active tab and search query
+    // Filter forums based on active tab, search query, and advanced filters
     const filteredForums = forums.filter(forum => {
         // Tab filtering
         if (activeTab === 'public' && forum.is_private) return false;
@@ -195,8 +202,22 @@ const Forums = () => {
         // Search filtering
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            return forum.title.toLowerCase().includes(query) || 
+            const matchesSearch = forum.title.toLowerCase().includes(query) || 
                    forum.description.toLowerCase().includes(query);
+            if (!matchesSearch) return false;
+        }
+        
+        // Advanced filters
+        if (filters.subjects.length > 0 && !filters.subjects.includes(forum.subject)) {
+            return false;
+        }
+        
+        if (filters.level && forum.level !== filters.level) {
+            return false;
+        }
+        
+        if (filters.isPrivate !== null && forum.is_private !== filters.isPrivate) {
+            return false;
         }
         
         return true;
@@ -241,23 +262,69 @@ const Forums = () => {
                     }}>
                         Forums
                     </h1>
-                    <Button 
-                        onClick={() => setShowCreateForm(true)}
-                        style={{ backgroundColor: colors.primary }}
-                    >
-                        + Create Forum
-                    </Button>
+                    <div style={{
+                        position: "fixed",
+                        bottom: spacing.xl,
+                        right: spacing.xl,
+                        zIndex: 1000
+                    }}>
+                        <div 
+                            onClick={() => {
+                                setShowCreateForm(true);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            style={{
+                                width: "60px",
+                                height: "60px",
+                                backgroundColor: colors.primary,
+                                borderRadius: "50%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                                transition: "all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                                fontSize: "24px",
+                                color: colors.white,
+                                fontWeight: typography.fontWeight.bold,
+                                overflow: "hidden",
+                                whiteSpace: "nowrap",
+                                position: "relative"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.width = "220px";
+                                e.target.style.borderRadius = "30px";
+                                e.target.style.justifyContent = "flex-start";
+                                e.target.style.paddingLeft = "20px";
+                                e.target.style.backgroundColor = colors.secondary;
+                                e.target.style.boxShadow = "0 6px 25px rgba(0,0,0,0.2)";
+                                e.target.innerHTML = '<span style="font-size: 16px;">Create New Forum</span><span style="position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 24px;">+</span>';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.width = "60px";
+                                e.target.style.borderRadius = "50%";
+                                e.target.style.justifyContent = "center";
+                                e.target.style.paddingLeft = "0px";
+                                e.target.style.backgroundColor = colors.primary;
+                                e.target.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15)";
+                                e.target.innerHTML = '+';
+                            }}
+                            title="Create New Forum"
+                        >
+                            +
+                        </div>
+                    </div>
                 </div>
 
                 {/* Search Bar */}
-                <div style={{ marginBottom: spacing.lg }}>
+                <div style={{ marginBottom: spacing.lg, display: "flex", gap: spacing.sm }}>
                     <input
                         type="text"
                         placeholder="Search forums..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{
-                            width: '100%',
+                            flex: 1,
                             padding: spacing.md,
                             border: `1px solid ${colors.gray[300]}`,
                             borderRadius: borderRadius.lg,
@@ -268,6 +335,33 @@ const Forums = () => {
                         onFocus={(e) => e.target.style.borderColor = colors.primary}
                         onBlur={(e) => e.target.style.borderColor = colors.gray[300]}
                     />
+                    <button
+                        onClick={() => setShowAdvancedSearch(true)}
+                        style={{
+                            padding: spacing.md,
+                            backgroundColor: colors.secondary,
+                            color: colors.white,
+                            border: "none",
+                            borderRadius: borderRadius.lg,
+                            cursor: "pointer",
+                            fontSize: typography.body,
+                            fontWeight: "600",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: spacing.xs,
+                            transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = colors.gray[600];
+                            e.target.style.transform = "translateY(-1px)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = colors.secondary;
+                            e.target.style.transform = "translateY(0)";
+                        }}
+                    >
+                        🔍 Advanced
+                    </button>
                 </div>
 
                 {/* Tabs */}
@@ -462,16 +556,58 @@ const Forums = () => {
                                 </label>
                             </div>
                             <div style={{ display: "flex", gap: spacing.sm }}>
-                                <Button type="submit" style={{ backgroundColor: colors.primary }}>
+                                <button
+                                    type="submit"
+                                    style={{
+                                        padding: "16px 32px",
+                                        backgroundColor: colors.primary,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        fontSize: "16px",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        flex: 1,
+                                        boxShadow: "0 4px 12px rgba(26, 77, 58, 0.3)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-2px)";
+                                        e.target.style.boxShadow = "0 6px 16px rgba(26, 77, 58, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.3)";
+                                    }}
+                                >
                                     Create Forum
-                                </Button>
-                                <Button 
-                                    type="button" 
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => setShowCreateForm(false)}
-                                    style={{ backgroundColor: colors.gray[500] }}
+                                    style={{
+                                        padding: "16px 32px",
+                                        backgroundColor: colors.gray[500],
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        fontSize: "16px",
+                                        fontWeight: "600",
+                                        cursor: "pointer",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                                    }}
                                 >
                                     Cancel
-                                </Button>
+                                </button>
                             </div>
                         </form>
                     </Card>
@@ -665,6 +801,193 @@ const Forums = () => {
                         forumId={selectedForumId}
                         onInvite={handleInviteSuccess}
                     />
+                )}
+
+                {/* Advanced Search Modal */}
+                {showAdvancedSearch && (
+                    <div style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        zIndex: 1000,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: spacing.lg
+                    }}>
+                        <div style={{
+                            backgroundColor: colors.white,
+                            borderRadius: borderRadius.lg,
+                            padding: spacing.xl,
+                            width: "100%",
+                            maxWidth: "500px",
+                            maxHeight: "80vh",
+                            overflow: "auto",
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.3)"
+                        }}>
+                            <div style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: spacing.lg
+                            }}>
+                                <h3 style={{ margin: 0, color: colors.primary }}>Advanced Search</h3>
+                                <button
+                                    onClick={() => setShowAdvancedSearch(false)}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        fontSize: "24px",
+                                        cursor: "pointer",
+                                        color: colors.gray[500]
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            {/* Subject Filter */}
+                            <div style={{ marginBottom: spacing.md }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Subjects
+                                </label>
+                                <div style={{ 
+                                    display: "grid", 
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", 
+                                    gap: spacing.sm,
+                                    maxHeight: "200px",
+                                    overflowY: "auto",
+                                    padding: spacing.sm,
+                                    border: `1px solid ${colors.gray[300]}`,
+                                    borderRadius: borderRadius.md,
+                                    backgroundColor: colors.gray[50]
+                                }}>
+                                    {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 'Engineering', 'Other'].map(subject => (
+                                        <label key={subject} style={{ 
+                                            display: "flex", 
+                                            alignItems: "center", 
+                                            gap: spacing.xs,
+                                            cursor: "pointer",
+                                            padding: spacing.xs,
+                                            borderRadius: borderRadius.sm,
+                                            transition: "background-color 0.2s ease"
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={filters.subjects.includes(subject)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setFilters({...filters, subjects: [...filters.subjects, subject]});
+                                                    } else {
+                                                        setFilters({...filters, subjects: filters.subjects.filter(s => s !== subject)});
+                                                    }
+                                                }}
+                                                style={{ margin: 0 }}
+                                            />
+                                            <span style={{ fontSize: typography.body, fontWeight: "500" }}>{subject}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Level Filter */}
+                            <div style={{ marginBottom: spacing.md }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Level
+                                </label>
+                                <input
+                                    type="text"
+                                    value={filters.level}
+                                    onChange={(e) => setFilters({...filters, level: e.target.value})}
+                                    placeholder="e.g., Beginner, Intermediate, Advanced"
+                                    style={{
+                                        width: "100%",
+                                        padding: spacing.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        borderRadius: borderRadius.md,
+                                        fontSize: typography.body
+                                    }}
+                                />
+                            </div>
+
+                            {/* Privacy Filter */}
+                            <div style={{ marginBottom: spacing.lg }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Privacy
+                                </label>
+                                <div style={{ display: "flex", gap: spacing.md }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
+                                        <input
+                                            type="radio"
+                                            name="privacy"
+                                            checked={filters.isPrivate === null}
+                                            onChange={() => setFilters({...filters, isPrivate: null})}
+                                        />
+                                        <span>All</span>
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
+                                        <input
+                                            type="radio"
+                                            name="privacy"
+                                            checked={filters.isPrivate === false}
+                                            onChange={() => setFilters({...filters, isPrivate: false})}
+                                        />
+                                        <span>Public Only</span>
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: spacing.xs }}>
+                                        <input
+                                            type="radio"
+                                            name="privacy"
+                                            checked={filters.isPrivate === true}
+                                            onChange={() => setFilters({...filters, isPrivate: true})}
+                                        />
+                                        <span>Private Only</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div style={{ display: "flex", gap: spacing.sm, justifyContent: "flex-end" }}>
+                                <button
+                                    onClick={() => {
+                                        setFilters({ subjects: [], level: '', tags: [], isPrivate: null });
+                                        setSearchQuery('');
+                                    }}
+                                    style={{
+                                        padding: spacing.sm,
+                                        backgroundColor: colors.gray[500],
+                                        color: colors.white,
+                                        border: "none",
+                                        borderRadius: borderRadius.md,
+                                        cursor: "pointer",
+                                        fontSize: typography.body
+                                    }}
+                                >
+                                    Clear All
+                                </button>
+                                <button
+                                    onClick={() => setShowAdvancedSearch(false)}
+                                    style={{
+                                        padding: spacing.sm,
+                                        backgroundColor: colors.primary,
+                                        color: colors.white,
+                                        border: "none",
+                                        borderRadius: borderRadius.md,
+                                        cursor: "pointer",
+                                        fontSize: typography.body
+                                    }}
+                                >
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </Layout>

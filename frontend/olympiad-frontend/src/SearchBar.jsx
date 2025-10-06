@@ -28,7 +28,9 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
     
     if (advancedData.query) params.append('q', advancedData.query);
     if (advancedData.category) params.append('category', advancedData.category);
-    if (advancedData.subject) params.append('subject', advancedData.subject);
+    if (advancedData.subjects && advancedData.subjects.length > 0) {
+      params.append('subjects', advancedData.subjects.join(','));
+    }
     if (advancedData.level) params.append('level', advancedData.level);
     if (advancedData.year) params.append('year', advancedData.year);
     if (advancedData.tags) params.append('tags', advancedData.tags);
@@ -140,7 +142,7 @@ function AdvancedSearchModal({ onClose, onSearch, initialData = {} }) {
   const [formData, setFormData] = useState({
     query: initialData.query || '',
     category: 'problems', // Advanced search always focuses on problems
-    subject: '',
+    subjects: [],
     level: '',
     year: '',
     tags: ''
@@ -151,6 +153,15 @@ function AdvancedSearchModal({ onClose, onSearch, initialData = {} }) {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleSubjectChange = (subject) => {
+    setFormData(prev => ({
+      ...prev,
+      subjects: prev.subjects.includes(subject) 
+        ? prev.subjects.filter(s => s !== subject)
+        : [...prev.subjects, subject]
+    }));
   };
 
   const handleSubmit = (e) => {
@@ -218,28 +229,45 @@ function AdvancedSearchModal({ onClose, onSearch, initialData = {} }) {
             </p>
           </div>
 
-          {/* Subject */}
+          {/* Subjects */}
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Subject (Optional)
+              Subjects (Optional)
             </label>
-            <select
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
-            >
-              <option value="">Any Subject</option>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+              gap: '10px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              padding: '10px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              backgroundColor: '#f8f9fa'
+            }}>
               {subjects.map(subject => (
-                <option key={subject} value={subject}>{subject}</option>
+                <label key={subject} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#e9ecef'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.subjects.includes(subject)}
+                    onChange={() => handleSubjectChange(subject)}
+                    style={{ margin: 0 }}
+                  />
+                  <span style={{ fontSize: '14px', fontWeight: '500' }}>{subject}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           {/* Level */}

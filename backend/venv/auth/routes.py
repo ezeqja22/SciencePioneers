@@ -1540,7 +1540,7 @@ def combined_search(
 async def advanced_search(
     q: str = "",
     category: str = "problems",
-    subject: str = "",
+    subjects: str = "",
     level: str = "",
     year: int = None,
     tags: str = "",
@@ -1567,8 +1567,10 @@ async def advanced_search(
         )
     
     # Apply problem-specific filters
-    if subject:
-        problems_query = problems_query.filter(Problem.subject == subject)
+    if subjects:
+        subject_list = [s.strip() for s in subjects.split(",") if s.strip()]
+        if subject_list:
+            problems_query = problems_query.filter(Problem.subject.in_(subject_list))
     if level:
         problems_query = problems_query.filter(Problem.level.ilike(f"%{level}%"))
     if year:

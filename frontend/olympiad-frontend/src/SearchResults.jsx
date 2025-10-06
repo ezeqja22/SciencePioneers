@@ -52,7 +52,7 @@ const SearchResults = () => {
     
     // Extract all search parameters for advanced search
     const searchParams = new URLSearchParams(location.search);
-    const subject = searchParams.get('subject') || '';
+    const subjects = searchParams.get('subjects') || '';
     const level = searchParams.get('level') || '';
     const year = searchParams.get('year') || '';
     const tags = searchParams.get('tags') || '';
@@ -77,7 +77,7 @@ const SearchResults = () => {
         // Always fetch results, even without query (for advanced search)
         fetchSearchResults();
         fetchCurrentUser();
-    }, [query, currentPage, activeTab, subject, level, year, tags]);
+    }, [query, currentPage, activeTab, subjects, level, year, tags]);
 
     const fetchCurrentUser = async () => {
         try {
@@ -100,7 +100,7 @@ const SearchResults = () => {
             
             // Check if we have advanced search parameters
             const urlParams = new URLSearchParams(location.search);
-            const hasAdvancedParams = urlParams.get('subject') || urlParams.get('level') || 
+            const hasAdvancedParams = urlParams.get('subjects') || urlParams.get('level') || 
                                     urlParams.get('year') || urlParams.get('tags');
             
             let endpoint;
@@ -109,7 +109,7 @@ const SearchResults = () => {
                 const params = new URLSearchParams();
                 if (query && query.trim()) params.append('q', query.trim());
                 if (urlParams.get('category')) params.append('category', urlParams.get('category'));
-                if (urlParams.get('subject')) params.append('subject', urlParams.get('subject'));
+                if (urlParams.get('subjects')) params.append('subjects', urlParams.get('subjects'));
                 if (urlParams.get('level')) params.append('level', urlParams.get('level'));
                 if (urlParams.get('year')) params.append('year', urlParams.get('year'));
                 if (urlParams.get('tags')) params.append('tags', urlParams.get('tags'));
