@@ -3050,14 +3050,18 @@ def delete_forum(
         ForumMembership.is_active == True
     ).all()
     
-    # Move user's problems from this forum to drafts
-    user_problems = db.query(Problem).filter(
-        Problem.forum_id == forum_id,
-        Problem.author_id == current_user.id
+    # Move ALL problems from this forum to drafts for their respective authors
+    forum_problems = db.query(Problem).filter(
+        Problem.forum_id == forum_id
     ).all()
     
-    for problem in user_problems:
-        # Create draft from problem
+    # First, delete all forum messages that reference these problems
+    problem_ids = [problem.id for problem in forum_problems]
+    if problem_ids:
+        db.query(ForumMessage).filter(ForumMessage.problem_id.in_(problem_ids)).delete()
+    
+    for problem in forum_problems:
+        # Create draft from problem for the problem's author
         draft = Draft(
             title=problem.title,
             description=problem.description,
@@ -3071,6 +3075,9 @@ def delete_forum(
         
         # Delete the original problem
         db.delete(problem)
+    
+    # Commit the draft creations before deleting the forum
+    db.commit()
     
     # Send notifications to all members
     notification_service = NotificationService(db)
