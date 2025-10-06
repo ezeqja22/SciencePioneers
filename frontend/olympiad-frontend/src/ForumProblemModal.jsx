@@ -19,6 +19,8 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
     const [error, setError] = useState('');
     const [showMathEditor, setShowMathEditor] = useState(false);
     const [mathEditorTarget, setMathEditorTarget] = useState(null); // 'title' or 'description'
+    const [images, setImages] = useState([]); // Array of uploaded image files
+    const [uploadingImages, setUploadingImages] = useState(false);
 
     const subjects = [
         'Mathematics', 'Physics', 'Chemistry', 'Biology', 
@@ -44,6 +46,32 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
     const closeMathEditor = () => {
         setShowMathEditor(false);
         setMathEditorTarget(null);
+    };
+
+    const handleImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const validFiles = files.filter(file => {
+            if (!file.type.startsWith('image/')) {
+                alert(`${file.name} is not an image file`);
+                return false;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert(`${file.name} is too large. Maximum size is 5MB`);
+                return false;
+            }
+            return true;
+        });
+
+        if (images.length + validFiles.length > 10) {
+            alert('Maximum 10 images allowed');
+            return;
+        }
+
+        setImages(prev => [...prev, ...validFiles]);
+    };
+
+    const removeImage = (index) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleChange = (e) => {
@@ -81,6 +109,35 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            // Upload images if any
+            if (images.length > 0) {
+                setUploadingImages(true);
+                try {
+                    for (const file of images) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const uploadUrl = `http://127.0.0.1:8000/auth/problems/${response.data.id}/images`;
+                        
+                        await axios.post(
+                            uploadUrl,
+                            formData,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`,
+                                    'Content-Type': 'multipart/form-data'
+                                }
+                            }
+                        );
+                    }
+                } catch (error) {
+                    console.error("Error uploading images:", error);
+                    alert(`Problem created but images failed to upload: ${error.response?.data?.detail || error.message}. You can add them later by editing the problem.`);
+                } finally {
+                    setUploadingImages(false);
+                }
+            }
+
             // Send the problem as a message to the forum
             await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
                 content: `Posted a new problem: "${formData.title}"`,
@@ -99,6 +156,7 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                 year: '',
                 tags: ''
             });
+            setImages([]);
             onClose();
             if (onProblemCreated) {
                 onProblemCreated(response.data);
@@ -427,6 +485,104 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Images */}
+                        <div>
+                            <label style={{
+                                display: 'block',
+                                fontSize: typography.fontSize.sm,
+                                fontWeight: typography.fontWeight.medium,
+                                color: colors.dark,
+                                marginBottom: spacing.xs
+                            }}>
+                                Images (Optional) - {images.length}/10
+                            </label>
+                            <div style={{
+                                border: `2px dashed ${colors.gray[300]}`,
+                                borderRadius: borderRadius.md,
+                                padding: spacing.lg,
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                backgroundColor: images.length > 0 ? colors.gray[50] : 'transparent'
+                            }}
+                            onClick={() => document.getElementById('image-upload').click()}
+                            onMouseEnter={(e) => {
+                                e.target.style.borderColor = colors.primary;
+                                e.target.style.backgroundColor = colors.primary + '10';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.borderColor = colors.gray[300];
+                                e.target.style.backgroundColor = images.length > 0 ? colors.gray[50] : 'transparent';
+                            }}
+                            >
+                                <input
+                                    id="image-upload"
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    style={{ display: 'none' }}
+                                />
+                                <div style={{ fontSize: '24px', marginBottom: spacing.sm }}>📷</div>
+                                <div style={{ fontSize: typography.fontSize.base, color: colors.dark, marginBottom: spacing.xs }}>
+                                    {images.length > 0 ? `${images.length} image(s) selected` : 'Add Image'}
+                                </div>
+                                <div style={{ fontSize: typography.fontSize.sm, color: colors.gray[600] }}>
+                                    Upload up to 10 diagrams, graphs, or other images to help illustrate your problem
+                                </div>
+                            </div>
+
+                            {/* Image Preview */}
+                            {images.length > 0 && (
+                                <div style={{ marginTop: spacing.md }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing.sm }}>
+                                        {images.map((file, index) => (
+                                            <div key={index} style={{
+                                                position: 'relative',
+                                                width: '80px',
+                                                height: '80px',
+                                                borderRadius: borderRadius.md,
+                                                overflow: 'hidden',
+                                                border: `1px solid ${colors.gray[300]}`
+                                            }}>
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt={`Preview ${index + 1}`}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover'
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: '4px',
+                                                        right: '4px',
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: colors.error,
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontSize: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Buttons */}
@@ -455,19 +611,19 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || uploadingImages}
                             style={{
                                 padding: `${spacing.sm} ${spacing.lg}`,
-                                backgroundColor: loading ? colors.gray[400] : colors.primary,
+                                backgroundColor: (loading || uploadingImages) ? colors.gray[400] : colors.primary,
                                 color: colors.white,
                                 border: 'none',
                                 borderRadius: borderRadius.md,
-                                cursor: loading ? 'not-allowed' : 'pointer',
+                                cursor: (loading || uploadingImages) ? 'not-allowed' : 'pointer',
                                 fontSize: typography.fontSize.base,
                                 fontWeight: typography.fontWeight.medium
                             }}
                         >
-                            {loading ? 'Creating...' : 'Create Problem'}
+                            {uploadingImages ? 'Uploading Images...' : loading ? 'Creating...' : 'Create Problem'}
                         </button>
                     </div>
                 </form>

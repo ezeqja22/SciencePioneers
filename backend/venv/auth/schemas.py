@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: EmailStr
+    profile_picture: Optional[str] = None
 
     class Config:
         from_attributes = True

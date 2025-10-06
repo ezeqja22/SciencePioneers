@@ -327,6 +327,49 @@ def get_mathematics_problems_debug(db: Session = Depends(get_db)):
         })
     return {"problems": result}
 
+@router.get("/problems/{problem_id}/images")
+async def get_problem_images(
+    problem_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all images for a problem"""
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    if problem.forum_id:
+        # Check if user is the problem author (they should always have access to their own problems)
+        is_author = problem.author_id == current_user.id
+        
+        # Check if user is a member (active or creator)
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == problem.forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        # Also check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+        is_creator = forum and forum.creator_id == current_user.id
+        
+        print(f"SECURITY CHECK: problem_id={problem_id}, forum_id={problem.forum_id}, author_id={problem.author_id}, current_user_id={current_user.id}")
+        print(f"SECURITY CHECK: is_author={is_author}, membership={bool(membership)}, is_creator={is_creator}")
+        
+        if not is_author and not membership and not is_creator:
+            print(f"SECURITY CHECK: ACCESS DENIED - user {current_user.id} cannot access problem {problem_id}")
+            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
+        else:
+            print(f"SECURITY CHECK: ACCESS GRANTED - user {current_user.id} can access problem {problem_id}")
+    
+    # Get images from database
+    problem_images = db.query(ProblemImage).filter(ProblemImage.problem_id == problem_id).all()
+    image_filenames = [img.filename for img in problem_images]
+    
+    return {"images": image_filenames}
+
 @router.get("/problems/{subject}", response_model=List[ProblemResponse])
 def get_problems_by_subject(subject: str, db: Session = Depends(get_db)):
     # First get problems with comment counts (case-insensitive search)
@@ -386,6 +429,9 @@ def get_problem(problem_id: int, current_user: User = Depends(get_current_user),
     
     # SECURITY CHECK: If problem is from a forum, check if user is a member
     if problem.forum_id:
+        # Check if user is the problem author (they should always have access to their own problems)
+        is_author = problem.author_id == current_user.id
+        
         # Check if user is a member (active or creator)
         membership = db.query(ForumMembership).filter(
             ForumMembership.forum_id == problem.forum_id,
@@ -396,7 +442,7 @@ def get_problem(problem_id: int, current_user: User = Depends(get_current_user),
         forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
         is_creator = forum and forum.creator_id == current_user.id
         
-        if not membership and not is_creator:
+        if not is_author and not membership and not is_creator:
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Debug: Check what's in the database
@@ -576,6 +622,9 @@ def get_comments(problem_id: int, current_user: User = Depends(get_current_user)
     
     # SECURITY CHECK: If problem is from a forum, check if user is a member
     if problem.forum_id:
+        # Check if user is the problem author (they should always have access to their own problems)
+        is_author = problem.author_id == current_user.id
+        
         # Check if user is a member (active or creator)
         membership = db.query(ForumMembership).filter(
             ForumMembership.forum_id == problem.forum_id,
@@ -586,7 +635,7 @@ def get_comments(problem_id: int, current_user: User = Depends(get_current_user)
         forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
         is_creator = forum and forum.creator_id == current_user.id
         
-        if not membership and not is_creator:
+        if not is_author and not membership and not is_creator:
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get comments first, then manually load author info to handle inactive users
@@ -711,6 +760,9 @@ def get_vote_status(
     
     # SECURITY CHECK: If problem is from a forum, check if user is a member
     if problem.forum_id:
+        # Check if user is the problem author (they should always have access to their own problems)
+        is_author = problem.author_id == current_user.id
+        
         # Check if user is a member (active or creator)
         membership = db.query(ForumMembership).filter(
             ForumMembership.forum_id == problem.forum_id,
@@ -721,7 +773,7 @@ def get_vote_status(
         forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
         is_creator = forum and forum.creator_id == current_user.id
         
-        if not membership and not is_creator:
+        if not is_author and not membership and not is_creator:
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get user's current vote
@@ -1126,7 +1178,12 @@ def serve_image(filename: str):
     if os.path.exists(forum_path):
         return FileResponse(forum_path)
     
-    return {"error": "File not found", "path": f"Tried: {profile_path}, {forum_path}"}
+    # Try problem images
+    problem_path = f"../../uploads/problem_images/{filename}"
+    if os.path.exists(problem_path):
+        return FileResponse(problem_path)
+    
+    return {"error": "File not found", "path": f"Tried: {profile_path}, {forum_path}, {problem_path}"}
 
 @router.post("/follow/{user_id}")
 def follow_user(
@@ -1874,39 +1931,6 @@ async def serve_problem_image(filename: str):
         raise HTTPException(status_code=404, detail="Image not found")
     
     return FileResponse(file_path)
-
-@router.get("/problems/{problem_id}/images")
-async def get_problem_images(
-    problem_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Get all images for a problem"""
-    # Check if problem exists
-    problem = db.query(Problem).filter(Problem.id == problem_id).first()
-    if not problem:
-        raise HTTPException(status_code=404, detail="Problem not found")
-    
-    # SECURITY CHECK: If problem is from a forum, check if user is a member
-    if problem.forum_id:
-        # Check if user is a member (active or creator)
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == problem.forum_id,
-            ForumMembership.user_id == current_user.id
-        ).first()
-        
-        # Also check if user is the forum creator
-        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
-        is_creator = forum and forum.creator_id == current_user.id
-        
-        if not membership and not is_creator:
-            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
-    
-    # Get images from database
-    problem_images = db.query(ProblemImage).filter(ProblemImage.problem_id == problem_id).all()
-    image_filenames = [img.filename for img in problem_images]
-    
-    return {"images": image_filenames}
 
 @router.delete("/problems/{problem_id}/images/{filename}")
 async def delete_problem_image(

@@ -227,7 +227,9 @@ function ProblemDetail() {
             // Fetch problem images
             try {
                 console.log("DEBUG: Fetching problem images...");
-                const imagesResponse = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/images`);
+                const imagesResponse = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/images`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 console.log("DEBUG: Problem images fetched successfully");
                 setProblemImages(imagesResponse.data.images || []);
             } catch (error) {

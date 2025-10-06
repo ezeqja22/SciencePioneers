@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { InlineMath, BlockMath } from 'react-katex';
@@ -56,6 +56,23 @@ const ForumDetail = () => {
     const [mathLatex, setMathLatex] = useState('');
     const [activeMathTab, setActiveMathTab] = useState('basic');
     const [problemData, setProblemData] = useState({});
+    const messagesEndRef = useRef(null);
+    const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+    
+    // Auto-scroll to bottom only when chat is first opened
+    const scrollToBottom = () => {
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    };
+
+    useEffect(() => {
+        // Only auto-scroll if chat is open and we haven't scrolled yet
+        if (showChat && !hasScrolledToBottom) {
+            scrollToBottom();
+            setHasScrolledToBottom(true);
+        }
+    }, [showChat, messages]);
     
     // Filter states
     const [filters, setFilters] = useState({
@@ -1214,6 +1231,7 @@ const ForumDetail = () => {
                                     );
                                 })
                             )}
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Message Input */}
