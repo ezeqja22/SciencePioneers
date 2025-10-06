@@ -73,6 +73,11 @@ function ProblemDetail() {
             return `/subject/${encodeURIComponent(subject)}`;
         }
         
+        if (from === 'forum' && urlParams.get('forumId')) {
+            // Return to forum
+            return `/forum/${urlParams.get('forumId')}`;
+        }
+        
         if (from === 'user' && urlParams.get('username')) {
             // Return to user profile
             return `/user/${encodeURIComponent(urlParams.get('username'))}`;

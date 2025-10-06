@@ -2,12 +2,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { colors, spacing, typography, borderRadius, shadows } from './designSystem';
 
-const ForumProblemCard = ({ problem, author }) => {
+const ForumProblemCard = ({ problem, author, forumId }) => {
     const navigate = useNavigate();
 
     const handleClick = () => {
         if (problem?.id) {
-            navigate(`/problem/${problem.id}`);
+            navigate(`/problem/${problem.id}?from=forum&forumId=${forumId}`);
         }
     };
 

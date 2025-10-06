@@ -50,6 +50,16 @@ const ForumDetail = () => {
     const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
     const [showProblemModal, setShowProblemModal] = useState(false);
     const [problemData, setProblemData] = useState({});
+    
+    // Filter states
+    const [filters, setFilters] = useState({
+        subject: '',
+        level: '',
+        year: '',
+        tag: ''
+    });
+    const [sortOrder, setSortOrder] = useState('newest'); // 'newest' or 'oldest'
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -276,6 +286,71 @@ const ForumDetail = () => {
     const handleProblemCreated = (problem) => {
         fetchMessages(); // Refresh messages to show the new problem
     };
+
+    // Filter handlers
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
+    };
+
+    const handleSortChange = (order) => {
+        setSortOrder(order);
+        setShowSortDropdown(false);
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            subject: '',
+            level: '',
+            year: '',
+            tag: ''
+        });
+    };
+
+    // Close sort dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showSortDropdown && !event.target.closest('.sort-dropdown')) {
+                setShowSortDropdown(false);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showSortDropdown]);
+
+    // Filter and sort problems
+    const filteredProblems = problems.filter(problem => {
+        // Subject filter
+        if (filters.subject && problem.subject !== filters.subject) {
+            return false;
+        }
+        
+        // Level filter
+        if (filters.level && !problem.level.toLowerCase().includes(filters.level.toLowerCase())) {
+            return false;
+        }
+        
+        // Year filter
+        if (filters.year && problem.year !== parseInt(filters.year)) {
+            return false;
+        }
+        
+        // Tag filter
+        if (filters.tag && (!problem.tags || !problem.tags.toLowerCase().includes(filters.tag.toLowerCase()))) {
+            return false;
+        }
+        
+        return true;
+    }).sort((a, b) => {
+        if (sortOrder === 'newest') {
+            return new Date(b.created_at) - new Date(a.created_at);
+        } else {
+            return new Date(a.created_at) - new Date(b.created_at);
+        }
+    });
 
     const confirmDeleteForum = async () => {
         try {
@@ -582,12 +657,205 @@ const ForumDetail = () => {
 
                         {activeTab === 'problems' && (
                             <div>
-                                {problems.length === 0 ? (
+                                {/* Filter Controls */}
+                                <div style={{
+                                    backgroundColor: colors.gray[50],
+                                    padding: spacing.md,
+                                    borderRadius: borderRadius.md,
+                                    marginBottom: spacing.md,
+                                    border: `1px solid ${colors.gray[200]}`
+                                }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing.lg, alignItems: 'center', marginBottom: spacing.sm }}>
+                                        {/* Subject Filter */}
+                                        <div style={{ minWidth: '150px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', color: colors.gray[600], marginBottom: '4px' }}>
+                                                Subject:
+                                            </label>
+                                            <select
+                                                value={filters.subject}
+                                                onChange={(e) => handleFilterChange('subject', e.target.value)}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    border: `1px solid ${colors.gray[300]}`,
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: '0.9rem',
+                                                    backgroundColor: colors.white
+                                                }}
+                                            >
+                                                <option value="">All Subjects</option>
+                                                <option value="Mathematics">Mathematics</option>
+                                                <option value="Physics">Physics</option>
+                                                <option value="Chemistry">Chemistry</option>
+                                                <option value="Biology">Biology</option>
+                                                <option value="Computer Science">Computer Science</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        {/* Level Filter */}
+                                        <div style={{ minWidth: '120px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', color: colors.gray[600], marginBottom: '4px' }}>
+                                                Level:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={filters.level}
+                                                onChange={(e) => handleFilterChange('level', e.target.value)}
+                                                placeholder="e.g. Grade 10"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    border: `1px solid ${colors.gray[300]}`,
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: '0.9rem'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Year Filter */}
+                                        <div style={{ minWidth: '100px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', color: colors.gray[600], marginBottom: '4px' }}>
+                                                Year:
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={filters.year}
+                                                onChange={(e) => handleFilterChange('year', e.target.value)}
+                                                placeholder="2024"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    border: `1px solid ${colors.gray[300]}`,
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: '0.9rem'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Tag Filter */}
+                                        <div style={{ minWidth: '120px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', color: colors.gray[600], marginBottom: '4px' }}>
+                                                Tag:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={filters.tag}
+                                                onChange={(e) => handleFilterChange('tag', e.target.value)}
+                                                placeholder="e.g. algebra"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '6px 8px',
+                                                    border: `1px solid ${colors.gray[300]}`,
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: '0.9rem'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Sort Dropdown */}
+                                        <div style={{ minWidth: '120px' }}>
+                                            <label style={{ display: 'block', fontSize: '0.8rem', color: colors.gray[600], marginBottom: '4px' }}>
+                                                Sort:
+                                            </label>
+                                            <div style={{ position: 'relative' }} className="sort-dropdown">
+                                                <button
+                                                    onClick={() => setShowSortDropdown(!showSortDropdown)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 8px',
+                                                        border: `1px solid ${colors.gray[300]}`,
+                                                        borderRadius: borderRadius.sm,
+                                                        fontSize: '0.9rem',
+                                                        backgroundColor: colors.white,
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                    }}
+                                                >
+                                                    {sortOrder === 'newest' ? 'Newest First' : 'Oldest First'}
+                                                    <span style={{ fontSize: '0.8rem' }}>▼</span>
+                                                </button>
+                                                
+                                                {showSortDropdown && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '100%',
+                                                        left: 0,
+                                                        right: 0,
+                                                        backgroundColor: colors.white,
+                                                        border: `1px solid ${colors.gray[300]}`,
+                                                        borderRadius: borderRadius.sm,
+                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                        zIndex: 10
+                                                    }}>
+                                                        <button
+                                                            onClick={() => handleSortChange('newest')}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '8px 12px',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                textAlign: 'left',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.9rem'
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            Newest First
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleSortChange('oldest')}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '8px 12px',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                textAlign: 'left',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.9rem'
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            Oldest First
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Clear Filters Button */}
+                                        <div style={{ alignSelf: 'flex-end' }}>
+                                            <button
+                                                onClick={clearFilters}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    backgroundColor: colors.gray[200],
+                                                    color: colors.gray[700],
+                                                    border: 'none',
+                                                    borderRadius: borderRadius.sm,
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.8rem'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[300]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = colors.gray[200]}
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {filteredProblems.length === 0 ? (
                                     <p style={{ color: colors.gray[500], textAlign: 'center', padding: spacing.xl }}>
-                                        No problems posted yet
+                                        {problems.length === 0 ? 'No problems posted yet' : 'No problems match your filters'}
                                     </p>
                                 ) : (
-                                    problems.map((problem) => (
+                                    filteredProblems.map((problem) => (
                                         <Card 
                                             key={problem.id} 
                                             style={{ 
@@ -598,7 +866,7 @@ const ForumDetail = () => {
                                                     backgroundColor: colors.gray[50]
                                                 }
                                             }}
-                                            onClick={() => navigate(`/problem/${problem.id}`)}
+                                            onClick={() => navigate(`/problem/${problem.id}?from=forum&forumId=${forumId}`)}
                                             onMouseEnter={(e) => {
                                                 e.currentTarget.style.backgroundColor = colors.gray[50];
                                                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -615,11 +883,82 @@ const ForumDetail = () => {
                                             </h4>
                                             <p style={{ 
                                                 color: colors.gray[600], 
-                                                margin: "0 0 8px 0",
+                                                margin: "0 0 12px 0",
                                                 fontSize: "0.9rem"
                                             }}>
                                                 {renderMathContent(problem.description)}
                                             </p>
+                                            
+                                            {/* Badges */}
+                                            <div style={{ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                                                <span style={{
+                                                    backgroundColor: "#e0e7ff",
+                                                    color: "#3730a3",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "16px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                                                    transition: "all 0.2s ease"
+                                                }}>
+                                                    {problem.subject}
+                                                </span>
+                                                {problem.level && problem.level.trim() && (
+                                                    <span style={{
+                                                        backgroundColor: "#fef3c7",
+                                                        color: "#92400e",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
+                                                        transition: "all 0.2s ease"
+                                                    }}>
+                                                        {problem.level}
+                                                    </span>
+                                                )}
+                                                {problem.year && (
+                                                    <span style={{
+                                                        backgroundColor: "#dcfce7", 
+                                                        color: "#166534",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        boxShadow: "0 2px 6px rgba(26, 77, 58, 0.2)",
+                                                        transition: "all 0.2s ease"
+                                                    }}>
+                                                        Year: {problem.year}
+                                                    </span>
+                                                )}
+                                                {problem.tags && problem.tags.trim() && (
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                                        {problem.tags.split(",").map((tag, index) => {
+                                                            const trimmedTag = tag.trim();
+                                                            if (!trimmedTag) return null;
+                                                            return (
+                                                                <span
+                                                                    key={index}
+                                                                    style={{
+                                                                        backgroundColor: colors.tertiary,
+                                                                        color: "white",
+                                                                        padding: "6px 12px",
+                                                                        borderRadius: "16px",
+                                                                        fontSize: "12px",
+                                                                        fontWeight: "600",
+                                                                        whiteSpace: "nowrap",
+                                                                        boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                                                        transition: "all 0.2s ease"
+                                                                    }}
+                                                                >
+                                                                    {trimmedTag}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
                                             <div style={{ 
                                                 color: colors.gray[500], 
                                                 fontSize: "0.8rem" 
@@ -761,6 +1100,7 @@ const ForumDetail = () => {
                                                             <ForumProblemCard 
                                                                 problem={problemData[message.problem_id]} 
                                                                 author={message.author}
+                                                                forumId={forumId}
                                                             />
                                                         ) : (
                                                             <div style={{ 
