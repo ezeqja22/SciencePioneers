@@ -3,6 +3,8 @@ import axios from 'axios';
 import { colors, spacing, typography, borderRadius, shadows } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import MathEditor from './MathEditor';
+import './MathEditor.css';
 
 const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
     const [formData, setFormData] = useState({
@@ -15,12 +17,34 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showMathEditor, setShowMathEditor] = useState(false);
+    const [mathEditorTarget, setMathEditorTarget] = useState(null); // 'title' or 'description'
 
     const subjects = [
         'Mathematics', 'Physics', 'Chemistry', 'Biology', 
         'Computer Science', 'Engineering', 'Other'
     ];
 
+    const openMathEditor = (target) => {
+        setMathEditorTarget(target);
+        setShowMathEditor(true);
+    };
+
+    const handleMathInsert = (mathContent) => {
+        if (mathEditorTarget) {
+            setFormData({
+                ...formData,
+                [mathEditorTarget]: formData[mathEditorTarget] + mathContent
+            });
+        }
+        setShowMathEditor(false);
+        setMathEditorTarget(null);
+    };
+
+    const closeMathEditor = () => {
+        setShowMathEditor(false);
+        setMathEditorTarget(null);
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -186,22 +210,47 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                             }}>
                                 Title *
                             </label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                placeholder="Enter problem title..."
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: spacing.sm,
-                                    border: `1px solid ${colors.gray[300]}`,
-                                    borderRadius: borderRadius.md,
-                                    fontSize: typography.fontSize.base,
-                                    outline: 'none'
-                                }}
-                            />
+                            <div style={{ display: 'flex', gap: spacing.sm }}>
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                    placeholder="Enter problem title..."
+                                    required
+                                    style={{
+                                        flex: 1,
+                                        padding: spacing.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        borderRadius: borderRadius.md,
+                                        fontSize: typography.fontSize.base,
+                                        outline: 'none'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => openMathEditor('title')}
+                                    style={{
+                                        padding: "12px 16px",
+                                        backgroundColor: colors.secondary,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: borderRadius.md,
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        whiteSpace: "nowrap"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = colors.primary;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.secondary;
+                                    }}
+                                >
+                                    Math
+                                </button>
+                            </div>
                         </div>
 
                         {/* Subject and Level */}
@@ -333,24 +382,50 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                             }}>
                                 Description *
                             </label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                placeholder="Describe the problem in detail..."
-                                required
-                                rows={6}
-                                style={{
-                                    width: '100%',
-                                    padding: spacing.sm,
-                                    border: `1px solid ${colors.gray[300]}`,
-                                    borderRadius: borderRadius.md,
-                                    fontSize: typography.fontSize.base,
-                                    outline: 'none',
-                                    resize: 'vertical',
-                                    fontFamily: 'inherit'
-                                }}
-                            />
+                            <div style={{ display: 'flex', gap: spacing.sm }}>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    placeholder="Describe the problem in detail..."
+                                    required
+                                    rows={6}
+                                    style={{
+                                        flex: 1,
+                                        padding: spacing.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        borderRadius: borderRadius.md,
+                                        fontSize: typography.fontSize.base,
+                                        outline: 'none',
+                                        resize: 'vertical',
+                                        fontFamily: 'inherit'
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => openMathEditor('description')}
+                                    style={{
+                                        padding: "12px 16px",
+                                        backgroundColor: colors.secondary,
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: borderRadius.md,
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "600",
+                                        whiteSpace: "nowrap",
+                                        alignSelf: "flex-start"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = colors.primary;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.secondary;
+                                    }}
+                                >
+                                    Math
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -397,6 +472,14 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                     </div>
                 </form>
             </div>
+            
+            {/* Math Editor Modal */}
+            <MathEditor
+                isOpen={showMathEditor}
+                onClose={closeMathEditor}
+                onInsert={handleMathInsert}
+                initialValue=""
+            />
         </div>
     );
 };
