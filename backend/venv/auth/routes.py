@@ -3,13 +3,13 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
-from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema
+from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime
@@ -3050,7 +3050,27 @@ def delete_forum(
         ForumMembership.is_active == True
     ).all()
     
-    # Note: Problems archiving will be implemented when forum problems feature is added
+    # Move user's problems from this forum to drafts
+    user_problems = db.query(Problem).filter(
+        Problem.forum_id == forum_id,
+        Problem.author_id == current_user.id
+    ).all()
+    
+    for problem in user_problems:
+        # Create draft from problem
+        draft = Draft(
+            title=problem.title,
+            description=problem.description,
+            subject=problem.subject,
+            level=problem.level,
+            year=problem.year,
+            tags=problem.tags,
+            author_id=problem.author_id
+        )
+        db.add(draft)
+        
+        # Delete the original problem
+        db.delete(problem)
     
     # Send notifications to all members
     notification_service = NotificationService(db)
@@ -3085,5 +3105,163 @@ def delete_forum(
     db.commit()
     
     return {"message": "Forum deleted successfully"}
+
+
+# ==================== DRAFT ENDPOINTS ====================
+
+@router.post("/drafts", response_model=DraftResponse)
+def create_draft(
+    draft: DraftCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new draft"""
+    db_draft = Draft(
+        title=draft.title,
+        description=draft.description,
+        subject=draft.subject,
+        level=draft.level,
+        year=draft.year,
+        tags=draft.tags,
+        author_id=current_user.id
+    )
+    db.add(db_draft)
+    db.commit()
+    db.refresh(db_draft)
+    
+    return db_draft
+
+@router.get("/drafts", response_model=List[DraftResponse])
+def get_user_drafts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all drafts for the current user"""
+    drafts = db.query(Draft).filter(Draft.author_id == current_user.id).order_by(Draft.updated_at.desc()).all()
+    return drafts
+
+@router.get("/drafts/{draft_id}", response_model=DraftResponse)
+def get_draft(
+    draft_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific draft by ID"""
+    draft = db.query(Draft).filter(
+        Draft.id == draft_id,
+        Draft.author_id == current_user.id
+    ).first()
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    return draft
+
+@router.put("/drafts/{draft_id}", response_model=DraftResponse)
+def update_draft(
+    draft_id: int,
+    draft_update: DraftUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an existing draft"""
+    draft = db.query(Draft).filter(
+        Draft.id == draft_id,
+        Draft.author_id == current_user.id
+    ).first()
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    # Update only provided fields
+    update_data = draft_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(draft, field, value)
+    
+    draft.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(draft)
+    
+    return draft
+
+@router.delete("/drafts/{draft_id}")
+def delete_draft(
+    draft_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a draft"""
+    draft = db.query(Draft).filter(
+        Draft.id == draft_id,
+        Draft.author_id == current_user.id
+    ).first()
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    db.delete(draft)
+    db.commit()
+    
+    return {"message": "Draft deleted successfully"}
+
+@router.post("/drafts/{draft_id}/publish", response_model=ProblemResponse)
+def publish_draft(
+    draft_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Publish a draft as a new problem"""
+    draft = db.query(Draft).filter(
+        Draft.id == draft_id,
+        Draft.author_id == current_user.id
+    ).first()
+    
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    # Create new problem from draft
+    problem_data = {
+        "title": draft.title,
+        "description": draft.description,
+        "subject": draft.subject,
+        "level": draft.level,
+        "year": draft.year,
+        "tags": draft.tags,
+        "author_id": current_user.id
+    }
+    
+    db_problem = Problem(**problem_data)
+    db.add(db_problem)
+    db.commit()
+    db.refresh(db_problem)
+    
+    # Delete the draft after publishing
+    db.delete(draft)
+    db.commit()
+    
+    # Get comment count and author for response
+    comment_count = db.query(Comment).filter(Comment.problem_id == db_problem.id).count()
+    author = db.query(User).filter(User.id == db_problem.author_id).first()
+    
+    return {
+        "id": db_problem.id,
+        "title": db_problem.title,
+        "description": db_problem.description,
+        "subject": db_problem.subject,
+        "level": db_problem.level,
+        "year": db_problem.year,
+        "tags": db_problem.tags,
+        "created_at": db_problem.created_at,
+        "author_id": db_problem.author_id,
+        "forum_id": db_problem.forum_id,
+        "comment_count": comment_count,
+        "author": {
+            "id": author.id,
+            "username": author.username,
+            "email": author.email,
+            "profile_picture": author.profile_picture,
+            "created_at": author.created_at
+        } if author else None
+    }
 
 

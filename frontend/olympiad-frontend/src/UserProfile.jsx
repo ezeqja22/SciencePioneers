@@ -34,12 +34,13 @@ function UserProfile() {
     const navigate = useNavigate();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks
+    const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks, drafts
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [voteData, setVoteData] = useState({});
     const [showImageModal, setShowImageModal] = useState(false);
+    const [drafts, setDrafts] = useState([]);
     const fileInputRef = useRef(null);
     const [editFormData, setEditFormData] = useState({
         bio: ""
@@ -50,6 +51,7 @@ function UserProfile() {
         const token = localStorage.getItem("token");
         if (token) {
             fetchUserProfile();
+            fetchDrafts();
         }
     }, []);
 
@@ -111,6 +113,20 @@ function UserProfile() {
             setVoteData(voteDataMap);
         } catch (error) {
             console.error("Error fetching vote data:", error);
+        }
+    };
+
+    const fetchDrafts = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            
+            const response = await axios.get("http://127.0.0.1:8000/auth/drafts", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDrafts(response.data);
+        } catch (error) {
+            console.error("Error fetching drafts:", error);
         }
     };
 
@@ -282,6 +298,31 @@ function UserProfile() {
             alert("Error removing profile picture. Please try again.");
         } finally {
             setUploading(false);
+        }
+    };
+
+    const handleDeleteDraft = async (draftId) => {
+        const confirmed = window.confirm("Are you sure you want to delete this draft? This action cannot be undone.");
+        if (!confirmed) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please log in to delete draft");
+                return;
+            }
+
+            await axios.delete(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Remove the draft from the local state
+            setDrafts(prev => prev.filter(draft => draft.id !== draftId));
+
+            alert("Draft deleted successfully!");
+        } catch (error) {
+            console.error("Error deleting draft:", error);
+            alert(error.response?.data?.detail || "Failed to delete draft");
         }
     };
 
@@ -775,6 +816,38 @@ function UserProfile() {
                 >
                     My Bookmarks ({bookmarks.length})
                 </button>
+                <button
+                    onClick={() => {
+                        setActiveTab("drafts");
+                        fetchDrafts();
+                    }}
+                    style={{
+                        padding: "12px 24px",
+                        backgroundColor: activeTab === "drafts" ? colors.primary : "transparent",
+                        color: activeTab === "drafts" ? "white" : colors.gray[600],
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        transition: "all 0.2s ease",
+                        boxShadow: activeTab === "drafts" ? "0 2px 8px rgba(26, 77, 58, 0.3)" : "none"
+                    }}
+                    onMouseEnter={(e) => {
+                        if (activeTab !== "drafts") {
+                            e.target.style.backgroundColor = colors.gray[200];
+                            e.target.style.color = colors.gray[800];
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (activeTab !== "drafts") {
+                            e.target.style.backgroundColor = "transparent";
+                            e.target.style.color = colors.gray[600];
+                        }
+                    }}
+                >
+                    My Drafts ({drafts.length})
+                </button>
             </div>
 
             {/* Content based on active tab */}
@@ -1149,6 +1222,137 @@ function UserProfile() {
                                             <span style={{ fontSize: "12px", color: "#666" }}>
                                                 Bookmarked {new Date(bookmark.created_at).toLocaleDateString()}
                                             </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+                {activeTab === "drafts" && (
+                    <div>
+                        <h3 style={{ marginBottom: "20px", color: "#333" }}>My Drafts</h3>
+                        {drafts.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                                <p>You don't have any drafts yet.</p>
+                                <p>Start creating a problem and use "Save in Drafts" to save your work!</p>
+                            </div>
+                        ) : (
+                            <div>
+                                {drafts.map((draft) => (
+                                    <div key={draft.id} style={{
+                                        border: "1px solid #ddd",
+                                        borderRadius: "8px",
+                                        padding: "20px",
+                                        marginBottom: "15px",
+                                        backgroundColor: "#f9f9f9"
+                                    }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                                            <h4 style={{ margin: "0", color: "#333" }}>{renderMathContent(draft.title)}</h4>
+                                            <div style={{ display: "flex", gap: "8px" }}>
+                                                <button
+                                                    onClick={() => navigate(`/create-problem?draft=${draft.id}`)}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        backgroundColor: colors.primary,
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "4px",
+                                                        cursor: "pointer",
+                                                        fontSize: "12px"
+                                                    }}
+                                                >
+                                                    Finish Problem
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteDraft(draft.id)}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        backgroundColor: "#dc3545",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "4px",
+                                                        cursor: "pointer",
+                                                        fontSize: "12px"
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p style={{ color: "#666", margin: "0 0 15px 0", whiteSpace: "pre-wrap" }}>{renderMathContent(draft.description.substring(0, 150))}...</p>
+                                        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                            <span style={{
+                                                backgroundColor: "#e0e7ff",
+                                                color: "#3730a3",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
+                                                transition: "all 0.2s ease"
+                                            }}>
+                                                {draft.subject}
+                                            </span>
+                                            <span style={{
+                                                backgroundColor: "#f0f9ff",
+                                                color: "#0369a1",
+                                                padding: "6px 12px",
+                                                borderRadius: "16px",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                marginRight: "8px",
+                                                boxShadow: "0 2px 6px rgba(3, 105, 161, 0.2)",
+                                                transition: "all 0.2s ease"
+                                            }}>
+                                                {draft.level}
+                                            </span>
+                                            {draft.year && (
+                                                <span style={{
+                                                    backgroundColor: "#fef3c7",
+                                                    color: "#d97706",
+                                                    padding: "6px 12px",
+                                                    borderRadius: "16px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "600",
+                                                    marginRight: "8px",
+                                                    boxShadow: "0 2px 6px rgba(217, 119, 6, 0.2)",
+                                                    transition: "all 0.2s ease"
+                                                }}>
+                                                    {draft.year}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {draft.tags && draft.tags.trim() && (
+                                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                                                {draft.tags.split(',').map((tag, index) => (
+                                                    <span key={index} style={{
+                                                        backgroundColor: colors.tertiary,
+                                                        color: "white",
+                                                        padding: "6px 12px",
+                                                        borderRadius: "16px",
+                                                        fontSize: "12px",
+                                                        fontWeight: "600",
+                                                        whiteSpace: "nowrap",
+                                                        boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
+                                                        transition: "all 0.2s ease"
+                                                    }}>
+                                                        {tag.trim()}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div style={{ 
+                                            fontSize: "12px", 
+                                            color: "#666", 
+                                            marginTop: "10px",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center"
+                                        }}>
+                                            <span>Created: {new Date(draft.created_at).toLocaleDateString()}</span>
+                                            <span>Updated: {new Date(draft.updated_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 ))}

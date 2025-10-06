@@ -288,3 +288,35 @@ class ForumJoinRequestResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class DraftCreate(BaseModel):
+    title: str
+    description: str
+    subject: str
+    level: Optional[str] = "Any Level"
+    year: Optional[int] = None
+    tags: Optional[str] = None
+
+class DraftUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    subject: Optional[str] = None
+    level: Optional[str] = None
+    year: Optional[int] = None
+    tags: Optional[str] = None
+
+class DraftResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    subject: str
+    level: Optional[str]
+    year: Optional[int]
+    tags: Optional[str]
+    author_id: int
+    created_at: datetime
+    updated_at: datetime
+    author: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True

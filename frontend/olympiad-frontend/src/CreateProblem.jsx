@@ -24,18 +24,59 @@ function CreateProblem() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const subjectParam = urlParams.get('subject');
+    const draftId = urlParams.get('draft');
+    
     if (subjectParam) {
       setFormData(prev => ({
         ...prev,
         subject: subjectParam
       }));
     }
+    
+    // Load draft if draft ID is provided
+    if (draftId) {
+      loadDraft(draftId);
+    }
   }, [location]);
+
+  const loadDraft = async (draftId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to load draft");
+        return;
+      }
+
+      const response = await axios.get(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const draft = response.data;
+      setFormData({
+        title: draft.title,
+        description: draft.description,
+        subject: draft.subject,
+        level: draft.level,
+        year: draft.year ? draft.year.toString() : ""
+      });
+
+      // Set tags from draft
+      if (draft.tags) {
+        setTags(draft.tags.split(',').map(tag => tag.trim()).filter(tag => tag));
+      }
+
+      alert("Draft loaded successfully! You can now finish and publish your problem.");
+    } catch (error) {
+      console.error("Error loading draft:", error);
+      alert(error.response?.data?.detail || "Failed to load draft");
+    }
+  };
   const [images, setImages] = useState([]); // Array of uploaded image filenames
   const [uploadingImages, setUploadingImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showMathEditor, setShowMathEditor] = useState(false);
   const [mathEditorTarget, setMathEditorTarget] = useState(null); // 'title' or 'description'
+  const [savingDraft, setSavingDraft] = useState(false);
   const navigate = useNavigate();
 
   // Function to determine where to redirect after successful creation
@@ -135,6 +176,42 @@ function CreateProblem() {
     setImages(newImages);
   };
 
+  const handleSaveDraft = async () => {
+    if (!formData.title.trim() || !formData.description.trim() || !formData.subject) {
+      alert("Please fill in at least title, description, and subject to save as draft");
+      return;
+    }
+
+    setSavingDraft(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please log in to save a draft");
+        return;
+      }
+
+      const draftData = {
+        title: formData.title,
+        description: formData.description,
+        subject: formData.subject,
+        level: formData.level || "Any Level",
+        year: formData.year ? parseInt(formData.year) : null,
+        tags: tags.filter(tag => tag.trim()).join(", ")
+      };
+
+      await axios.post("http://127.0.0.1:8000/auth/drafts", draftData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert("Draft saved successfully!");
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      alert(error.response?.data?.detail || "Failed to save draft");
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -204,6 +281,21 @@ function CreateProblem() {
       }
 
       alert("Problem created successfully!");
+      
+      // If this was created from a draft, delete the draft
+      const urlParams = new URLSearchParams(location.search);
+      const draftId = urlParams.get('draft');
+      if (draftId) {
+        try {
+          await axios.delete(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (error) {
+          console.error("Error deleting draft after publishing:", error);
+          // Don't show error to user as the problem was created successfully
+        }
+      }
+      
       navigate(getRedirectPath());
     } catch (error) {
       console.error("Error creating problem:", error);
@@ -218,7 +310,7 @@ function CreateProblem() {
 
   return (
     <Layout showHomeButton={true}>
-      <div style={{ marginBottom: spacing.xl }}>
+      <div style={{ marginBottom: spacing.xl, position: "relative" }}>
         <h1 style={{
           fontSize: typography.fontSize["3xl"],
           fontWeight: typography.fontWeight.bold,
@@ -228,7 +320,44 @@ function CreateProblem() {
         }}>
           Create New Problem
         </h1>
-        <p style={{ color: "#666" }}>Share a science problem with the community</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ color: "#666", margin: 0 }}>Share a science problem with the community</p>
+          <button
+            onClick={handleSaveDraft}
+            disabled={savingDraft}
+            style={{
+              position: "fixed",
+              bottom: "34px",
+              right: "20px",
+              zIndex: 1000,
+              padding: "16px 32px",
+              backgroundColor: colors.secondary,
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: savingDraft ? "not-allowed" : "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              transition: "all 0.2s ease",
+              opacity: savingDraft ? 0.7 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (!savingDraft) {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 16px rgba(0,0,0,0.2)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!savingDraft) {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+              }
+            }}
+          >
+            {savingDraft ? "Saving..." : "Save in Drafts"}
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>

@@ -30,6 +30,7 @@ class User(Base):
     sent_invitations = relationship("ForumInvitation", foreign_keys="ForumInvitation.inviter_id", back_populates="inviter")
     received_invitations = relationship("ForumInvitation", foreign_keys="ForumInvitation.invitee_id", back_populates="invitee")
     forum_join_requests = relationship("ForumJoinRequest", back_populates="user")
+    drafts = relationship("Draft", back_populates="author")
 
 class Problem(Base):
     __tablename__ = "problems"
@@ -221,3 +222,20 @@ class ForumJoinRequest(Base):
     # Relationships
     forum = relationship("Forum", back_populates="join_requests")
     user = relationship("User", back_populates="forum_join_requests")
+
+class Draft(Base):
+    __tablename__ = "drafts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    subject = Column(String, nullable=False)
+    level = Column(String, default="Any Level")
+    year = Column(Integer, nullable=True)
+    tags = Column(String, nullable=True)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    author = relationship("User", back_populates="drafts")
