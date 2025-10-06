@@ -12,6 +12,7 @@ import { colors, spacing, typography, borderRadius, shadows } from './designSyst
 import { getUserInitial, getDisplayName } from './utils';
 import ForumProblemModal from './ForumProblemModal';
 import ForumProblemCard from './ForumProblemCard';
+import ForumInviteModal from './ForumInviteModal';
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -58,6 +59,7 @@ const ForumDetail = () => {
     const [problemData, setProblemData] = useState({});
     const messagesEndRef = useRef(null);
     const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
     
     // Auto-scroll to bottom only when chat is first opened
     const scrollToBottom = () => {
@@ -441,6 +443,15 @@ const ForumDetail = () => {
         localStorage.setItem(`forum-${forumId}-chat-open`, newState.toString());
     };
 
+    const handleInviteUsers = () => {
+        setShowInviteModal(true);
+    };
+
+    const handleInviteSuccess = () => {
+        // Refresh members list after successful invitation
+        fetchMembers();
+    };
+
     if (loading) {
         return (
             <div style={{
@@ -558,6 +569,31 @@ const ForumDetail = () => {
                             >
                                 {showChat ? 'Close Chat' : 'Open Chat'}
                             </Button>
+                            
+                            {isCreator && (
+                                <Button
+                                    onClick={handleInviteUsers}
+                                    style={{
+                                        backgroundColor: colors.secondary,
+                                        color: colors.white,
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        borderRadius: borderRadius.md,
+                                        cursor: 'pointer',
+                                        fontSize: typography.fontSize.base,
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = '#4a5568';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.secondary;
+                                    }}
+                                >
+                                    Invite Users
+                                </Button>
+                            )}
                             
                             {isMember && !isCreator && (
                                 <Button
@@ -1429,6 +1465,14 @@ const ForumDetail = () => {
                 onClose={() => setShowProblemModal(false)}
                 forumId={forumId}
                 onProblemCreated={handleProblemCreated}
+            />
+            
+            {/* Forum Invite Modal */}
+            <ForumInviteModal
+                isOpen={showInviteModal}
+                onClose={() => setShowInviteModal(false)}
+                forumId={forumId}
+                onInvite={handleInviteSuccess}
             />
             
             {/* Math Symbols Modal */}

@@ -10,7 +10,8 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [invitedUsers, setInvitedUsers] = useState(new Set());
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (isOpen && searchQuery.length >= 1) {
@@ -48,37 +49,65 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
     }
   };
 
-  const handleInvite = async (userId) => {
+  const handleSearch = () => {
+    if (searchQuery.trim().length >= 1) {
+      fetchUsers();
+    }
+  };
+
+  const handleInviteSelected = async () => {
+    if (selectedUsers.size === 0) return;
+    
+    setInviting(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://127.0.0.1:8000/auth/forums/${forumId}/invite`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ forum_id: forumId, invitee_id: userId }),
-      });
+      const invitePromises = Array.from(selectedUsers).map(userId => 
+        fetch(`http://127.0.0.1:8000/auth/forums/${forumId}/invite`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ forum_id: forumId, invitee_id: userId }),
+        })
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        setInvitedUsers(prev => new Set([...prev, userId]));
+      const responses = await Promise.all(invitePromises);
+      const successfulInvites = responses.filter(response => response.ok).length;
+      
+      if (successfulInvites > 0) {
+        // Clear selected users and close modal after successful invitation
+        setSelectedUsers(new Set());
         if (onInvite) {
-          onInvite(userId);
+          onInvite();
         }
-        alert('User invited successfully!');
+        alert(`${successfulInvites} user(s) invited successfully!`);
+        onClose(); // Close the modal after successful invitation
       } else {
-        const errorData = await response.json();
-        alert(`Failed to invite user: ${errorData.detail || 'Unknown error'}`);
+        alert('Failed to invite users');
       }
     } catch (error) {
-      alert(`Error inviting user: ${error.message || 'Network error'}`);
+      alert(`Error inviting users: ${error.message}`);
+    } finally {
+      setInviting(false);
     }
+  };
+
+  const handleUserSelect = (userId) => {
+    setSelectedUsers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
   };
 
   const getButtonText = (user) => {
     if (user.is_member) return 'Member';
-    if (user.has_pending_invitation || invitedUsers.has(user.id)) return 'Invited';
+    if (user.has_pending_invitation) return 'Invited';
     return 'Invite';
   };
 
@@ -90,7 +119,7 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
         cursor: 'not-allowed',
       };
     }
-    if (user.has_pending_invitation || invitedUsers.has(user.id)) {
+    if (user.has_pending_invitation) {
       return {
         backgroundColor: colors.gray[300],
         color: colors.gray[600],
@@ -103,362 +132,432 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
     };
   };
 
+  const getStatusBadge = (user) => {
+    if (user.is_member) {
+      return { text: 'Member', color: colors.success, bgColor: '#d4edda' };
+    }
+    if (user.has_pending_invitation) {
+      return { text: 'Invited', color: colors.warning, bgColor: '#fff3cd' };
+    }
+    return null;
+  };
+
   if (!isOpen) return null;
 
   return (
     <>
       <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+        
+        .modal-content {
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          max-width: 600px;
+          width: 90%;
+          max-height: 80vh;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .modal-header {
+          padding: 24px 24px 0 24px;
+          border-bottom: 1px solid #e5e7eb;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .modal-body {
+          padding: 24px;
+          flex: 1;
+          overflow-y: auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .search-container {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        
+        .search-input {
+          flex: 1;
+          padding: 12px 16px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 16px;
+          transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+          outline: none;
+          border-color: ${colors.primary};
+        }
+        
+        .search-button {
+          padding: 12px 24px;
+          background-color: ${colors.primary};
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .search-button:hover {
+          background-color: #2563eb;
+        }
+        
+        .tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 24px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .tab {
+          padding: 12px 24px;
+          background: none;
+          border: none;
+          border-bottom: 3px solid transparent;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: #6b7280;
+        }
+        
+        .tab.active {
+          color: ${colors.primary};
+          border-bottom-color: ${colors.primary};
+          background-color: #f8fafc;
+        }
+        
+        .tab:hover {
+          color: ${colors.primary};
+          background-color: #f8fafc;
+        }
+        
+        .user-list {
+          max-height: 400px;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          background-color: #fafafa;
+          flex: 1;
+        }
+        
+        .user-list::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .user-list::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        
+        .user-list::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 4px;
+        }
+        
+        .user-list::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+        
+        .user-item {
+          display: flex;
+          align-items: center;
+          padding: 16px;
+          border-bottom: 1px solid #f3f4f6;
+          transition: background-color 0.2s;
+        }
+        
+        .user-item:hover {
+          background-color: #f8fafc;
+        }
+        
+        .user-item:last-child {
+          border-bottom: none;
+        }
+        
+        .user-checkbox {
+          margin-right: 16px;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+        
+        .user-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background-color: ${colors.primary};
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 18px;
+          margin-right: 16px;
+        }
+        
+        .user-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .user-name {
+          font-weight: 600;
+          font-size: 16px;
+          color: #1f2937;
+        }
+        
+        .user-email {
+          font-size: 14px;
+          color: #6b7280;
+        }
+        
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          display: inline-block;
+          width: fit-content;
+          min-width: auto;
+        }
+        
+        .invite-button {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 6px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          min-width: 80px;
+        }
+        
+        .invite-button:disabled {
+          cursor: not-allowed;
+        }
+        
+        .bulk-actions {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 0;
+          border-top: 1px solid #e5e7eb;
+          margin-top: 16px;
+        }
+        
+        .selected-count {
+          color: #6b7280;
+          font-size: 14px;
+        }
+        
+        .bulk-invite-button {
+          padding: 12px 24px;
+          background-color: ${colors.secondary};
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .bulk-invite-button:hover {
+          background-color: #4a5568;
+        }
+        
+        .bulk-invite-button:disabled {
+          background-color: #9ca3af;
+          cursor: not-allowed;
+        }
+        
+        .loading {
+          text-align: center;
+          padding: 40px;
+          color: #6b7280;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 40px;
+          color: #6b7280;
         }
       `}</style>
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      backdropFilter: 'blur(4px)',
-    }}>
-      <div style={{
-        backgroundColor: colors.white,
-        borderRadius: borderRadius.xl,
-        padding: spacing[10],
-        width: '95%',
-        maxWidth: '900px',
-        maxHeight: '90vh',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: shadows.xl,
-        border: `1px solid ${colors.gray[200]}`,
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: spacing[8],
-          paddingBottom: spacing[6],
-          borderBottom: `3px solid ${colors.primary}`,
-        }}>
-          <h2 style={{
-            fontSize: fontSize['2xl'],
-            fontWeight: fontWeight.bold,
-            color: colors.dark,
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-          }}>
-            <span style={{ fontSize: fontSize.xl }}>👥</span>
-            Invite Users
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: fontSize['2xl'],
-              cursor: 'pointer',
-              color: colors.gray[500],
-              padding: spacing[2],
-              borderRadius: borderRadius.full,
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '40px',
-              height: '40px',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = colors.gray[100];
-              e.target.style.color = colors.dark;
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = colors.gray[500];
-            }}
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div style={{ marginBottom: spacing[8] }}>
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="Search users by username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: `${spacing[5]} ${spacing[5]} ${spacing[5]} ${spacing[16]}`,
-                border: `3px solid ${colors.gray[200]}`,
-                borderRadius: borderRadius.xl,
-                fontSize: fontSize.lg,
-                fontWeight: fontWeight.medium,
-                backgroundColor: colors.gray[50],
-                transition: 'all 0.3s ease',
-                outline: 'none',
-                boxShadow: shadows.sm,
-                textIndent: spacing[8],
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = colors.primary;
-                e.target.style.backgroundColor = colors.white;
-                e.target.style.boxShadow = `0 0 0 4px ${colors.primary}20, ${shadows.md}`;
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = colors.gray[200];
-                e.target.style.backgroundColor = colors.gray[50];
-                e.target.style.boxShadow = shadows.sm;
-                e.target.style.transform = 'translateY(0)';
-              }}
-            />
-            <div style={{
-              position: 'absolute',
-              left: spacing[6],
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: fontSize.lg,
-              color: colors.gray[400],
-              zIndex: 1,
+      
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="modal-header">
+            <h2 style={{ 
+              margin: 0, 
+              fontSize: '24px', 
+              fontWeight: '700', 
+              color: '#1f2937' 
             }}>
-              🔍
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div style={{
-          display: 'flex',
-          backgroundColor: colors.gray[100],
-          borderRadius: borderRadius.xl,
-          padding: spacing[2],
-          marginBottom: spacing[8],
-          gap: spacing[2],
-          boxShadow: shadows.sm,
-        }}>
-          {[
-            { id: 'all', label: 'All Users', icon: '👥' },
-            { id: 'following', label: 'Following', icon: '👤' },
-            { id: 'followers', label: 'Followers', icon: '👥' },
-          ].map((tab) => (
+              Invite Users
+            </h2>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={onClose}
               style={{
-                flex: 1,
-                padding: `${spacing[4]} ${spacing[6]}`,
+                background: 'none',
                 border: 'none',
-                background: activeTab === tab.id ? colors.white : 'transparent',
-                borderRadius: borderRadius.lg,
-                color: activeTab === tab.id ? colors.primary : colors.gray[600],
+                fontSize: '24px',
                 cursor: 'pointer',
-                fontSize: fontSize.base,
-                fontWeight: activeTab === tab.id ? fontWeight.bold : fontWeight.semibold,
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: spacing[3],
-                boxShadow: activeTab === tab.id ? shadows.md : 'none',
-                transform: activeTab === tab.id ? 'translateY(-1px)' : 'translateY(0)',
+                color: '#6b7280',
+                padding: '4px',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => {
-                if (activeTab !== tab.id) {
-                  e.target.style.backgroundColor = colors.gray[200];
-                  e.target.style.transform = 'translateY(-1px)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeTab !== tab.id) {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.transform = 'translateY(0)';
-                }
-              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
             >
-              <span style={{ fontSize: fontSize.lg }}>{tab.icon}</span>
-              {tab.label}
+              ×
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Users List */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          minHeight: '400px',
-          maxHeight: '500px',
-          padding: spacing[2],
-        }}>
-          {loading ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px',
-              flexDirection: 'column',
-              gap: spacing[3],
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                border: `3px solid ${colors.gray[200]}`,
-                borderTop: `3px solid ${colors.primary}`,
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite',
-              }}></div>
-              <div style={{ color: colors.gray[600], fontWeight: fontWeight.medium }}>Searching users...</div>
+          {/* Body */}
+          <div className="modal-body">
+            {/* Search */}
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search users by name or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button 
+                className="search-button"
+                onClick={handleSearch}
+                disabled={loading}
+              >
+                {loading ? 'Searching...' : 'Search'}
+              </button>
             </div>
-          ) : users.length === 0 ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px',
-              flexDirection: 'column',
-              gap: spacing[3],
-              color: colors.gray[500],
-            }}>
-              <div style={{ fontSize: fontSize['2xl'] }}>
-                {searchQuery.length < 1 ? '🔍' : '😔'}
-              </div>
-              <div style={{ fontSize: fontSize.base, fontWeight: fontWeight.medium }}>
-                {searchQuery.length < 1 ? 'Start typing to search for users...' : 'No users found'}
-              </div>
-              {searchQuery.length >= 1 && (
-                <div style={{ fontSize: fontSize.sm, color: colors.gray[400] }}>
-                  Try a different search term or check another tab
+
+            {/* Tabs */}
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Users
+              </button>
+              <button
+                className={`tab ${activeTab === 'following' ? 'active' : ''}`}
+                onClick={() => setActiveTab('following')}
+              >
+                Following
+              </button>
+              <button
+                className={`tab ${activeTab === 'followers' ? 'active' : ''}`}
+                onClick={() => setActiveTab('followers')}
+              >
+                Followers
+              </button>
+            </div>
+
+            {/* User List */}
+            <div style={{ marginBottom: '8px', fontSize: '14px', color: '#6b7280' }}>
+              {users.length > 0 && `Showing ${users.length} user${users.length !== 1 ? 's' : ''}`}
+            </div>
+            <div className="user-list">
+              {loading ? (
+                <div className="loading">Searching users...</div>
+              ) : users.length === 0 ? (
+                <div className="empty-state">
+                  {searchQuery ? 'No users found matching your search.' : 'Enter a search term to find users to invite.'}
                 </div>
+              ) : (
+                users.map((user) => {
+                  const statusBadge = getStatusBadge(user);
+                  const isSelected = selectedUsers.has(user.id);
+                  
+                  return (
+                    <div key={user.id} className="user-item">
+                      <input
+                        type="checkbox"
+                        className="user-checkbox"
+                        checked={isSelected}
+                        onChange={() => handleUserSelect(user.id)}
+                        disabled={user.is_member || user.has_pending_invitation}
+                      />
+                      
+                      <div className="user-avatar">
+                        {getUserInitial(user.username)}
+                      </div>
+                      
+                      <div className="user-info">
+                        <div className="user-name">{user.username}</div>
+                        <div className="user-email">{user.email}</div>
+                        {statusBadge && (
+                          <span 
+                            className="status-badge"
+                            style={{ 
+                              color: statusBadge.color, 
+                              backgroundColor: statusBadge.bgColor 
+                            }}
+                          >
+                            {statusBadge.text}
+                          </span>
+                        )}
+                      </div>
+                      
+                      <button
+                        className="invite-button"
+                        onClick={() => handleUserSelect(user.id)}
+                        disabled={user.is_member || user.has_pending_invitation}
+                        style={getButtonStyle(user)}
+                      >
+                        {getButtonText(user)}
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
-          ) : (
-            users.map((user) => (
-              <div
-                key={user.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: spacing[6],
-                  backgroundColor: colors.white,
-                  border: `2px solid ${colors.gray[200]}`,
-                  borderRadius: borderRadius.xl,
-                  marginBottom: spacing[4],
-                  transition: 'all 0.3s ease',
-                  boxShadow: shadows.md,
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = colors.primary;
-                  e.target.style.boxShadow = shadows.lg;
-                  e.target.style.transform = 'translateY(-3px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = colors.gray[200];
-                  e.target.style.boxShadow = shadows.md;
-                  e.target.style.transform = 'translateY(0)';
-                }}
-              >
-                {/* Profile Picture */}
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  backgroundColor: colors.secondary,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: colors.white,
-                  fontSize: fontSize.xl,
-                  fontWeight: fontWeight.bold,
-                  marginRight: spacing[6],
-                  boxShadow: shadows.md,
-                  border: `3px solid ${colors.white}`,
-                }}>
-                  {user.profile_picture ? (
-                    <img
-                      src={`http://127.0.0.1:8000/auth/serve-image/${user.profile_picture}`}
-                      alt={user.username}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                      }}
-                    />
-                  ) : (
-                    getUserInitial(user.username)
-                  )}
-                </div>
 
-                {/* User Info */}
-                <div style={{ flex: 1, marginRight: spacing[12] }}>
-                  <div style={{
-                    fontSize: fontSize.xl,
-                    fontWeight: fontWeight.bold,
-                    color: colors.dark,
-                    marginBottom: spacing[2],
-                  }}>
-                    {user.username}
-                  </div>
-                  {user.bio && (
-                    <div style={{
-                      fontSize: fontSize.base,
-                      color: colors.gray[600],
-                      lineHeight: 1.5,
-                      fontWeight: fontWeight.medium,
-                    }}>
-                      {user.bio}
-                    </div>
-                  )}
-                </div>
-
-                {/* Invite Button */}
+            {/* Bulk Actions */}
+            {selectedUsers.size > 0 && (
+              <div className="bulk-actions">
+                <span className="selected-count">
+                  {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
+                </span>
                 <button
-                  onClick={() => handleInvite(user.id)}
-                  disabled={user.is_member || user.has_pending_invitation || invitedUsers.has(user.id)}
-                  style={{
-                    padding: `${spacing[4]} ${spacing[8]}`,
-                    borderRadius: borderRadius.xl,
-                    border: 'none',
-                    fontSize: fontSize.base,
-                    fontWeight: fontWeight.bold,
-                    cursor: user.is_member || user.has_pending_invitation || invitedUsers.has(user.id) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: shadows.lg,
-                    minWidth: '120px',
-                    ...getButtonStyle(user),
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!user.is_member && !user.has_pending_invitation && !invitedUsers.has(user.id)) {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = shadows.xl;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!user.is_member && !user.has_pending_invitation && !invitedUsers.has(user.id)) {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = shadows.lg;
-                    }
-                  }}
+                  className="bulk-invite-button"
+                  onClick={handleInviteSelected}
+                  disabled={inviting}
                 >
-                  {getButtonText(user)}
+                  {inviting ? 'Inviting...' : `Invite ${selectedUsers.size} User${selectedUsers.size !== 1 ? 's' : ''}`}
                 </button>
               </div>
-            ))
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

@@ -605,7 +605,6 @@ function UserProfile() {
                         </div>
                         
                         {/* Remove Profile Picture Button */}
-                        {console.log("DEBUG: user.profile_picture =", user.profile_picture)}
                         {user && (
                             <div>
                                 <button

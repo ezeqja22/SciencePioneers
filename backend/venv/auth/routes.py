@@ -215,8 +215,6 @@ def create_problem(
     current_user: dict = Depends(get_current_user)
 ):
     # Debug: Check if line breaks are preserved in the received data
-    print(f"Received description: {repr(problem.description)}")
-    print(f"Description length: {len(problem.description)}")
     
     db_problem = Problem(
         title=problem.title,
@@ -355,14 +353,8 @@ async def get_problem_images(
         forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
         is_creator = forum and forum.creator_id == current_user.id
         
-        print(f"SECURITY CHECK: problem_id={problem_id}, forum_id={problem.forum_id}, author_id={problem.author_id}, current_user_id={current_user.id}")
-        print(f"SECURITY CHECK: is_author={is_author}, membership={bool(membership)}, is_creator={is_creator}")
-        
         if not is_author and not membership and not is_creator:
-            print(f"SECURITY CHECK: ACCESS DENIED - user {current_user.id} cannot access problem {problem_id}")
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
-        else:
-            print(f"SECURITY CHECK: ACCESS GRANTED - user {current_user.id} can access problem {problem_id}")
     
     # Get images from database
     problem_images = db.query(ProblemImage).filter(ProblemImage.problem_id == problem_id).all()
@@ -446,8 +438,6 @@ def get_problem(problem_id: int, current_user: User = Depends(get_current_user),
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Debug: Check what's in the database
-    print(f"Database description: {repr(problem.description)}")
-    print(f"Database description length: {len(problem.description)}")
     
     # Fetch the author
     author = db.query(User).filter(User.id == problem.author_id).first()
@@ -1105,7 +1095,7 @@ def remove_profile_picture(
             os.remove(file_path)
     except Exception as e:
         # Log the error but don't fail the request
-        print(f"Warning: Could not delete profile picture file: {e}")
+        pass  # File deletion is optional
     
     # Update database to remove profile picture
     current_user.profile_picture = None
@@ -1765,21 +1755,14 @@ async def delete_account_request(
     from email_service import email_service
     
     # Debug logging
-    print(f"DEBUG: Delete account request for user {current_user.id} ({current_user.username})")
-    
     # Generate verification code for account deletion
     verification_code = email_service.generate_verification_code()
     verification_expires = email_service.get_verification_expiry()
-    
-    print(f"DEBUG: Generated verification code: {verification_code}")
-    print(f"DEBUG: Verification expires at: {verification_expires}")
     
     # Store the verification code in user record
     current_user.verification_code = verification_code
     current_user.verification_expires = verification_expires
     db.commit()
-    
-    print(f"DEBUG: Stored verification code in database for user {current_user.id}")
     
     # Send account deletion verification email
     success = await email_service.send_account_deletion_email(
@@ -1806,26 +1789,16 @@ def delete_account(
     verification_code = request.get("verification_code")
     
     # Debug logging
-    print(f"DEBUG: Delete account request for user {current_user.id}")
-    print(f"DEBUG: Received verification code: {verification_code}")
-    print(f"DEBUG: User's stored verification code: {current_user.verification_code}")
-    print(f"DEBUG: User's verification expires: {current_user.verification_expires}")
     
     if not verification_code:
         raise HTTPException(status_code=400, detail="Verification code is required")
     
     # Check verification code
     if not current_user.verification_code or current_user.verification_code != verification_code:
-        print(f"DEBUG: Verification code mismatch!")
-        print(f"DEBUG: Expected: {current_user.verification_code}")
-        print(f"DEBUG: Received: {verification_code}")
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # Check if code has expired
     if current_user.verification_expires and current_user.verification_expires < datetime.utcnow():
-        print(f"DEBUG: Verification code has expired!")
-        print(f"DEBUG: Current time: {datetime.utcnow()}")
-        print(f"DEBUG: Expiry time: {current_user.verification_expires}")
         raise HTTPException(status_code=400, detail="Verification code has expired")
     
     # Instead of deleting the user, mark them as deleted
@@ -2398,14 +2371,12 @@ def create_forum_problem(
     problem_data['forum_id'] = forum_id
     problem_data['author_id'] = current_user.id
     
-    print(f"DEBUG: Creating problem for forum {forum_id} with data: {problem_data}")
     
     db_problem = Problem(**problem_data)
     db.add(db_problem)
     db.commit()
     db.refresh(db_problem)
     
-    print(f"DEBUG: Created problem {db_problem.id} with forum_id: {db_problem.forum_id}")
     
     # Update forum last activity
     forum = db.query(Forum).filter(Forum.id == forum_id).first()
@@ -2461,9 +2432,6 @@ def get_forum_problems(
         Problem.forum_id == forum_id
     ).order_by(Problem.created_at.desc()).offset(skip).limit(limit).all()
     
-    print(f"DEBUG: Found {len(problems)} problems for forum {forum_id}")
-    for p in problems:
-        print(f"DEBUG: Problem {p.id}: {p.title} (forum_id: {p.forum_id})")
     
     # Serialize problems with comment counts and authors
     result = []
@@ -3107,16 +3075,13 @@ def delete_forum(
     notification_service = NotificationService(db)
     for member in members:
         if member.user_id != current_user.id:  # Don't notify the creator
-            print(f"DEBUG: Sending forum deleted notification to user {member.user_id}")
             notification = notification_service.send_forum_deleted_notification(
                 user_id=member.user_id,
                 forum_title=forum.title,
                 creator_username=current_user.username
             )
             if notification:
-                print(f"DEBUG: Notification created successfully for user {member.user_id}")
-            else:
-                print(f"DEBUG: Failed to create notification for user {member.user_id}")
+                pass  # Notification was sent successfully
     
     # Explicitly delete related records to avoid foreign key constraint issues
     # Delete forum invitations
