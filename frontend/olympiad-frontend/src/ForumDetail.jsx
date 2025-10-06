@@ -49,6 +49,12 @@ const ForumDetail = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
     const [showProblemModal, setShowProblemModal] = useState(false);
+    const [showMathModal, setShowMathModal] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [mathPreview, setMathPreview] = useState('');
+    const [mathLatex, setMathLatex] = useState('');
+    const [activeMathTab, setActiveMathTab] = useState('basic');
     const [problemData, setProblemData] = useState({});
     
     // Filter states
@@ -203,22 +209,26 @@ const ForumDetail = () => {
         }
     };
 
-    const sendMessage = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
+    const sendMessage = async (e, messageType = "text", content = null) => {
+        if (e) e.preventDefault();
+        
+        const messageContent = content || newMessage;
+        if (!messageContent.trim() && messageType === "text") return;
 
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
 
             await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
-                content: newMessage,
-                message_type: "text"
+                content: messageContent,
+                message_type: messageType
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            setNewMessage('');
+            if (messageType === "text") {
+                setNewMessage('');
+            }
             fetchMessages();
         } catch (error) {
             console.error("Error sending message:", error);
@@ -275,12 +285,49 @@ const ForumDetail = () => {
 
     const handleUploadImage = () => {
         setShowAttachmentMenu(false);
-        alert("Image upload coming soon!");
+        // Trigger file input for image selection
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                uploadImageToForum(file);
+            }
+        };
+        fileInput.click();
+    };
+
+    const uploadImageToForum = async (file) => {
+        try {
+            const token = localStorage.getItem("token");
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('forum_id', forumId);
+
+            const response = await axios.post(
+                "http://127.0.0.1:8000/auth/forums/upload-image",
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            // Send the image as a message
+            await sendMessage('', 'image', response.data.file_path);
+            
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            alert("Error uploading image. Please try again.");
+        }
     };
 
     const handleMathSymbols = () => {
         setShowAttachmentMenu(false);
-        alert("Math symbols coming soon!");
+        setShowMathModal(true);
     };
 
     const handleProblemCreated = (problem) => {
@@ -1094,6 +1141,24 @@ const ForumDetail = () => {
                                                     <div style={{ whiteSpace: "pre-wrap" }}>
                                                         {renderMathContent(message.content)}
                                                     </div>
+                                                ) : message.message_type === 'image' ? (
+                                                    <div style={{ marginTop: spacing.sm }}>
+                                                        <img 
+                                                            src={`http://127.0.0.1:8000/auth/serve-image/${message.content.split('/').pop()}`}
+                                                            alt="Forum image"
+                                                            style={{
+                                                                maxWidth: '100%',
+                                                                maxHeight: '400px',
+                                                                borderRadius: borderRadius.md,
+                                                                boxShadow: shadows.sm,
+                                                                cursor: 'pointer'
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(`http://127.0.0.1:8000/auth/serve-image/${message.content.split('/').pop()}`);
+                                                                setShowImageModal(true);
+                                                            }}
+                                                        />
+                                                    </div>
                                                 ) : message.message_type === 'problem' ? (
                                                     <div style={{ marginTop: spacing.sm }}>
                                                         {problemData[message.problem_id] ? (
@@ -1329,6 +1394,427 @@ const ForumDetail = () => {
                 forumId={forumId}
                 onProblemCreated={handleProblemCreated}
             />
+            
+            {/* Math Symbols Modal */}
+            {showMathModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}
+                onClick={() => setShowMathModal(false)}
+                >
+                    <div style={{
+                        backgroundColor: colors.white,
+                        borderRadius: borderRadius.lg,
+                        padding: spacing.xl,
+                        maxWidth: '800px',
+                        width: '95%',
+                        maxHeight: '90vh',
+                        overflow: 'auto',
+                        boxShadow: shadows.lg
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 style={{ margin: '0 0 20px 0', color: colors.gray[800] }}>
+                            Math Symbols
+                        </h3>
+                        
+                        {/* LaTeX Editor and Preview Section */}
+                        <div style={{
+                            backgroundColor: colors.gray[50],
+                            padding: spacing.md,
+                            borderRadius: borderRadius.md,
+                            marginBottom: spacing.lg,
+                            border: `1px solid ${colors.gray[200]}`
+                        }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
+                                {/* LaTeX Editor */}
+                                <div>
+                                    <div style={{ fontSize: '14px', color: colors.gray[600], marginBottom: spacing.sm }}>
+                                        LaTeX Editor:
+                                    </div>
+                                    <textarea
+                                        value={mathLatex}
+                                        onChange={(e) => setMathLatex(e.target.value)}
+                                        placeholder="Type LaTeX here or click symbols..."
+                                        style={{
+                                            width: '100%',
+                                            minHeight: '80px',
+                                            padding: spacing.sm,
+                                            backgroundColor: colors.white,
+                                            borderRadius: borderRadius.sm,
+                                            border: `1px solid ${colors.gray[300]}`,
+                                            fontSize: '14px',
+                                            fontFamily: 'monospace',
+                                            resize: 'vertical',
+                                            outline: 'none'
+                                        }}
+                                        onFocus={(e) => e.target.style.borderColor = colors.primary}
+                                        onBlur={(e) => e.target.style.borderColor = colors.gray[300]}
+                                    />
+                                </div>
+                                
+                                {/* Live Preview */}
+                                <div>
+                                    <div style={{ fontSize: '14px', color: colors.gray[600], marginBottom: spacing.sm }}>
+                                        Live Preview:
+                                    </div>
+                                    <div style={{
+                                        minHeight: '80px',
+                                        padding: spacing.sm,
+                                        backgroundColor: colors.white,
+                                        borderRadius: borderRadius.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        fontSize: '16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        {mathLatex ? renderMathContent(mathLatex) : 'Preview will appear here...'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Category Tabs */}
+                        <div style={{
+                            display: 'flex',
+                            gap: spacing.xs,
+                            marginBottom: spacing.lg,
+                            flexWrap: 'wrap'
+                        }}>
+                            {Object.entries({
+                                basic: 'Basic',
+                                fractions: 'Fractions', 
+                                powers: 'Powers',
+                                integrals: 'Integrals',
+                                derivatives: 'Derivatives',
+                                greek: 'Greek',
+                                sets: 'Sets',
+                                geometry: 'Geometry',
+                                logic: 'Logic'
+                            }).map(([key, name]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setActiveMathTab(key)}
+                                    style={{
+                                        padding: `${spacing.sm} ${spacing.md}`,
+                                        border: 'none',
+                                        borderRadius: borderRadius.md,
+                                        backgroundColor: activeMathTab === key ? colors.primary : colors.gray[200],
+                                        color: activeMathTab === key ? colors.white : colors.gray[700],
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    {name}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        {/* Symbols Grid */}
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+                            gap: spacing.sm, 
+                            marginBottom: spacing.lg 
+                        }}>
+                            {(() => {
+                                const symbolCategories = {
+                                    basic: {
+                                        symbols: [
+                                            { symbol: '+', latex: '+' },
+                                            { symbol: '-', latex: '-' },
+                                            { symbol: '×', latex: '\\times' },
+                                            { symbol: '÷', latex: '\\div' },
+                                            { symbol: '=', latex: '=' },
+                                            { symbol: '≠', latex: '\\neq' },
+                                            { symbol: '<', latex: '<' },
+                                            { symbol: '>', latex: '>' },
+                                            { symbol: '≤', latex: '\\leq' },
+                                            { symbol: '≥', latex: '\\geq' },
+                                            { symbol: '±', latex: '\\pm' },
+                                            { symbol: '∓', latex: '\\mp' },
+                                            { symbol: '∞', latex: '\\infty' },
+                                            { symbol: '∅', latex: '\\emptyset' }
+                                        ]
+                                    },
+                                    fractions: {
+                                        symbols: [
+                                            { symbol: '½', latex: '\\frac{1}{2}' },
+                                            { symbol: '⅓', latex: '\\frac{1}{3}' },
+                                            { symbol: '¼', latex: '\\frac{1}{4}' },
+                                            { symbol: '⅔', latex: '\\frac{2}{3}' },
+                                            { symbol: '¾', latex: '\\frac{3}{4}' },
+                                            { symbol: 'Fraction', latex: '\\frac{}{}', template: true },
+                                            { symbol: 'Mixed', latex: '\\frac{}{} \\frac{}{}', template: true }
+                                        ]
+                                    },
+                                    powers: {
+                                        symbols: [
+                                            { symbol: 'x²', latex: 'x^2' },
+                                            { symbol: 'x³', latex: 'x^3' },
+                                            { symbol: 'xⁿ', latex: 'x^n' },
+                                            { symbol: '√', latex: '\\sqrt{}', template: true },
+                                            { symbol: '∛', latex: '\\sqrt[3]{}', template: true },
+                                            { symbol: '∜', latex: '\\sqrt[4]{}', template: true },
+                                            { symbol: 'x₁', latex: 'x_1' },
+                                            { symbol: 'x₂', latex: 'x_2' }
+                                        ]
+                                    },
+                                    integrals: {
+                                        symbols: [
+                                            { symbol: '∫', latex: '\\int' },
+                                            { symbol: '∬', latex: '\\iint' },
+                                            { symbol: '∭', latex: '\\iiint' },
+                                            { symbol: '∮', latex: '\\oint' },
+                                            { symbol: '∫₀^∞', latex: '\\int_0^{\\infty}', template: true },
+                                            { symbol: '∫_a^b', latex: '\\int_a^b', template: true }
+                                        ]
+                                    },
+                                    derivatives: {
+                                        symbols: [
+                                            { symbol: '∂', latex: '\\partial' },
+                                            { symbol: 'd/dx', latex: '\\frac{d}{dx}', template: true },
+                                            { symbol: 'd²/dx²', latex: '\\frac{d^2}{dx^2}', template: true },
+                                            { symbol: '∂/∂x', latex: '\\frac{\\partial}{\\partial x}', template: true },
+                                            { symbol: '∇', latex: '\\nabla' },
+                                            { symbol: 'Δ', latex: '\\Delta' }
+                                        ]
+                                    },
+                                    greek: {
+                                        symbols: [
+                                            { symbol: 'α', latex: '\\alpha' },
+                                            { symbol: 'β', latex: '\\beta' },
+                                            { symbol: 'γ', latex: '\\gamma' },
+                                            { symbol: 'δ', latex: '\\delta' },
+                                            { symbol: 'ε', latex: '\\varepsilon' },
+                                            { symbol: 'ζ', latex: '\\zeta' },
+                                            { symbol: 'η', latex: '\\eta' },
+                                            { symbol: 'θ', latex: '\\theta' },
+                                            { symbol: 'λ', latex: '\\lambda' },
+                                            { symbol: 'μ', latex: '\\mu' },
+                                            { symbol: 'π', latex: '\\pi' },
+                                            { symbol: 'σ', latex: '\\sigma' },
+                                            { symbol: 'τ', latex: '\\tau' },
+                                            { symbol: 'φ', latex: '\\phi' },
+                                            { symbol: 'ψ', latex: '\\psi' },
+                                            { symbol: 'ω', latex: '\\omega' }
+                                        ]
+                                    },
+                                    sets: {
+                                        symbols: [
+                                            { symbol: '∈', latex: '\\in' },
+                                            { symbol: '∉', latex: '\\notin' },
+                                            { symbol: '⊂', latex: '\\subset' },
+                                            { symbol: '⊃', latex: '\\supset' },
+                                            { symbol: '∪', latex: '\\cup' },
+                                            { symbol: '∩', latex: '\\cap' },
+                                            { symbol: 'ℝ', latex: '\\mathbb{R}' },
+                                            { symbol: 'ℕ', latex: '\\mathbb{N}' },
+                                            { symbol: 'ℤ', latex: '\\mathbb{Z}' },
+                                            { symbol: 'ℚ', latex: '\\mathbb{Q}' },
+                                            { symbol: 'ℂ', latex: '\\mathbb{C}' }
+                                        ]
+                                    },
+                                    geometry: {
+                                        symbols: [
+                                            { symbol: '∠', latex: '\\angle' },
+                                            { symbol: '⊥', latex: '\\perp' },
+                                            { symbol: '∥', latex: '\\parallel' },
+                                            { symbol: '△', latex: '\\triangle' },
+                                            { symbol: '□', latex: '\\square' },
+                                            { symbol: '○', latex: '\\circ' }
+                                        ]
+                                    },
+                                    logic: {
+                                        symbols: [
+                                            { symbol: '∴', latex: '\\therefore' },
+                                            { symbol: '∵', latex: '\\because' },
+                                            { symbol: '∧', latex: '\\land' },
+                                            { symbol: '∨', latex: '\\lor' },
+                                            { symbol: '¬', latex: '\\neg' },
+                                            { symbol: '→', latex: '\\rightarrow' },
+                                            { symbol: '↔', latex: '\\leftrightarrow' },
+                                            { symbol: '∀', latex: '\\forall' },
+                                            { symbol: '∃', latex: '\\exists' }
+                                        ]
+                                    }
+                                };
+                                
+                                const currentCategory = symbolCategories[activeMathTab];
+                                if (!currentCategory) return null;
+                                
+                                return currentCategory.symbols.map((item, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => {
+                                            setMathLatex(prev => prev + item.latex);
+                                        }}
+                                        style={{
+                                            padding: spacing.sm,
+                                            border: `1px solid ${colors.gray[300]}`,
+                                            borderRadius: borderRadius.md,
+                                            backgroundColor: colors.white,
+                                            cursor: 'pointer',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            minHeight: '60px',
+                                            justifyContent: 'center'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[50];
+                                            e.target.style.borderColor = colors.primary;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.white;
+                                            e.target.style.borderColor = colors.gray[300];
+                                        }}
+                                        title={`${item.symbol} - Click to add to editor`}
+                                    >
+                                        <span>{item.symbol}</span>
+                                        {item.template && (
+                                            <span style={{ fontSize: '10px', color: colors.gray[500] }}>Template</span>
+                                        )}
+                                    </button>
+                                ));
+                            })()}
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: spacing.sm, justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '12px', color: colors.gray[500] }}>
+                                Click symbols to add to editor • Edit LaTeX directly • Live preview updates automatically
+                            </div>
+                            <div style={{ display: 'flex', gap: spacing.sm }}>
+                                <button
+                                    onClick={() => {
+                                        if (mathLatex.trim()) {
+                                            setNewMessage(prev => prev + mathLatex);
+                                            setMathLatex('');
+                                            setShowMathModal(false);
+                                        }
+                                    }}
+                                    disabled={!mathLatex.trim()}
+                                    style={{
+                                        padding: `${spacing.sm} ${spacing.md}`,
+                                        backgroundColor: mathLatex.trim() ? colors.primary : colors.gray[300],
+                                        color: mathLatex.trim() ? colors.white : colors.gray[500],
+                                        border: 'none',
+                                        borderRadius: borderRadius.md,
+                                        cursor: mathLatex.trim() ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
+                                    Insert
+                                </button>
+                                <button
+                                    onClick={() => setMathLatex('')}
+                                    disabled={!mathLatex.trim()}
+                                    style={{
+                                        padding: `${spacing.sm} ${spacing.md}`,
+                                        backgroundColor: mathLatex.trim() ? colors.gray[200] : colors.gray[100],
+                                        color: mathLatex.trim() ? colors.gray[700] : colors.gray[400],
+                                        border: 'none',
+                                        borderRadius: borderRadius.md,
+                                        cursor: mathLatex.trim() ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
+                                    Clear
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setMathLatex('');
+                                        setShowMathModal(false);
+                                    }}
+                                    style={{
+                                        padding: `${spacing.sm} ${spacing.md}`,
+                                        backgroundColor: colors.gray[200],
+                                        color: colors.gray[700],
+                                        border: 'none',
+                                        borderRadius: borderRadius.md,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Image Zoom Modal */}
+            {showImageModal && selectedImage && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1001
+                }}
+                onClick={() => setShowImageModal(false)}
+                >
+                    <div style={{
+                        position: 'relative',
+                        maxWidth: '90vw',
+                        maxHeight: '90vh'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowImageModal(false)}
+                            style={{
+                                position: 'absolute',
+                                top: '-40px',
+                                right: '0',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                cursor: 'pointer',
+                                fontSize: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 1002
+                            }}
+                        >
+                            ×
+                        </button>
+                        <img
+                            src={selectedImage}
+                            alt="Forum image"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '90vh',
+                                objectFit: 'contain',
+                                borderRadius: borderRadius.md
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
             
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (

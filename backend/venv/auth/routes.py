@@ -13,7 +13,7 @@ from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMe
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, Form
 import os
 import uuid
 from PIL import Image
@@ -1063,19 +1063,70 @@ def remove_profile_picture(
     return {"message": "Profile picture removed successfully"}
 
 
+@router.post("/forums/upload-image")
+async def upload_forum_image(
+    file: UploadFile = File(...),
+    forum_id: int = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload image for forum messages"""
+    # Check if user is member of the forum
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id
+    ).first()
+    
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    is_creator = forum and forum.creator_id == current_user.id
+    
+    if not membership and not is_creator:
+        raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
+    
+    # Read file content first
+    content = await file.read()
+    
+    # Check file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File is not an image")
+
+    # Check file size (5MB limit)
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File is too large. Maximum size is 5MB")
+
+    # Generate unique filename
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"forum_{forum_id}_{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
+    file_path = f"../../uploads/forum_images/{unique_filename}"
+    stored_path = f"forum_images/{unique_filename}"
+
+    # Create directory if it doesn't exist
+    os.makedirs("../../uploads/forum_images", exist_ok=True)
+    
+    # Save the file
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
+        
+    return {"message": "Image uploaded successfully", "file_path": stored_path}
+
+
 @router.get("/serve-image/{filename}")
 def serve_image(filename: str):
     """Direct image serving endpoint for testing"""
     from fastapi.responses import FileResponse
     import os
     
-    # Correct path: go up two levels from backend/venv/ to reach uploads/
-    file_path = f"../../uploads/profile_pictures/{filename}"
+    # Try profile pictures first
+    profile_path = f"../../uploads/profile_pictures/{filename}"
+    if os.path.exists(profile_path):
+        return FileResponse(profile_path)
     
-    if os.path.exists(file_path):
-        return FileResponse(file_path)
-    else:
-        return {"error": "File not found", "path": file_path}
+    # Try forum images
+    forum_path = f"../../uploads/forum_images/{filename}"
+    if os.path.exists(forum_path):
+        return FileResponse(forum_path)
+    
+    return {"error": "File not found", "path": f"Tried: {profile_path}, {forum_path}"}
 
 @router.post("/follow/{user_id}")
 def follow_user(
