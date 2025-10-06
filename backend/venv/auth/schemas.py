@@ -159,6 +159,10 @@ class ForumBase(BaseModel):
     description: str = None
     is_private: bool = False
     max_members: int = 100
+    # Badge fields
+    subject: Optional[str] = None
+    level: Optional[str] = None
+    tags: Optional[str] = None  # Comma-separated string of up to 5 tags
 
 class ForumCreate(ForumBase):
     pass
@@ -167,6 +171,10 @@ class ForumUpdate(BaseModel):
     title: str = None
     description: str = None
     is_private: bool = None
+    # Badge fields
+    subject: Optional[str] = None
+    level: Optional[str] = None
+    tags: Optional[str] = None
 
 class Forum(ForumBase):
     id: int

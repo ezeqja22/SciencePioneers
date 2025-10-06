@@ -121,7 +121,6 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     verification_code = email_service.generate_verification_code()
     verification_expires = email_service.get_verification_expiry()
     
-    # Debug prints
     
     # Try to send email BEFORE creating user
     success = await email_service.send_verification_email(
@@ -160,8 +159,6 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     )
     db.add(notification_preferences)
     db.commit()
-    
-    # Debug: Verify the user was created with the correct verification code
     
     # Generate JWT token for automatic login
     from auth.utils import create_jwt
@@ -214,7 +211,6 @@ def create_problem(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    # Debug: Check if line breaks are preserved in the received data
     
     db_problem = Problem(
         title=problem.title,
@@ -245,9 +241,6 @@ def create_problem(
         "author": None
     }
 
-@router.get("/debug/test")
-def debug_test():
-    return {"message": "Backend is working", "timestamp": "now"}
 
 @router.get("/problems/")
 def get_problems(
@@ -301,29 +294,6 @@ def get_problems(
         "total_pages": (total_problems + limit - 1) // limit
     }
 
-
-@router.get("/debug/subjects")
-def get_all_subjects(db: Session = Depends(get_db)):
-    """Debug endpoint to see what subjects exist in the database"""
-    subjects = db.query(Problem.subject).distinct().all()
-    return {"subjects": [s[0] for s in subjects]}
-
-@router.get("/debug/mathematics-problems")
-def get_mathematics_problems_debug(db: Session = Depends(get_db)):
-    """Debug endpoint to see Mathematics problems with all details"""
-    problems = db.query(Problem).filter(func.lower(Problem.subject) == 'mathematics').all()
-    result = []
-    for p in problems:
-        author = db.query(User).filter(User.id == p.author_id).first()
-        result.append({
-            "id": p.id,
-            "title": p.title,
-            "subject": p.subject,
-            "author_id": p.author_id,
-            "author": author.username if author else "No author found",
-            "created_at": str(p.created_at)
-        })
-    return {"problems": result}
 
 @router.get("/problems/{problem_id}/images")
 async def get_problem_images(
@@ -437,7 +407,6 @@ def get_problem(problem_id: int, current_user: User = Depends(get_current_user),
         if not is_author and not membership and not is_creator:
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
-    # Debug: Check what's in the database
     
     # Fetch the author
     author = db.query(User).filter(User.id == problem.author_id).first()
@@ -638,7 +607,6 @@ def get_comments(problem_id: int, current_user: User = Depends(get_current_user)
             author = db.query(User).filter(User.id == comment.author_id).first()
             comment.author = author
     
-    # Debug: Print comment info
     
     return comments
 
@@ -1702,7 +1670,6 @@ def verify_email(
     email = request.get("email")
     verification_code = request.get("verification_code")
     
-    # Debug prints
     
     if not email or not verification_code:
         raise HTTPException(status_code=400, detail="Email and verification code are required")
@@ -1754,7 +1721,6 @@ async def delete_account_request(
     """Send verification code for account deletion"""
     from email_service import email_service
     
-    # Debug logging
     # Generate verification code for account deletion
     verification_code = email_service.generate_verification_code()
     verification_expires = email_service.get_verification_expiry()
@@ -1788,7 +1754,6 @@ def delete_account(
     """Delete user account after verification"""
     verification_code = request.get("verification_code")
     
-    # Debug logging
     
     if not verification_code:
         raise HTTPException(status_code=400, detail="Verification code is required")
@@ -2137,12 +2102,22 @@ def create_forum(
     db: Session = Depends(get_db)
 ):
     """Create a new forum"""
+    # Validate tags (max 5 tags)
+    tags_list = []
+    if forum.tags:
+        tags_list = [tag.strip() for tag in forum.tags.split(',') if tag.strip()]
+        if len(tags_list) > 5:
+            raise HTTPException(status_code=400, detail="Maximum 5 tags allowed")
+    
     db_forum = Forum(
         title=forum.title,
         description=forum.description,
         creator_id=current_user.id,
         is_private=forum.is_private,
-        max_members=forum.max_members
+        max_members=forum.max_members,
+        subject=forum.subject,
+        level=forum.level,
+        tags=forum.tags
     )
     db.add(db_forum)
     db.commit()
@@ -2158,6 +2133,39 @@ def create_forum(
     db.commit()
     
     return db_forum
+
+@router.put("/forums/{forum_id}", response_model=ForumSchema)
+def update_forum(
+    forum_id: int,
+    forum_update: ForumUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a forum (creator only)"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if user is the creator
+    if forum.creator_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the forum creator can update the forum")
+    
+    # Validate tags if provided
+    if forum_update.tags:
+        tags_list = [tag.strip() for tag in forum_update.tags.split(',') if tag.strip()]
+        if len(tags_list) > 5:
+            raise HTTPException(status_code=400, detail="Maximum 5 tags allowed")
+    
+    # Update only provided fields
+    update_data = forum_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(forum, field, value)
+    
+    db.commit()
+    db.refresh(forum)
+    
+    return forum
 
 @router.get("/forums", response_model=List[ForumSchema])
 def get_forums(

@@ -146,6 +146,10 @@ class Forum(Base):
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_private = Column(Boolean, default=False)
     max_members = Column(Integer, default=100)
+    # Badge fields
+    subject = Column(String, nullable=True)  # Primary subject badge
+    level = Column(String, nullable=True)    # Level badge
+    tags = Column(String, nullable=True)    # Up to 5 tags as comma-separated string
     created_at = Column(DateTime, default=datetime.utcnow)
     last_activity = Column(DateTime, default=datetime.utcnow)
     

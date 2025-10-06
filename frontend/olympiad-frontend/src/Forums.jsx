@@ -18,7 +18,10 @@ const Forums = () => {
         title: '',
         description: '',
         is_private: false,
-        max_members: 100
+        max_members: 100,
+        subject: '',
+        level: '',
+        tags: ['']
     });
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,6 +29,28 @@ const Forums = () => {
     const [selectedForumId, setSelectedForumId] = useState(null);
 
     const navigate = useNavigate();
+
+    // Tag management functions
+    const handleTagChange = (index, value) => {
+        const newTags = [...newForum.tags];
+        newTags[index] = value;
+        setNewForum({...newForum, tags: newTags});
+    };
+
+    const addTag = () => {
+        if (newForum.tags.length < 5) {
+            setNewForum({...newForum, tags: [...newForum.tags, ""]});
+        } else {
+            alert("Maximum 5 tags allowed");
+        }
+    };
+
+    const removeTag = (index) => {
+        if (newForum.tags.length > 1) {
+            const newTags = newForum.tags.filter((_, i) => i !== index);
+            setNewForum({...newForum, tags: newTags});
+        }
+    };
 
     useEffect(() => {
         fetchCurrentUser();
@@ -77,11 +102,20 @@ const Forums = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post("http://127.0.0.1:8000/auth/forums", newForum, {
+            // Process tags: filter out empty tags and join with commas
+            const validTags = newForum.tags.filter(tag => tag.trim() !== "");
+            const processedTags = validTags.join(", ");
+
+            const forumData = {
+                ...newForum,
+                tags: processedTags
+            };
+
+            await axios.post("http://127.0.0.1:8000/auth/forums", forumData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            setNewForum({ title: '', description: '', is_private: false, max_members: 100 });
+            setNewForum({ title: '', description: '', is_private: false, max_members: 100, subject: '', level: '', tags: [''] });
             setShowCreateForm(false);
             fetchForums();
         } catch (error) {
@@ -310,6 +344,113 @@ const Forums = () => {
                                     }}
                                 />
                             </div>
+                            
+                            {/* Badge Fields */}
+                            <div style={{ marginBottom: spacing.md }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Subject
+                                </label>
+                                <select
+                                    value={newForum.subject}
+                                    onChange={(e) => setNewForum({...newForum, subject: e.target.value})}
+                                    style={{
+                                        width: "100%",
+                                        padding: spacing.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        borderRadius: borderRadius.md,
+                                        fontSize: typography.body
+                                    }}
+                                >
+                                    <option value="">Select Subject (Optional)</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Physics">Physics</option>
+                                    <option value="Chemistry">Chemistry</option>
+                                    <option value="Biology">Biology</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                    <option value="Engineering">Engineering</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div style={{ marginBottom: spacing.md }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Level
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newForum.level}
+                                    onChange={(e) => setNewForum({...newForum, level: e.target.value})}
+                                    placeholder="e.g., National Albanian Olympiad 5th Class Phase 1, EGMO Phase 2, IMO, etc."
+                                    style={{
+                                        width: "100%",
+                                        padding: spacing.sm,
+                                        border: `1px solid ${colors.gray[300]}`,
+                                        borderRadius: borderRadius.md,
+                                        fontSize: typography.body
+                                    }}
+                                />
+                            </div>
+                            
+                            <div style={{ marginBottom: spacing.md }}>
+                                <label style={{ display: "block", marginBottom: spacing.xs, fontWeight: "600" }}>
+                                    Tags (Optional) - {newForum.tags.length}/5
+                                </label>
+                                {newForum.tags.map((tag, index) => (
+                                    <div key={index} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                                        <input
+                                            type="text"
+                                            value={tag}
+                                            onChange={(e) => handleTagChange(index, e.target.value)}
+                                            style={{
+                                                flex: 1,
+                                                padding: "10px",
+                                                border: "1px solid #ddd",
+                                                borderRadius: "4px",
+                                                fontSize: "14px"
+                                            }}
+                                            placeholder={`Tag ${index + 1}`}
+                                        />
+                                        {newForum.tags.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTag(index)}
+                                                style={{
+                                                    padding: "10px",
+                                                    backgroundColor: "#dc3545",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "4px",
+                                                    cursor: "pointer",
+                                                    fontSize: "12px"
+                                                }}
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                {newForum.tags.length < 5 && (
+                                    <button
+                                        type="button"
+                                        onClick={addTag}
+                                        style={{
+                                            padding: "10px 20px",
+                                            backgroundColor: "#28a745",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "4px",
+                                            cursor: "pointer",
+                                            fontSize: "14px"
+                                        }}
+                                    >
+                                    + Add New Tag
+                                    </button>
+                                )}
+                                <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+                                    Add up to 5 tags to help categorize your forum
+                                </small>
+                            </div>
+                            
                             <div style={{ marginBottom: spacing.md }}>
                                 <label style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
                                     <input
@@ -367,6 +508,53 @@ const Forums = () => {
                                 }}>
                                     {forum.description}
                                 </p>
+                                
+                                {/* Forum Badges */}
+                                <div style={{ 
+                                    display: "flex", 
+                                    flexWrap: "wrap", 
+                                    gap: "6px", 
+                                    marginBottom: "12px",
+                                    pointerEvents: "none"
+                                }}>
+                                    {forum.subject && (
+                                        <span style={{
+                                            backgroundColor: "#e0e7ff",
+                                            color: "#3730a3",
+                                            padding: "6px 12px",
+                                            borderRadius: "16px",
+                                            fontSize: "12px",
+                                            fontWeight: "600"
+                                        }}>
+                                            {forum.subject}
+                                        </span>
+                                    )}
+                                    {forum.level && (
+                                        <span style={{
+                                            backgroundColor: "#fef3c7",
+                                            color: "#92400e",
+                                            padding: "6px 12px",
+                                            borderRadius: "16px",
+                                            fontSize: "12px",
+                                            fontWeight: "600"
+                                        }}>
+                                            {forum.level}
+                                        </span>
+                                    )}
+                                    {forum.tags && forum.tags.split(',').slice(0, 3).map((tag, index) => (
+                                        <span key={index} style={{
+                                            backgroundColor: "#dcfce7",
+                                            color: "#166534",
+                                            padding: "6px 12px",
+                                            borderRadius: "16px",
+                                            fontSize: "12px",
+                                            fontWeight: "600"
+                                        }}>
+                                            {tag.trim()}
+                                        </span>
+                                    ))}
+                                </div>
+                                
                                 <div style={{ 
                                     display: "flex", 
                                     justifyContent: "space-between", 
