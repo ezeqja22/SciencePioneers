@@ -2201,6 +2201,25 @@ def get_forums(
     
     return forums
 
+@router.get("/forums/my-forums", response_model=List[ForumSchema])
+def get_my_forums(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get forums where user is a member or creator"""
+    # Get forums where user is creator
+    created_forums = db.query(Forum).filter(Forum.creator_id == current_user.id).all()
+    
+    # Get forums where user is a member
+    membership_forums = db.query(Forum).join(ForumMembership).filter(
+        ForumMembership.user_id == current_user.id
+    ).all()
+    
+    # Combine and remove duplicates
+    all_forums = list(created_forums) + [f for f in membership_forums if f not in created_forums]
+    
+    return all_forums
+
 @router.get("/forums/{forum_id}", response_model=ForumSchema)
 def get_forum(
     forum_id: int,

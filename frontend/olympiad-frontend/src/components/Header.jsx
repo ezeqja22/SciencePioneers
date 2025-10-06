@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { colors, spacing, typography, shadows } from "../designSystem";
+import { colors, spacing, typography, shadows, borderRadius } from "../designSystem";
 import { getUserInitial } from "../utils";
 import NotificationBell from "./NotificationBell";
 
@@ -9,6 +9,10 @@ function Header({ showHomeButton = false }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+    const [myForums, setMyForums] = useState([]);
+    const [loadingForums, setLoadingForums] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
 
     // Subjects list
@@ -30,6 +34,18 @@ function Header({ showHomeButton = false }) {
         }
     }, []);
 
+    useEffect(() => {
+        // Handle responsive behavior
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        
+        handleResize(); // Set initial value
+        window.addEventListener('resize', handleResize);
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -43,6 +59,24 @@ function Header({ showHomeButton = false }) {
         }
     };
 
+    const fetchMyForums = async () => {
+        if (!currentUser) return;
+        
+        setLoadingForums(true);
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://127.0.0.1:8000/auth/forums/my-forums", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMyForums(response.data);
+        } catch (error) {
+            console.error("Error fetching my forums:", error);
+            setMyForums([]);
+        } finally {
+            setLoadingForums(false);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem("token");
         setCurrentUser(null);
@@ -52,6 +86,22 @@ function Header({ showHomeButton = false }) {
     const handleSubjectClick = (subject) => {
         navigate(`/subject/${subject.toLowerCase().replace(/\s+/g, '-')}`);
         setShowSubjectDropdown(false);
+    };
+
+    const handleHamburgerClick = () => {
+        if (!showHamburgerMenu) {
+            fetchMyForums();
+        }
+        setShowHamburgerMenu(!showHamburgerMenu);
+    };
+
+    const handleForumClick = (forumId) => {
+        navigate(`/forum/${forumId}`);
+        setShowHamburgerMenu(false);
+    };
+
+    const handleMenuClose = () => {
+        setShowHamburgerMenu(false);
     };
 
     return (
@@ -67,8 +117,48 @@ function Header({ showHomeButton = false }) {
             top: 0,
             zIndex: 1000
         }}>
-            {/* Logo */}
+            {/* Logo and Hamburger Menu */}
             <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
+                {/* Hamburger Menu Button */}
+                {currentUser && (
+                    <button
+                        onClick={handleHamburgerClick}
+                        style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: colors.white,
+                            cursor: "pointer",
+                            padding: spacing.sm,
+                            borderRadius: "4px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "3px",
+                            transition: "background-color 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    >
+                        <div style={{
+                            width: "20px",
+                            height: "2px",
+                            backgroundColor: colors.white,
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "20px",
+                            height: "2px",
+                            backgroundColor: colors.white,
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "20px",
+                            height: "2px",
+                            backgroundColor: colors.white,
+                            transition: "all 0.3s ease"
+                        }} />
+                    </button>
+                )}
+                
                 <Link to="/homepage" style={{ textDecoration: "none", color: "inherit" }}>
                     <div style={{
                         width: "40px",
@@ -364,6 +454,158 @@ function Header({ showHomeButton = false }) {
                     </div>
                 )}
             </nav>
+            
+            {/* Hamburger Menu Overlay */}
+            {showHamburgerMenu && (
+                <div
+                    onClick={handleMenuClose}
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        zIndex: 999
+                    }}
+                />
+            )}
+            
+            {/* Sliding Menu */}
+            <div style={{
+                position: "fixed",
+                top: 0,
+                left: showHamburgerMenu ? "0" : (isMobile ? "-100%" : "-100%"),
+                width: isMobile ? "100%" : "25%",
+                height: "100vh",
+                backgroundColor: colors.white,
+                boxShadow: shadows.xl,
+                zIndex: 1000,
+                transition: "left 0.3s ease-in-out",
+                overflowY: "auto",
+                padding: spacing.lg
+            }}>
+                <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: spacing.lg,
+                    paddingBottom: spacing.md,
+                    borderBottom: `1px solid ${colors.gray[200]}`
+                }}>
+                    <button
+                        onClick={handleMenuClose}
+                        style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: colors.gray[600],
+                            cursor: "pointer",
+                            padding: spacing.sm,
+                            borderRadius: borderRadius.sm,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "3px",
+                            transition: "background-color 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    >
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: colors.gray[600],
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: colors.gray[600],
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: colors.gray[600],
+                            transition: "all 0.3s ease"
+                        }} />
+                    </button>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: typography.fontSize.lg,
+                        fontWeight: typography.fontWeight.bold,
+                        color: colors.dark
+                    }}>
+                        My Forums
+                    </h3>
+                </div>
+                
+                {loadingForums ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: spacing.xl,
+                        color: colors.gray[500]
+                    }}>
+                        Loading forums...
+                    </div>
+                ) : myForums.length === 0 ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: spacing.xl,
+                        color: colors.gray[500],
+                        textAlign: "center"
+                    }}>
+                        No forums found.<br />
+                        Join or create a forum to see it here.
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+                        {myForums.map((forum) => (
+                            <button
+                                key={forum.id}
+                                onClick={() => handleForumClick(forum.id)}
+                                style={{
+                                    width: "100%",
+                                    padding: spacing.md,
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    borderRadius: borderRadius.md,
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    fontSize: typography.fontSize.base,
+                                    color: colors.dark,
+                                    transition: "background-color 0.2s",
+                                    borderBottom: `1px solid ${colors.gray[100]}`
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                            >
+                                <div style={{
+                                    fontWeight: typography.fontWeight.medium,
+                                    marginBottom: spacing.xs
+                                }}>
+                                    {forum.title}
+                                </div>
+                                {forum.description && (
+                                    <div style={{
+                                        fontSize: typography.fontSize.sm,
+                                        color: colors.gray[600],
+                                        lineHeight: 1.4
+                                    }}>
+                                        {forum.description.length > 60 
+                                            ? `${forum.description.substring(0, 60)}...` 
+                                            : forum.description
+                                        }
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </header>
     );
 }

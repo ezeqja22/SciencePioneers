@@ -9,6 +9,10 @@ function Homepage() {
     const [currentUser, setCurrentUser] = useState(null);
     const [showSubjectDropdown, setShowSubjectDropdown] = useState(false);
     const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+    const [myForums, setMyForums] = useState([]);
+    const [loadingForums, setLoadingForums] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
 
     // Actual subjects from the system
@@ -28,6 +32,18 @@ function Homepage() {
         if (token) {
             fetchCurrentUser();
         }
+    }, []);
+
+    useEffect(() => {
+        // Handle responsive behavior
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        
+        handleResize(); // Set initial value
+        window.addEventListener('resize', handleResize);
+        
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const fetchCurrentUser = async () => {
@@ -54,6 +70,40 @@ function Homepage() {
         navigate(`/subject/${subject.toLowerCase().replace(/\s+/g, '-')}`);
     };
 
+    const fetchMyForums = async () => {
+        if (!currentUser) return;
+        
+        setLoadingForums(true);
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://127.0.0.1:8000/auth/forums/my-forums", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMyForums(response.data);
+        } catch (error) {
+            console.error("Error fetching my forums:", error);
+            setMyForums([]);
+        } finally {
+            setLoadingForums(false);
+        }
+    };
+
+    const handleHamburgerClick = () => {
+        if (!showHamburgerMenu) {
+            fetchMyForums();
+        }
+        setShowHamburgerMenu(!showHamburgerMenu);
+    };
+
+    const handleForumClick = (forumId) => {
+        navigate(`/forum/${forumId}`);
+        setShowHamburgerMenu(false);
+    };
+
+    const handleMenuClose = () => {
+        setShowHamburgerMenu(false);
+    };
+
     return (
         <div style={{ 
             minHeight: "100vh", 
@@ -70,8 +120,47 @@ function Homepage() {
                 alignItems: "center",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
             }}>
-                {/* Logo */}
+                {/* Logo and Hamburger Menu */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {/* Hamburger Menu Button */}
+                    {currentUser && (
+                        <button
+                            onClick={handleHamburgerClick}
+                            style={{
+                                backgroundColor: "transparent",
+                                border: "none",
+                                color: "white",
+                                cursor: "pointer",
+                                padding: "8px",
+                                borderRadius: "4px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "3px",
+                                transition: "background-color 0.2s"
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                        >
+                            <div style={{
+                                width: "20px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "20px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "20px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                        </button>
+                    )}
                     <div style={{
                         width: "40px",
                         height: "40px",
@@ -549,6 +638,158 @@ function Homepage() {
                     }}
                 />
             )}
+            
+            {/* Hamburger Menu Overlay */}
+            {showHamburgerMenu && (
+                <div
+                    onClick={handleMenuClose}
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        zIndex: 999
+                    }}
+                />
+            )}
+            
+            {/* Sliding Menu */}
+            <div style={{
+                position: "fixed",
+                top: 0,
+                left: showHamburgerMenu ? "0" : (isMobile ? "-100%" : "-100%"),
+                width: isMobile ? "100%" : "25%",
+                height: "100vh",
+                backgroundColor: "white",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                zIndex: 1000,
+                transition: "left 0.3s ease-in-out",
+                overflowY: "auto",
+                padding: "1.5rem"
+            }}>
+                <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "1.5rem",
+                    paddingBottom: "0.75rem",
+                    borderBottom: "1px solid #e5e7eb"
+                }}>
+                    <button
+                        onClick={handleMenuClose}
+                        style={{
+                            backgroundColor: "transparent",
+                            border: "none",
+                            color: "#6b7280",
+                            cursor: "pointer",
+                            padding: "8px",
+                            borderRadius: "4px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "3px",
+                            transition: "background-color 0.2s"
+                        }}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = "#f3f4f6"}
+                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                    >
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: "#6b7280",
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: "#6b7280",
+                            transition: "all 0.3s ease"
+                        }} />
+                        <div style={{
+                            width: "16px",
+                            height: "2px",
+                            backgroundColor: "#6b7280",
+                            transition: "all 0.3s ease"
+                        }} />
+                    </button>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: "1.125rem",
+                        fontWeight: "bold",
+                        color: "#1f2937"
+                    }}>
+                        My Forums
+                    </h3>
+                </div>
+                
+                {loadingForums ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: "2rem",
+                        color: "#6b7280"
+                    }}>
+                        Loading forums...
+                    </div>
+                ) : myForums.length === 0 ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: "2rem",
+                        color: "#6b7280",
+                        textAlign: "center"
+                    }}>
+                        No forums found.<br />
+                        Join or create a forum to see it here.
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        {myForums.map((forum) => (
+                            <button
+                                key={forum.id}
+                                onClick={() => handleForumClick(forum.id)}
+                                style={{
+                                    width: "100%",
+                                    padding: "12px",
+                                    backgroundColor: "transparent",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    fontSize: "14px",
+                                    color: "#1f2937",
+                                    transition: "background-color 0.2s",
+                                    borderBottom: "1px solid #f3f4f6"
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = "#f9fafb"}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                            >
+                                <div style={{
+                                    fontWeight: "500",
+                                    marginBottom: "4px"
+                                }}>
+                                    {forum.title}
+                                </div>
+                                {forum.description && (
+                                    <div style={{
+                                        fontSize: "12px",
+                                        color: "#6b7280",
+                                        lineHeight: 1.4
+                                    }}>
+                                        {forum.description.length > 60 
+                                            ? `${forum.description.substring(0, 60)}...` 
+                                            : forum.description
+                                        }
+                                    </div>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
