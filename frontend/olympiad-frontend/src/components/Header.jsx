@@ -487,45 +487,52 @@ function Header({ showHomeButton = false }) {
             }}>
                 <div style={{
                     display: "flex",
-                    justifyContent: "space-between",
+                    justifyContent: "center",
                     alignItems: "center",
                     marginBottom: spacing.lg,
                     paddingBottom: spacing.md,
-                    borderBottom: `1px solid ${colors.gray[200]}`
+                    borderBottom: `1px solid ${colors.gray[200]}`,
+                    backgroundColor: colors.primary,
+                    margin: `-${spacing.lg} -${spacing.lg} ${spacing.lg} -${spacing.lg}`,
+                    padding: spacing.lg,
+                    borderRadius: `${borderRadius.lg} ${borderRadius.lg} 0 0`,
+                    position: "relative"
                 }}>
                     <button
                         onClick={handleMenuClose}
                         style={{
                             backgroundColor: "transparent",
                             border: "none",
-                            color: colors.gray[600],
+                            color: colors.white,
                             cursor: "pointer",
                             padding: spacing.sm,
                             borderRadius: borderRadius.sm,
                             display: "flex",
                             flexDirection: "column",
                             gap: "3px",
-                            transition: "background-color 0.2s"
+                            transition: "background-color 0.2s",
+                            position: "absolute",
+                            left: spacing.lg
                         }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
+                        onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                     >
                         <div style={{
                             width: "16px",
                             height: "2px",
-                            backgroundColor: colors.gray[600],
+                            backgroundColor: colors.white,
                             transition: "all 0.3s ease"
                         }} />
                         <div style={{
                             width: "16px",
                             height: "2px",
-                            backgroundColor: colors.gray[600],
+                            backgroundColor: colors.white,
                             transition: "all 0.3s ease"
                         }} />
                         <div style={{
                             width: "16px",
                             height: "2px",
-                            backgroundColor: colors.gray[600],
+                            backgroundColor: colors.white,
                             transition: "all 0.3s ease"
                         }} />
                     </button>
@@ -533,7 +540,7 @@ function Header({ showHomeButton = false }) {
                         margin: 0,
                         fontSize: typography.fontSize.lg,
                         fontWeight: typography.fontWeight.bold,
-                        color: colors.dark
+                        color: colors.white
                     }}>
                         My Forums
                     </h3>
@@ -562,47 +569,120 @@ function Header({ showHomeButton = false }) {
                         Join or create a forum to see it here.
                     </div>
                 ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
-                        {myForums.map((forum) => (
-                            <button
-                                key={forum.id}
-                                onClick={() => handleForumClick(forum.id)}
-                                style={{
-                                    width: "100%",
-                                    padding: spacing.md,
-                                    backgroundColor: "transparent",
-                                    border: "none",
-                                    borderRadius: borderRadius.md,
-                                    cursor: "pointer",
-                                    textAlign: "left",
-                                    fontSize: typography.fontSize.base,
-                                    color: colors.dark,
-                                    transition: "background-color 0.2s",
-                                    borderBottom: `1px solid ${colors.gray[100]}`
-                                }}
-                                onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
-                                onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                            >
-                                <div style={{
-                                    fontWeight: typography.fontWeight.medium,
-                                    marginBottom: spacing.xs
-                                }}>
-                                    {forum.title}
-                                </div>
-                                {forum.description && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+                        {myForums.map((forum) => {
+                            // Get icon based on subject
+                            const getForumIcon = (subject) => {
+                                const subjectLower = subject?.toLowerCase() || '';
+                                if (subjectLower.includes('biology') || subjectLower.includes('chemistry')) return '🔬';
+                                if (subjectLower.includes('mathematics') || subjectLower.includes('math')) return '📐';
+                                if (subjectLower.includes('physics')) return '⚛️';
+                                if (subjectLower.includes('computer') || subjectLower.includes('engineering')) return '💻';
+                                if (subjectLower.includes('education') || subjectLower.includes('academic')) return '🏫';
+                                return '📚';
+                            };
+
+                            return (
+                                <button
+                                    key={forum.id}
+                                    onClick={() => handleForumClick(forum.id)}
+                                    style={{
+                                        width: "100%",
+                                        padding: spacing.md,
+                                        backgroundColor: "transparent",
+                                        border: "none",
+                                        borderRadius: borderRadius.lg,
+                                        cursor: "pointer",
+                                        textAlign: "left",
+                                        fontSize: typography.fontSize.base,
+                                        color: colors.dark,
+                                        transition: "all 0.2s ease",
+                                        borderBottom: `1px solid ${colors.gray[100]}`,
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: spacing.sm,
+                                        position: "relative",
+                                        overflow: "hidden"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = "#e8f5e8";
+                                        e.target.style.transform = "scale(1.02)";
+                                        e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.15)";
+                                        e.target.style.borderColor = colors.primary;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = "transparent";
+                                        e.target.style.transform = "scale(1)";
+                                        e.target.style.boxShadow = "none";
+                                        e.target.style.borderColor = colors.gray[100];
+                                    }}
+                                >
+                                    {/* Forum Icon */}
                                     <div style={{
-                                        fontSize: typography.fontSize.sm,
-                                        color: colors.gray[600],
-                                        lineHeight: 1.4
+                                        fontSize: "20px",
+                                        marginTop: "2px",
+                                        flexShrink: 0
                                     }}>
-                                        {forum.description.length > 60 
-                                            ? `${forum.description.substring(0, 60)}...` 
-                                            : forum.description
-                                        }
+                                        {getForumIcon(forum.subject)}
                                     </div>
-                                )}
-                            </button>
-                        ))}
+                                    
+                                    {/* Forum Content */}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{
+                                            fontWeight: typography.fontWeight.semibold,
+                                            marginBottom: spacing.xs,
+                                            fontSize: typography.fontSize.base,
+                                            color: colors.dark,
+                                            lineHeight: 1.3
+                                        }}>
+                                            {forum.title}
+                                        </div>
+                                        {forum.description && (
+                                            <div style={{
+                                                fontSize: typography.fontSize.sm,
+                                                color: colors.gray[600],
+                                                lineHeight: 1.4,
+                                                marginBottom: spacing.xs
+                                            }}>
+                                                {forum.description.length > 50 
+                                                    ? `${forum.description.substring(0, 50)}...` 
+                                                    : forum.description
+                                                }
+                                            </div>
+                                        )}
+                                        
+                                        {/* Subject Badge */}
+                                        {forum.subject && (
+                                            <div style={{
+                                                display: "inline-block",
+                                                backgroundColor: colors.primary + "20",
+                                                color: colors.primary,
+                                                padding: `${spacing.xs} ${spacing.sm}`,
+                                                borderRadius: borderRadius.sm,
+                                                fontSize: typography.fontSize.xs,
+                                                fontWeight: typography.fontWeight.medium,
+                                                marginTop: spacing.xs
+                                            }}>
+                                                {forum.subject}
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Hover Glow Effect */}
+                                    <div style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        background: "linear-gradient(90deg, transparent, rgba(26, 77, 58, 0.1), transparent)",
+                                        opacity: 0,
+                                        transition: "opacity 0.2s ease",
+                                        pointerEvents: "none"
+                                    }} />
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
             </div>
