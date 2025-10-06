@@ -1037,6 +1037,32 @@ async def upload_profile_picture(
     return {"message": "Profile picture uploaded successfully", "file_path": stored_path}
 
 
+@router.delete("/user/profile-picture")
+def remove_profile_picture(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove user's profile picture"""
+    if not current_user.profile_picture:
+        raise HTTPException(status_code=400, detail="No profile picture to remove")
+    
+    # Delete the file from filesystem if it exists
+    try:
+        file_path = f"../../uploads/{current_user.profile_picture}"
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        # Log the error but don't fail the request
+        print(f"Warning: Could not delete profile picture file: {e}")
+    
+    # Update database to remove profile picture
+    current_user.profile_picture = None
+    db.commit()
+    db.refresh(current_user)
+    
+    return {"message": "Profile picture removed successfully"}
+
+
 @router.get("/serve-image/{filename}")
 def serve_image(filename: str):
     """Direct image serving endpoint for testing"""

@@ -39,6 +39,7 @@ function UserProfile() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [voteData, setVoteData] = useState({});
+    const [showImageModal, setShowImageModal] = useState(false);
     const fileInputRef = useRef(null);
     const [editFormData, setEditFormData] = useState({
         bio: ""
@@ -244,6 +245,57 @@ function UserProfile() {
         }
     };
 
+    const handleRemoveProfilePicture = async () => {
+        if (!user.profile_picture) {
+            alert("No profile picture to remove!");
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to remove your profile picture?")) {
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const token = localStorage.getItem("token");
+            await axios.delete(
+                "http://127.0.0.1:8000/auth/user/profile-picture",
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            
+            // Update profile data to remove picture
+            setProfileData(prev => ({
+                ...prev,
+                user: {
+                    ...prev.user,
+                    profile_picture: null
+                }
+            }));
+            
+            alert("Profile picture removed successfully!");
+        } catch (error) {
+            console.error("Error removing profile picture:", error);
+            alert("Error removing profile picture. Please try again.");
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleProfilePictureClick = () => {
+        if (user.profile_picture) {
+            setShowImageModal(true);
+        }
+    };
+
+    const handleCameraOverlayClick = (e) => {
+        e.stopPropagation(); // Prevent triggering profile picture click
+        fileInputRef.current.click();
+    };
+
     const handleLogout = () => {
         // Clear all user data
         localStorage.removeItem("token");
@@ -319,57 +371,72 @@ function UserProfile() {
                 border: "1px solid #e9ecef"
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    {/* Profile Picture Placeholder */}
-                    <div style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "50%",
-                        backgroundColor: "#007bff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "white",
-                        fontSize: "32px",
-                        fontWeight: "bold",
-                        backgroundImage: user.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center"
-                    }}>
-                        {!user.profile_picture && getUserInitial(user.username)}
-                    </div>
-                    
-                    {/* Change Profile Picture Button */}
-                    <button
-                        onClick={() => fileInputRef.current.click()}
-                        disabled={uploading}
+                    {/* Clickable Profile Picture */}
+                    <div 
+                        onClick={handleProfilePictureClick}
                         style={{
-                            padding: "10px 20px",
-                            backgroundColor: uploading ? colors.gray[400] : colors.primary,
+                            width: "80px",
+                            height: "80px",
+                            borderRadius: "50%",
+                            backgroundColor: "#007bff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                             color: "white",
-                            border: "none",
-                            borderRadius: "25px",
-                            cursor: uploading ? "not-allowed" : "pointer",
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            marginTop: "12px",
-                            boxShadow: uploading ? "none" : "0 2px 8px rgba(26, 77, 58, 0.3)",
-                            transition: "all 0.2s ease"
+                            fontSize: "32px",
+                            fontWeight: "bold",
+                            backgroundImage: user.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            cursor: "pointer",
+                            position: "relative",
+                            transition: "all 0.2s ease",
+                            overflow: "hidden"
                         }}
                         onMouseEnter={(e) => {
-                            if (!uploading) {
-                                e.target.style.transform = "translateY(-1px)";
-                                e.target.style.boxShadow = "0 4px 12px rgba(26, 77, 58, 0.4)";
-                            }
+                            e.target.style.transform = "scale(1.05)";
+                            e.target.style.boxShadow = "0 4px 12px rgba(0, 123, 255, 0.3)";
                         }}
                         onMouseLeave={(e) => {
-                            if (!uploading) {
-                                e.target.style.transform = "translateY(0)";
-                                e.target.style.boxShadow = "0 2px 8px rgba(26, 77, 58, 0.3)";
-                            }
+                            e.target.style.transform = "scale(1)";
+                            e.target.style.boxShadow = "none";
                         }}
                     >
-                        {uploading ? "Uploading..." : "📷 Change Profile Picture"}
-                    </button>
+                        {!user.profile_picture && getUserInitial(user.username)}
+                        
+                        {/* Camera overlay - semi-circle at bottom */}
+                        <div 
+                            onClick={handleCameraOverlayClick}
+                            style={{
+                                position: "absolute",
+                                bottom: "0",
+                                left: "0",
+                                right: "0",
+                                height: "30%",
+                                backgroundColor: "rgba(0, 123, 255, 0.9)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "16px",
+                                color: "white",
+                                borderRadius: "0 0 50% 50%",
+                                transform: "translateY(0)",
+                                transition: "all 0.2s ease",
+                                cursor: "pointer"
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = "rgba(0, 123, 255, 1)";
+                                e.target.style.transform = "translateY(-2px)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = "rgba(0, 123, 255, 0.9)";
+                                e.target.style.transform = "translateY(0)";
+                            }}
+                        >
+                            📷
+                        </div>
+                    </div>
+                    
                     
                     <div style={{ flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -496,6 +563,43 @@ function UserProfile() {
                             />
                         </div>
                         
+                        {/* Remove Profile Picture Button */}
+                        {console.log("DEBUG: user.profile_picture =", user.profile_picture)}
+                        {user && (
+                            <div>
+                                <button
+                                    onClick={handleRemoveProfilePicture}
+                                    disabled={uploading}
+                                    style={{
+                                        padding: "12px 24px",
+                                        backgroundColor: uploading ? colors.gray[400] : "#dc3545",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        cursor: uploading ? "not-allowed" : "pointer",
+                                        fontSize: "16px",
+                                        fontWeight: "600",
+                                        boxShadow: uploading ? "none" : "0 2px 8px rgba(220, 53, 69, 0.3)",
+                                        transition: "all 0.2s ease",
+                                        marginBottom: "20px"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!uploading) {
+                                            e.target.style.transform = "translateY(-1px)";
+                                            e.target.style.boxShadow = "0 4px 12px rgba(220, 53, 69, 0.4)";
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!uploading) {
+                                            e.target.style.transform = "translateY(0)";
+                                            e.target.style.boxShadow = "0 2px 8px rgba(220, 53, 69, 0.3)";
+                                        }
+                                    }}
+                                >
+                                    {uploading ? "Removing..." : "🗑️ Remove Profile Picture"}
+                                </button>
+                            </div>
+                        )}
                         
                         <div style={{ display: "flex", gap: "12px" }}>
                             <button
@@ -1061,6 +1165,66 @@ function UserProfile() {
                     </div>
                 )}
             </div>
+            
+            {/* Profile Picture Zoom Modal */}
+            {showImageModal && user.profile_picture && (
+                <div style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 1000
+                }}
+                onClick={() => setShowImageModal(false)}
+                >
+                    <div style={{
+                        position: "relative",
+                        maxWidth: "90vw",
+                        maxHeight: "90vh"
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowImageModal(false)}
+                            style={{
+                                position: "absolute",
+                                top: "10px",
+                                right: "10px",
+                                background: "rgba(0, 0, 0, 0.7)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "50%",
+                                width: "30px",
+                                height: "30px",
+                                cursor: "pointer",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 1001
+                            }}
+                        >
+                            ×
+                        </button>
+                        <img
+                            src={`http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()}`}
+                            alt="Profile Picture"
+                            style={{
+                                maxWidth: "100%",
+                                maxHeight: "90vh",
+                                objectFit: "contain",
+                                borderRadius: "8px",
+                                display: "block"
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 }
