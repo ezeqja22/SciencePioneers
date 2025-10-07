@@ -3576,3 +3576,79 @@ def get_online_count(
     db.commit()
     
     return {"online_count": online_count}
+
+@router.post("/forums/{forum_id}/typing")
+def set_typing_status(
+    forum_id: int,
+    is_typing: bool = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Set user's typing status in a forum"""
+    # Check if user is a member of the forum
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this forum")
+    
+    # Update or create typing status
+    typing_status = db.query(UserOnlineStatus).filter(
+        UserOnlineStatus.user_id == current_user.id,
+        UserOnlineStatus.forum_id == forum_id
+    ).first()
+    
+    if typing_status:
+        typing_status.is_typing = is_typing
+        if is_typing:
+            typing_status.last_typing = datetime.utcnow()
+    else:
+        typing_status = UserOnlineStatus(
+            user_id=current_user.id,
+            forum_id=forum_id,
+            is_typing=is_typing,
+            last_typing=datetime.utcnow() if is_typing else None
+        )
+        db.add(typing_status)
+    
+    db.commit()
+    
+    return {"message": "Typing status updated"}
+
+@router.get("/forums/{forum_id}/typing")
+def get_typing_users(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get users currently typing in a forum"""
+    # Check if user is a member of the forum
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this forum")
+    
+    # Get users typing within last 5 seconds
+    cutoff_time = datetime.utcnow() - timedelta(seconds=5)
+    typing_users = db.query(UserOnlineStatus, User).join(
+        User, UserOnlineStatus.user_id == User.id
+    ).filter(
+        UserOnlineStatus.forum_id == forum_id,
+        UserOnlineStatus.is_typing == True,
+        UserOnlineStatus.last_typing > cutoff_time,
+        UserOnlineStatus.user_id != current_user.id  # Exclude current user
+    ).all()
+    
+    typing_users_data = []
+    for status, user in typing_users:
+        typing_users_data.append({
+            "user_id": user.id,
+            "username": user.username
+        })
+    
+    return {"typing_users": typing_users_data}

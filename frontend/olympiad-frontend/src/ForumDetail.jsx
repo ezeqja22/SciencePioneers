@@ -14,6 +14,20 @@ import ForumProblemModal from './ForumProblemModal';
 import ForumProblemCard from './ForumProblemCard';
 import ForumInviteModal from './ForumInviteModal';
 
+// CSS for typing animation
+const typingAnimation = `
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    30% {
+        transform: translateY(-10px);
+        opacity: 1;
+    }
+}
+`;
+
 // Helper function to render math content
 const renderMathContent = (text) => {
     if (!text) return '';
@@ -33,6 +47,17 @@ const renderMathContent = (text) => {
 const ForumDetail = () => {
     const { forumId } = useParams();
     const navigate = useNavigate();
+    
+    // Add CSS animation to document
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = typingAnimation;
+        document.head.appendChild(style);
+        
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
     const [forum, setForum] = useState(null);
     const [problems, setProblems] = useState([]);
     const [members, setMembers] = useState([]);
@@ -60,6 +85,9 @@ const ForumDetail = () => {
     const [onlineCount, setOnlineCount] = useState(0);
     const [isUserOnline, setIsUserOnline] = useState(false);
     const [onlineStatusInitialized, setOnlineStatusInitialized] = useState(false);
+    const [typingUsers, setTypingUsers] = useState([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [typingTimeout, setTypingTimeout] = useState(null);
     const messagesEndRef = useRef(null);
     const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
@@ -167,6 +195,9 @@ const ForumDetail = () => {
             // Poll for online count updates
             const onlineCountInterval = setInterval(fetchOnlineCount, 10000); // Every 10 seconds
             
+            // Poll for typing users
+            const typingInterval = setInterval(fetchTypingUsers, 2000); // Every 2 seconds
+            
             // Handle browser close/tab close
             const handleBeforeUnload = () => {
                 markUserOffline();
@@ -178,6 +209,7 @@ const ForumDetail = () => {
                 clearInterval(messageInterval);
                 clearInterval(heartbeatInterval);
                 clearInterval(onlineCountInterval);
+                clearInterval(typingInterval);
                 window.removeEventListener('beforeunload', handleBeforeUnload);
             };
         }
@@ -355,6 +387,74 @@ const ForumDetail = () => {
         } catch (error) {
             console.error("Error fetching online count:", error);
             // Don't update count on error, keep current value
+        }
+    };
+
+    // Typing indicator functions
+    const handleTypingStart = async () => {
+        if (!isTyping) {
+            setIsTyping(true);
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+                const formData = new FormData();
+                formData.append('is_typing', 'true');
+                await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, formData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } catch (error) {
+                console.error("Error sending typing status:", error);
+            }
+        }
+
+        // Clear existing timeout
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+
+        // Set new timeout to stop typing after 3 seconds
+        const timeout = setTimeout(() => {
+            handleTypingStop();
+        }, 3000);
+        setTypingTimeout(timeout);
+    };
+
+    const handleTypingStop = async () => {
+        if (isTyping) {
+            setIsTyping(false);
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+
+            const formData = new FormData();
+            formData.append('is_typing', 'false');
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            } catch (error) {
+                console.error("Error sending typing status:", error);
+            }
+        }
+
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+            setTypingTimeout(null);
+        }
+    };
+
+    const fetchTypingUsers = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setTypingUsers(response.data.typing_users || []);
+        } catch (error) {
+            console.error("Error fetching typing users:", error);
         }
     };
 
@@ -1405,6 +1505,50 @@ const ForumDetail = () => {
                                     );
                                 })
                             )}
+                            
+                            {/* Typing Indicator */}
+                            {typingUsers.length > 0 && (
+                                <div style={{
+                                    padding: spacing.sm,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: spacing.sm,
+                                    color: colors.gray[600],
+                                    fontSize: '0.9rem',
+                                    fontStyle: 'italic'
+                                }}>
+                                    <div style={{ display: 'flex', gap: '2px' }}>
+                                        <div style={{
+                                            width: '6px',
+                                            height: '6px',
+                                            borderRadius: '50%',
+                                            backgroundColor: colors.gray[400],
+                                            animation: 'typing 1.4s infinite ease-in-out'
+                                        }}></div>
+                                        <div style={{
+                                            width: '6px',
+                                            height: '6px',
+                                            borderRadius: '50%',
+                                            backgroundColor: colors.gray[400],
+                                            animation: 'typing 1.4s infinite ease-in-out 0.2s'
+                                        }}></div>
+                                        <div style={{
+                                            width: '6px',
+                                            height: '6px',
+                                            borderRadius: '50%',
+                                            backgroundColor: colors.gray[400],
+                                            animation: 'typing 1.4s infinite ease-in-out 0.4s'
+                                        }}></div>
+                                    </div>
+                                    <span>
+                                        {typingUsers.length === 1 
+                                            ? `${typingUsers[0].username} is typing...`
+                                            : `${typingUsers.length} people are typing...`
+                                        }
+                                    </span>
+                                </div>
+                            )}
+                            
                             <div ref={messagesEndRef} />
                         </div>
 
@@ -1449,7 +1593,10 @@ const ForumDetail = () => {
                                 <input
                                     type="text"
                                     value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onChange={(e) => {
+                                        setNewMessage(e.target.value);
+                                        handleTypingStart();
+                                    }}
                                     placeholder="Type a message..."
                                     style={{
                                         flex: 1,

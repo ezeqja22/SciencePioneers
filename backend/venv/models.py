@@ -255,6 +255,8 @@ class UserOnlineStatus(Base):
     forum_id = Column(Integer, ForeignKey("forums.id"), primary_key=True)
     last_heartbeat = Column(DateTime, default=datetime.utcnow)
     is_online = Column(Boolean, default=True)
+    is_typing = Column(Boolean, default=False)
+    last_typing = Column(DateTime, nullable=True)
     
     # Relationships
     user = relationship("User")

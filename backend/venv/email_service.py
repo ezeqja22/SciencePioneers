@@ -15,10 +15,6 @@ class EmailService:
         self.sender_email = os.getenv("SMTP_EMAIL", "your-email@gmail.com")
         self.sender_password = os.getenv("SMTP_PASSWORD", "your-app-password")
         
-        # Debug: Print email configuration
-        print(f"DEBUG: Email service initialized")
-        print(f"DEBUG: SMTP_EMAIL = {self.sender_email}")
-        print(f"DEBUG: SMTP_PASSWORD = {'*' * len(self.sender_password) if self.sender_password else 'NOT SET'}")
         
     def generate_verification_code(self) -> str:
         """Generate a 6-digit verification code"""
