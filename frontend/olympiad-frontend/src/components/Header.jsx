@@ -13,6 +13,7 @@ function Header({ showHomeButton = false }) {
     const [myForums, setMyForums] = useState([]);
     const [loadingForums, setLoadingForums] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [pinnedForums, setPinnedForums] = useState([]);
     const navigate = useNavigate();
 
     // Subjects list
@@ -31,6 +32,12 @@ function Header({ showHomeButton = false }) {
         const token = localStorage.getItem("token");
         if (token) {
             fetchCurrentUser();
+        }
+        
+        // Load pinned forums from localStorage
+        const savedPinnedForums = localStorage.getItem('pinnedForums');
+        if (savedPinnedForums) {
+            setPinnedForums(JSON.parse(savedPinnedForums));
         }
     }, []);
 
@@ -102,6 +109,27 @@ function Header({ showHomeButton = false }) {
 
     const handleMenuClose = () => {
         setShowHamburgerMenu(false);
+    };
+
+    const handlePinToggle = (forumId, e) => {
+        e.stopPropagation(); // Prevent forum click
+        
+        setPinnedForums(prev => {
+            const isPinned = prev.includes(forumId);
+            let newPinnedForums;
+            
+            if (isPinned) {
+                // Unpin the forum
+                newPinnedForums = prev.filter(id => id !== forumId);
+            } else {
+                // Pin the forum
+                newPinnedForums = [...prev, forumId];
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('pinnedForums', JSON.stringify(newPinnedForums));
+            return newPinnedForums;
+        });
     };
 
     return (
@@ -570,7 +598,16 @@ function Header({ showHomeButton = false }) {
                     </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
-                        {myForums.map((forum) => {
+                        {myForums
+                            .sort((a, b) => {
+                                const aPinned = pinnedForums.includes(a.id);
+                                const bPinned = pinnedForums.includes(b.id);
+                                
+                                if (aPinned && !bPinned) return -1;
+                                if (!aPinned && bPinned) return 1;
+                                return 0;
+                            })
+                            .map((forum) => {
                             // Get icon based on subject
                             const getForumIcon = (subject) => {
                                 const subjectLower = subject?.toLowerCase() || '';
@@ -672,6 +709,76 @@ function Header({ showHomeButton = false }) {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    {/* Pin Button/Icon */}
+                                    {pinnedForums.includes(forum.id) ? (
+                                        // Pinned: Show pushpin emoji
+                                        <button
+                                            onClick={(e) => handlePinToggle(forum.id, e)}
+                                            style={{
+                                                backgroundColor: "transparent",
+                                                border: "none",
+                                                cursor: "pointer",
+                                                padding: spacing.xs,
+                                                borderRadius: borderRadius.sm,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "16px",
+                                                color: colors.primary,
+                                                transition: "all 0.2s ease",
+                                                flexShrink: 0,
+                                                marginTop: "2px"
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.target.style.backgroundColor = colors.gray[100];
+                                                e.target.style.transform = "scale(1.1)";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.target.style.backgroundColor = "transparent";
+                                                e.target.style.transform = "scale(1)";
+                                            }}
+                                            title="Unpin forum"
+                                        >
+                                            📌
+                                        </button>
+                                    ) : (
+                                        // Unpinned: Show "Pin" button
+                                        <button
+                                            onClick={(e) => handlePinToggle(forum.id, e)}
+                                            style={{
+                                                backgroundColor: "transparent",
+                                                border: `1px solid ${colors.gray[300]}`,
+                                                cursor: "pointer",
+                                                padding: `${spacing.xs} ${spacing.sm}`,
+                                                borderRadius: borderRadius.sm,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: typography.fontSize.xs,
+                                                fontWeight: typography.fontWeight.medium,
+                                                color: colors.gray[500],
+                                                transition: "all 0.2s ease",
+                                                flexShrink: 0,
+                                                marginTop: "2px",
+                                                minWidth: "40px",
+                                                height: "24px"
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.target.style.backgroundColor = colors.gray[100];
+                                                e.target.style.borderColor = colors.primary;
+                                                e.target.style.color = colors.primary;
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.target.style.backgroundColor = "transparent";
+                                                e.target.style.borderColor = colors.gray[300];
+                                                e.target.style.color = colors.gray[500];
+                                            }}
+                                            title="Pin forum"
+                                        >
+                                            Pin
+                                        </button>
+                                    )}
                                 </button>
                             );
                         })}
