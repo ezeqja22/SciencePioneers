@@ -174,6 +174,27 @@ const Forums = () => {
         }
     };
 
+    const handleRetractRequest = async (forumId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/retract-request`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            alert("Request retracted successfully");
+            fetchForums(); // Refresh to update button state
+        } catch (error) {
+            console.error("Error retracting request:", error);
+            if (error.response?.status === 404) {
+                alert("No pending request found");
+            } else {
+                alert("Failed to retract request");
+            }
+        }
+    };
+
     const handleForumClick = (forum) => {
         navigate(`/forum/${forum.id}/info`);
     };
@@ -736,13 +757,25 @@ const Forums = () => {
                                         forum.has_pending_request ? (
                                             <Button
                                                 size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRetractRequest(forum.id);
+                                                }}
                                                 style={{ 
                                                     backgroundColor: colors.gray[500],
-                                                    cursor: 'not-allowed',
+                                                    cursor: 'pointer',
                                                     border: 'none',
-                                                    pointerEvents: "auto"
+                                                    pointerEvents: "auto",
+                                                    transition: 'all 0.2s ease'
                                                 }}
-                                                disabled
+                                                onMouseEnter={(e) => {
+                                                    e.target.style.backgroundColor = colors.danger;
+                                                    e.target.textContent = 'Retract Request';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.target.style.backgroundColor = colors.gray[500];
+                                                    e.target.textContent = 'Requested';
+                                                }}
                                             >
                                                 Requested
                                             </Button>

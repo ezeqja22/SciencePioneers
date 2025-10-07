@@ -2889,6 +2889,43 @@ def request_to_join_forum(
     
     return db_request
 
+@router.delete("/forums/{forum_id}/retract-request")
+def retract_join_request(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retract a pending join request for a private forum"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Find the pending request
+    existing_request = db.query(ForumJoinRequest).filter(
+        ForumJoinRequest.forum_id == forum_id,
+        ForumJoinRequest.user_id == current_user.id,
+        ForumJoinRequest.status == "pending"
+    ).first()
+    
+    if not existing_request:
+        raise HTTPException(status_code=404, detail="No pending request found")
+    
+    # Delete the request
+    db.delete(existing_request)
+    
+    # Delete the notification for the forum creator
+    # Since we're deleting the request, we can safely delete all join request notifications
+    # for this forum creator (they should only have one per forum anyway)
+    db.query(Notification).filter(
+        Notification.user_id == forum.creator_id,
+        Notification.type == "forum_join_request"
+    ).delete()
+    
+    db.commit()
+    
+    return {"message": "Join request retracted successfully"}
+
 @router.get("/forums/{forum_id}/join-requests", response_model=List[ForumJoinRequestSchema])
 def get_forum_join_requests(
     forum_id: int,
