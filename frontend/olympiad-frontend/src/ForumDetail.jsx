@@ -780,100 +780,100 @@ const ForumDetail = () => {
 
                         <div style={{ 
                             display: 'flex', 
-                            gap: spacing.sm, 
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
                             marginBottom: spacing.lg,
                             flexWrap: 'wrap'
                         }}>
-                            <Button
-                                onClick={toggleChat}
-                                style={{
-                                    backgroundColor: colors.primary,
-                                    color: colors.white,
-                                    border: 'none',
-                                    padding: '12px 24px',
-                                    borderRadius: borderRadius.md,
-                                    cursor: 'pointer',
-                                    fontSize: typography.fontSize.base,
-                                    fontWeight: '600'
-                                }}
-                            >
-                                {showChat ? 'Close Chat' : 'Open Chat'}
-                            </Button>
-                            
-                            {isCreator && (
+                            <div style={{ display: 'flex', gap: spacing.sm }}>
                                 <Button
-                                    onClick={handleInviteUsers}
+                                    onClick={toggleChat}
                                     style={{
-                                        backgroundColor: colors.secondary,
+                                        backgroundColor: colors.primary,
                                         color: colors.white,
                                         border: 'none',
                                         padding: '12px 24px',
                                         borderRadius: borderRadius.md,
                                         cursor: 'pointer',
                                         fontSize: typography.fontSize.base,
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = '#4a5568';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = colors.secondary;
+                                        fontWeight: '600'
                                     }}
                                 >
-                                    Invite Users
+                                    {showChat ? 'Close Chat' : 'Open Chat'}
                                 </Button>
-                            )}
+                                
+                                {isCreator && (
+                                    <Button
+                                        onClick={handleInviteUsers}
+                                        style={{
+                                            backgroundColor: colors.secondary,
+                                            color: colors.white,
+                                            border: 'none',
+                                            padding: '12px 24px',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            fontSize: typography.fontSize.base,
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        Invite Users
+                                    </Button>
+                                )}
+                            </div>
                             
-                            {isMember && !isCreator && (
-                                <Button
-                                    onClick={handleLeaveForum}
-                                    style={{
-                                        backgroundColor: colors.gray[400],
-                                        color: colors.white,
-                                        border: 'none',
-                                        padding: '12px 24px',
-                                        borderRadius: borderRadius.md,
-                                        cursor: 'pointer',
-                                        fontSize: typography.fontSize.base,
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = colors.error;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = colors.gray[400];
-                                    }}
-                                >
-                                    Leave Forum
-                                </Button>
-                            )}
-                            
-                            {isCreator && (
-                                <Button
-                                    onClick={handleDeleteForum}
-                                    style={{
-                                        backgroundColor: colors.error,
-                                        color: colors.white,
-                                        border: 'none',
-                                        padding: '12px 24px',
-                                        borderRadius: borderRadius.md,
-                                        cursor: 'pointer',
-                                        fontSize: typography.fontSize.base,
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = '#c82333';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = colors.error;
-                                    }}
-                                >
-                                    Delete Forum
-                                </Button>
-                            )}
+                            <div style={{ display: 'flex', gap: spacing.sm }}>
+                                {isMember && !isCreator && (
+                                    <Button
+                                        onClick={handleLeaveForum}
+                                        style={{
+                                            backgroundColor: colors.gray[400],
+                                            color: colors.white,
+                                            border: 'none',
+                                            padding: '12px 24px',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            fontSize: typography.fontSize.base,
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.danger;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[400];
+                                        }}
+                                    >
+                                        Leave Forum
+                                    </Button>
+                                )}
+                                
+                                {isCreator && (
+                                    <Button
+                                        onClick={handleDeleteForum}
+                                        style={{
+                                            backgroundColor: colors.gray[400],
+                                            color: colors.white,
+                                            border: 'none',
+                                            padding: '12px 24px',
+                                            borderRadius: borderRadius.md,
+                                            cursor: 'pointer',
+                                            fontSize: typography.fontSize.base,
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.danger;
+                                        }}
+                                        onMouseLeave={(e) => {
+
+                                            e.target.style.backgroundColor = colors.gray[400];
+                                        }}
+                                    >
+                                        Delete Forum
+                                    </Button>
+                                )}
+                            </div>
                             
                             {!isMember && (
                                 <Button
