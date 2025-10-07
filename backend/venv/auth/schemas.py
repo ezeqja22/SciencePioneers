@@ -65,6 +65,7 @@ class CommentResponse(BaseModel):
     text: str
     author_id: int
     problem_id: int
+    is_solution: bool = False
     created_at: datetime
     author: UserOut
     updated_at: Optional[datetime] = None

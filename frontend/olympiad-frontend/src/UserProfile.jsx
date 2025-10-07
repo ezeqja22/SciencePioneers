@@ -35,6 +35,7 @@ function UserProfile() {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("problems"); // problems, comments, bookmarks, drafts
+    const [commentsSubTab, setCommentsSubTab] = useState("all"); // all, solutions
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -373,6 +374,13 @@ function UserProfile() {
     }
 
     const { user, problems, comments, bookmarks } = profileData;
+    
+    // Sort comments with solutions first, then by creation date
+    const sortedComments = comments ? comments.sort((a, b) => {
+        if (a.is_solution && !b.is_solution) return -1;
+        if (!a.is_solution && b.is_solution) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+    }) : [];
 
     return (
         <Layout showHomeButton={true}>
@@ -784,7 +792,7 @@ function UserProfile() {
                         }
                     }}
                 >
-                    My Comments ({comments.length})
+                    My Comments ({sortedComments.length})
                 </button>
                 <button
                     onClick={() => setActiveTab("bookmarks")}
@@ -1030,33 +1038,154 @@ function UserProfile() {
 
                 {activeTab === "comments" && (
                     <div>
-                        <h3 style={{ marginBottom: "20px", color: "#333" }}>My Comments</h3>
-                        {comments.length === 0 ? (
-                            <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-                                <p>You haven't made any comments yet.</p>
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
+                            <h3 style={{ margin: "0", color: "#333" }}>My Comments</h3>
+                            <div style={{ marginLeft: "20px", display: "flex", gap: "10px" }}>
+                                <button
+                                    onClick={() => setCommentsSubTab("all")}
+                                    style={{
+                                        padding: "8px 16px",
+                                        backgroundColor: commentsSubTab === "all" ? colors.primary : "transparent",
+                                        color: commentsSubTab === "all" ? "white" : colors.gray[600],
+                                        border: `1px solid ${commentsSubTab === "all" ? colors.primary : colors.gray[300]}`,
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (commentsSubTab !== "all") {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                            e.target.style.borderColor = colors.gray[400];
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (commentsSubTab !== "all") {
+                                            e.target.style.backgroundColor = "transparent";
+                                            e.target.style.borderColor = colors.gray[300];
+                                        }
+                                    }}
+                                >
+                                    All ({sortedComments.length})
+                                </button>
+                                <button
+                                    onClick={() => setCommentsSubTab("solutions")}
+                                    style={{
+                                        padding: "8px 16px",
+                                        backgroundColor: commentsSubTab === "solutions" ? colors.primary : "transparent",
+                                        color: commentsSubTab === "solutions" ? "white" : colors.gray[600],
+                                        border: `1px solid ${commentsSubTab === "solutions" ? colors.primary : colors.gray[300]}`,
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (commentsSubTab !== "solutions") {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                            e.target.style.borderColor = colors.gray[400];
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (commentsSubTab !== "solutions") {
+                                            e.target.style.backgroundColor = "transparent";
+                                            e.target.style.borderColor = colors.gray[300];
+                                        }
+                                    }}
+                                >
+                                    Solutions ({sortedComments.filter(comment => comment.is_solution).length})
+                                </button>
                             </div>
-                        ) : (
-                            <div>
-                                {comments.map((comment) => (
-                                    <div key={comment.id} style={{
-                                        border: "1px solid #ddd",
-                                        borderRadius: "8px",
-                                        padding: "15px",
-                                        marginBottom: "15px",
-                                        backgroundColor: "#f9f9f9"
-                                    }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                                            <Link to={`/problem/${comment.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
-                                                <h5 style={{ margin: "0", color: "#007bff" }}>{renderMathContent(comment.problem.title)}</h5>
-                                            </Link>
-                                            <span style={{ fontSize: "12px", color: "#666" }}>
-                                                {new Date(comment.created_at).toLocaleDateString()}
-                                            </span>
+                        </div>
+                        {commentsSubTab === "all" ? (
+                            sortedComments.length === 0 ? (
+                                <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                                    <p>You haven't made any comments yet.</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    {sortedComments.map((comment) => (
+                                        <div key={comment.id} style={{
+                                            border: comment.is_solution ? "2px solid #28a745" : "1px solid #ddd",
+                                            borderRadius: "8px",
+                                            padding: "15px",
+                                            marginBottom: "15px",
+                                            backgroundColor: comment.is_solution ? "#e8f5e8" : "#f9f9f9",
+                                            position: "relative"
+                                        }}>
+                                            {comment.is_solution && (
+                                                <div style={{
+                                                    position: "absolute",
+                                                    top: "10px",
+                                                    right: "10px",
+                                                    backgroundColor: "#28a745",
+                                                    color: "white",
+                                                    padding: "4px 8px",
+                                                    borderRadius: "12px",
+                                                    fontSize: "11px",
+                                                    fontWeight: "bold"
+                                                }}>
+                                                    ✅ SOLUTION
+                                                </div>
+                                            )}
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                                                <Link to={`/problem/${comment.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
+                                                    <h5 style={{ margin: "0", color: "#007bff" }}>{renderMathContent(comment.problem.title)}</h5>
+                                                </Link>
+                                                <span style={{ fontSize: "12px", color: "#666" }}>
+                                                    {new Date(comment.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <p style={{ color: "#333", margin: "0" }}>{renderMathContent(comment.text)}</p>
                                         </div>
-                                        <p style={{ color: "#333", margin: "0" }}>{renderMathContent(comment.text)}</p>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )
+                        ) : (
+                            sortedComments.filter(comment => comment.is_solution).length === 0 ? (
+                                <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
+                                    <p>You don't have any comments marked as solutions yet.</p>
+                                    <p>Keep contributing helpful answers to problems!</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    {sortedComments.filter(comment => comment.is_solution).map((comment) => (
+                                        <div key={comment.id} style={{
+                                            border: "2px solid #28a745",
+                                            borderRadius: "8px",
+                                            padding: "15px",
+                                            marginBottom: "15px",
+                                            backgroundColor: "#e8f5e8",
+                                            position: "relative"
+                                        }}>
+                                            <div style={{
+                                                position: "absolute",
+                                                top: "10px",
+                                                right: "10px",
+                                                backgroundColor: "#28a745",
+                                                color: "white",
+                                                padding: "4px 8px",
+                                                borderRadius: "12px",
+                                                fontSize: "11px",
+                                                fontWeight: "bold"
+                                            }}>
+                                                ✅ SOLUTION
+                                            </div>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                                                <Link to={`/problem/${comment.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
+                                                    <h5 style={{ margin: "0", color: "#007bff" }}>{renderMathContent(comment.problem.title)}</h5>
+                                                </Link>
+                                                <span style={{ fontSize: "12px", color: "#666" }}>
+                                                    {new Date(comment.created_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <p style={{ color: "#333", margin: "0" }}>{renderMathContent(comment.text)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )
                         )}
                     </div>
                 )}

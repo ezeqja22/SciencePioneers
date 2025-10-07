@@ -247,7 +247,13 @@ function ProblemDetail() {
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/comments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setComments(response.data);
+            // Sort comments with solutions first, then by creation date
+            const sortedComments = response.data.sort((a, b) => {
+                if (a.is_solution && !b.is_solution) return -1;
+                if (!a.is_solution && b.is_solution) return 1;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+            setComments(sortedComments);
         } catch (error) {
             console.error("Error fetching comments:", error);
         }
@@ -371,6 +377,37 @@ function ProblemDetail() {
             setComments(comments.filter(comment => comment.id !== commentId));
         } catch (error) {
             console.error("Error deleting comment:", error);
+        }
+    }
+
+    const handleMarkAsSolution = async (commentId) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.put(
+                `http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}/solution`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+            
+            // Update the comment in the state and re-sort
+            const updatedComments = comments.map(comment => 
+                comment.id === commentId 
+                    ? { ...comment, is_solution: response.data.is_solution }
+                    : comment
+            );
+            // Re-sort with solutions first
+            const sortedComments = updatedComments.sort((a, b) => {
+                if (a.is_solution && !b.is_solution) return -1;
+                if (!a.is_solution && b.is_solution) return 1;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+            setComments(sortedComments);
+        } catch (error) {
+            console.error("Error marking comment as solution:", error);
         }
     }
 
@@ -1411,11 +1448,12 @@ function ProblemDetail() {
 
                 {comments.map((comment) => (
                     <div key={comment.id} style={{
-                        backgroundColor: "#f9f9f9",
+                        backgroundColor: comment.is_solution ? "#e8f5e8" : "#f9f9f9",
                         padding: "15px",
                         marginBottom: "10px",
                         borderRadius: "5px",
-                        border: "1px solid #ddd"
+                        border: comment.is_solution ? "2px solid #28a745" : "1px solid #ddd",
+                        position: "relative"
                     }}>
                         {editingComment === comment.id ? (
                             <div>
@@ -1489,6 +1527,20 @@ function ProblemDetail() {
                             </div>
                         ) : (
                             <div>
+                                {comment.is_solution && (
+                                    <div style={{
+                                        backgroundColor: "#28a745",
+                                        color: "white",
+                                        padding: "4px 8px",
+                                        borderRadius: "3px",
+                                        fontSize: "12px",
+                                        fontWeight: "bold",
+                                        display: "inline-block",
+                                        marginBottom: "10px"
+                                    }}>
+                                        ✅ SOLUTION
+                                    </div>
+                                )}
                                 <div style={{ margin: "0 0 10px 0", color: "#333", whiteSpace: "pre-wrap" }}>{renderMathContent(comment.text)}</div>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <div style={{ fontSize: "12px", color: "#666" }}>
@@ -1496,13 +1548,45 @@ function ProblemDetail() {
                                         {comment.updated_at && new Date(comment.updated_at).getTime() > new Date(comment.created_at).getTime() && " (Edited)"}
                                         • {new Date(comment.created_at).toLocaleDateString()}
                                     </div>
-                                    {currentUser && currentUser.id === comment.author_id && (
-                                        <div style={{ display: "flex", gap: "5px" }}>
+                                    <div style={{ display: "flex", gap: "5px" }}>
+                                        {currentUser && currentUser.id === comment.author_id && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleEditComment(comment)}
+                                                    style={{
+                                                        padding: "4px 8px",
+                                                        backgroundColor: "#007bff",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "3px",
+                                                        cursor: "pointer",
+                                                        fontSize: "11px"
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteComment(comment.id)}
+                                                    style={{
+                                                        padding: "4px 8px",
+                                                        backgroundColor: "#dc3545",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "3px",
+                                                        cursor: "pointer",
+                                                        fontSize: "11px"
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
+                                        )}
+                                        {currentUser && currentUser.id === problem.author_id && (
                                             <button
-                                                onClick={() => handleEditComment(comment)}
+                                                onClick={() => handleMarkAsSolution(comment.id)}
                                                 style={{
                                                     padding: "4px 8px",
-                                                    backgroundColor: "#007bff",
+                                                    backgroundColor: comment.is_solution ? "#dc3545" : "#28a745",
                                                     color: "white",
                                                     border: "none",
                                                     borderRadius: "3px",
@@ -1510,24 +1594,10 @@ function ProblemDetail() {
                                                     fontSize: "11px"
                                                 }}
                                             >
-                                                Edit
+                                                {comment.is_solution ? "Unmark Solution" : "Mark as Solution"}
                                             </button>
-                                            <button
-                                                onClick={() => handleDeleteComment(comment.id)}
-                                                style={{
-                                                    padding: "4px 8px",
-                                                    backgroundColor: "#dc3545",
-                                                    color: "white",
-                                                    border: "none",
-                                                    borderRadius: "3px",
-                                                    cursor: "pointer",
-                                                    fontSize: "11px"
-                                                }}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         )}

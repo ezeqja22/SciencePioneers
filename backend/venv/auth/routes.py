@@ -693,6 +693,40 @@ def delete_comment(
     
     return {"message": "Comment deleted successfully"}
 
+@router.put("/problems/{problem_id}/comments/{comment_id}/solution")
+def mark_comment_as_solution(
+    problem_id: int,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark a comment as the solution (only problem author can do this)"""
+    # Check if problem exists
+    problem = db.query(Problem).filter(Problem.id == problem_id).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if current user is the problem author
+    if problem.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the problem author can mark comments as solutions")
+    
+    # Check if comment exists and belongs to this problem
+    db_comment = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.problem_id == problem_id
+    ).first()
+    
+    if not db_comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    # Toggle the solution status
+    db_comment.is_solution = not db_comment.is_solution
+    db.commit()
+    db.refresh(db_comment)
+    
+    action = "marked as solution" if db_comment.is_solution else "unmarked as solution"
+    return {"message": f"Comment {action} successfully", "is_solution": db_comment.is_solution}
+
 # Vote endpoints
 
 @router.get("/problems/{problem_id}/votes", response_model=List[VoteResponse])
@@ -925,6 +959,7 @@ def get_user_profile(
             "text": comment.text,
             "author_id": comment.author_id,
             "problem_id": comment.problem_id,
+            "is_solution": comment.is_solution,
             "created_at": comment.created_at.isoformat() if comment.created_at else None,
             "updated_at": comment.updated_at.isoformat() if comment.updated_at else None,
             "problem": {

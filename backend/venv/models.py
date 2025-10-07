@@ -59,6 +59,7 @@ class Comment(Base):
     text = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("problems.id"))
+    is_solution = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="comments")
