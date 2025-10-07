@@ -13,6 +13,10 @@ function Homepage() {
     const [myForums, setMyForums] = useState([]);
     const [loadingForums, setLoadingForums] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [pinnedForums, setPinnedForums] = useState(() => {
+        const saved = localStorage.getItem('pinnedForums');
+        return saved ? JSON.parse(saved) : [];
+    });
     const navigate = useNavigate();
 
     // Actual subjects from the system
@@ -86,6 +90,21 @@ function Homepage() {
         } finally {
             setLoadingForums(false);
         }
+    };
+
+    const togglePin = (forumId) => {
+        const newPinnedForums = pinnedForums.includes(forumId)
+            ? pinnedForums.filter(id => id !== forumId)
+            : [...pinnedForums, forumId];
+        
+        setPinnedForums(newPinnedForums);
+        localStorage.setItem('pinnedForums', JSON.stringify(newPinnedForums));
+    };
+
+    const getSortedForums = () => {
+        const pinned = myForums.filter(forum => pinnedForums.includes(forum.id));
+        const unpinned = myForums.filter(forum => !pinnedForums.includes(forum.id));
+        return [...pinned, ...unpinned];
     };
 
     const handleHamburgerClick = () => {
@@ -754,7 +773,7 @@ function Homepage() {
                     </div>
                 ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        {myForums.map((forum) => {
+                        {getSortedForums().map((forum) => {
                             // Get icon based on subject
                             const getForumIcon = (subject) => {
                                 const subjectLower = subject?.toLowerCase() || '';
@@ -856,6 +875,39 @@ function Homepage() {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    {/* Pin Button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            togglePin(forum.id);
+                                        }}
+                                        style={{
+                                            position: "absolute",
+                                            right: "12px",
+                                            top: "50%",
+                                            transform: "translateY(-50%)",
+                                            background: "none",
+                                            border: "none",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                            borderRadius: "4px",
+                                            transition: "all 0.2s ease",
+                                            fontSize: "14px",
+                                            color: pinnedForums.includes(forum.id) ? "#1a4d3a" : "#9ca3af",
+                                            pointerEvents: "auto"
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = "#f3f4f6";
+                                            e.target.style.color = "#1a4d3a";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = "transparent";
+                                            e.target.style.color = pinnedForums.includes(forum.id) ? "#1a4d3a" : "#9ca3af";
+                                        }}
+                                    >
+                                        {pinnedForums.includes(forum.id) ? "📍" : "Pin"}
+                                    </button>
                                 </button>
                             );
                         })}

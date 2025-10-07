@@ -17,6 +17,19 @@ function Settings() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
     
+    // Password change state
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordStep, setPasswordStep] = useState(1); // 1: old password, 2: new password
+    const [oldPassword, setOldPassword] = useState("");
+    const [verifiedOldPassword, setVerifiedOldPassword] = useState(""); // Store verified old password
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+    const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
+    
     // Notification preferences state
     const [notificationPrefs, setNotificationPrefs] = useState(null);
     const [prefsLoading, setPrefsLoading] = useState(false);
@@ -99,6 +112,146 @@ function Settings() {
 
     const handleDeleteAccount = () => {
         setShowDeleteModal(true);
+    };
+
+    const handleOpenPasswordModal = () => {
+        setShowPasswordModal(true);
+        setPasswordStep(1);
+        setOldPassword("");
+        setVerifiedOldPassword(""); // Clear verified old password
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordError("");
+        setPasswordSuccess(false);
+        setForgotPasswordSuccess(false);
+    };
+
+    const handleOldPasswordSubmit = async () => {
+        if (!oldPassword) {
+            setPasswordError("Please enter your current password");
+            return;
+        }
+        
+        setPasswordLoading(true);
+        setPasswordError("");
+        
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                "http://127.0.0.1:8000/auth/verify-password",
+                {
+                    old_password: oldPassword
+                },
+                {
+                    headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            // If we get here, old password is correct, move to step 2
+            setVerifiedOldPassword(oldPassword); // Store the verified old password
+            setPasswordStep(2);
+            setPasswordError("");
+            // Keep oldPassword value for step 2
+            
+        } catch (error) {
+            console.error("Error verifying password:", error);
+            const errorMessage = error.response?.data?.detail || "Incorrect password";
+            setPasswordError(typeof errorMessage === 'string' ? errorMessage : "Incorrect password");
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        setForgotPasswordLoading(true);
+        setPasswordError("");
+        
+        try {
+            await axios.post("http://127.0.0.1:8000/auth/forgot-password", {
+                email: currentUser?.email
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            setForgotPasswordSuccess(true);
+            
+        } catch (error) {
+            console.error("Error sending reset email:", error);
+            const errorMessage = error.response?.data?.detail || "Failed to send reset email. Please try again.";
+            setPasswordError(typeof errorMessage === 'string' ? errorMessage : "Failed to send reset email. Please try again.");
+        } finally {
+            setForgotPasswordLoading(false);
+        }
+    };
+
+    const handleNewPasswordSubmit = async () => {
+        if (!newPassword || !confirmPassword) {
+            setPasswordError("All fields are required");
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            setPasswordError("New passwords don't match");
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            setPasswordError("Password must be at least 6 characters long");
+            return;
+        }
+        
+        
+        const passwordToUse = verifiedOldPassword || oldPassword;
+        
+        if (!passwordToUse) {
+            setPasswordError("Old password is missing. Please go back and re-enter your current password.");
+            return;
+        }
+        
+        setPasswordLoading(true);
+        setPasswordError("");
+        
+        try {
+            const token = localStorage.getItem("token");
+            
+            await axios.post(
+                "http://127.0.0.1:8000/auth/change-password",
+                {
+                    old_password: passwordToUse,
+                    new_password: newPassword
+                },
+                {
+                    headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            setPasswordSuccess(true);
+            setOldPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            
+            // Close modal after 2 seconds
+            setTimeout(() => {
+                setShowPasswordModal(false);
+                setPasswordSuccess(false);
+                setPasswordStep(1);
+            }, 2000);
+            
+        } catch (error) {
+            console.error("Error changing password:", error);
+            const errorMessage = error.response?.data?.detail || "Failed to change password";
+            setPasswordError(typeof errorMessage === 'string' ? errorMessage : "Failed to change password");
+        } finally {
+            setPasswordLoading(false);
+        }
     };
 
     const confirmDeleteAccount = async () => {
@@ -260,6 +413,24 @@ function Settings() {
                                 {currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString() : "Unknown"}
                             </span>
                         </div>
+                        
+                        <Button
+                            variant="primary"
+                            onClick={handleOpenPasswordModal}
+                            style={{
+                                backgroundColor: colors.primary,
+                                color: colors.white,
+                                border: `1px solid ${colors.primary}`,
+                                padding: `${spacing.md} ${spacing.lg}`,
+                                borderRadius: borderRadius.md,
+                                fontSize: typography.fontSize.base,
+                                fontWeight: typography.fontWeight.medium,
+                                cursor: "pointer",
+                                transition: "all 0.2s ease"
+                            }}
+                        >
+                            🔒 Change Password
+                        </Button>
                     </div>
 
                     {/* Notification Preferences Section */}
@@ -843,6 +1014,365 @@ function Settings() {
                                         </Button>
                                     </div>
                                 </form>
+                            </div>
+                        </Card>
+                    </div>
+                )}
+
+                {/* Password Change Modal */}
+                {showPasswordModal && (
+                    <div style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: "rgba(0, 0, 0, 0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000,
+                        backdropFilter: "blur(4px)"
+                    }}>
+                        <Card style={{ 
+                            maxWidth: "480px", 
+                            margin: spacing.lg,
+                            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+                            border: "none",
+                            borderRadius: "16px"
+                        }}>
+                            <div style={{ textAlign: "center", padding: spacing.lg }}>
+                                <div style={{ 
+                                    fontSize: "56px", 
+                                    marginBottom: "24px",
+                                    filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))"
+                                }}>
+                                    🔒
+                                </div>
+                                
+                                <h2 style={{ 
+                                    color: colors.primary, 
+                                    marginBottom: "8px",
+                                    fontSize: typography.fontSize.xxl,
+                                    fontWeight: typography.fontWeight.bold
+                                }}>
+                                    Change Password
+                                </h2>
+                                
+                                <p style={{ 
+                                    color: colors.gray[600], 
+                                    marginBottom: "32px",
+                                    fontSize: typography.fontSize.base,
+                                    lineHeight: 1.5
+                                }}>
+                                    {passwordStep === 1 
+                                        ? "Enter your current password to continue"
+                                        : "Enter your new password"
+                                    }
+                                </p>
+                                
+                                {passwordSuccess ? (
+                                    <div style={{ 
+                                        color: colors.success, 
+                                        marginBottom: "24px",
+                                        fontSize: typography.fontSize.lg,
+                                        fontWeight: typography.fontWeight.medium
+                                    }}>
+                                        ✅ Password changed successfully!
+                                    </div>
+                                ) : forgotPasswordSuccess ? (
+                                    <div style={{ 
+                                        color: colors.success, 
+                                        marginBottom: "24px",
+                                        fontSize: typography.fontSize.lg,
+                                        fontWeight: typography.fontWeight.medium
+                                    }}>
+                                        📧 Reset link sent to your email!
+                                    </div>
+                                ) : (
+                                    <form onSubmit={(e) => { 
+                                        e.preventDefault(); 
+                                        if (passwordStep === 1) handleOldPasswordSubmit();
+                                        else handleNewPasswordSubmit();
+                                    }}>
+                                        {passwordStep === 1 ? (
+                                            <>
+                                                <div style={{ marginBottom: spacing.lg, textAlign: "left" }}>
+                                                    <label style={{ 
+                                                        display: "block", 
+                                                        marginBottom: spacing.sm,
+                                                        fontWeight: typography.fontWeight.semibold,
+                                                        color: colors.gray[800],
+                                                        fontSize: typography.fontSize.sm
+                                                    }}>
+                                                        Current Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        value={oldPassword}
+                                                        onChange={(e) => setOldPassword(e.target.value)}
+                                                        placeholder="Enter your current password"
+                                                        style={{
+                                                            width: "100%",
+                                                            padding: "14px 16px",
+                                                            border: `2px solid ${colors.gray[200]}`,
+                                                            borderRadius: "12px",
+                                                            fontSize: typography.fontSize.base,
+                                                            outline: "none",
+                                                            transition: "all 0.2s ease",
+                                                            backgroundColor: colors.gray[50]
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.target.style.borderColor = colors.primary;
+                                                            e.target.style.backgroundColor = colors.white;
+                                                            e.target.style.boxShadow = `0 0 0 3px ${colors.primary}20`;
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.target.style.borderColor = colors.gray[200];
+                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                            e.target.style.boxShadow = "none";
+                                                        }}
+                                                    />
+                                                </div>
+                                                
+                                                <div style={{ 
+                                                    display: "flex", 
+                                                    gap: spacing.md, 
+                                                    justifyContent: "center",
+                                                    marginBottom: spacing.md
+                                                }}>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setShowPasswordModal(false);
+                                                            setPasswordStep(1);
+                                                            setOldPassword("");
+                                                            setPasswordError("");
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.gray[100],
+                                                            color: colors.gray[700],
+                                                            border: `2px solid ${colors.gray[200]}`,
+                                                            padding: "12px 24px",
+                                                            borderRadius: "12px",
+                                                            cursor: "pointer",
+                                                            fontWeight: typography.fontWeight.medium,
+                                                            transition: "all 0.2s ease"
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.target.style.backgroundColor = colors.gray[200];
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.target.style.backgroundColor = colors.gray[100];
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        disabled={passwordLoading}
+                                                        style={{
+                                                            backgroundColor: colors.primary,
+                                                            color: colors.white,
+                                                            border: `2px solid ${colors.primary}`,
+                                                            padding: "12px 24px",
+                                                            borderRadius: "12px",
+                                                            opacity: passwordLoading ? 0.6 : 1,
+                                                            cursor: passwordLoading ? "not-allowed" : "pointer",
+                                                            fontWeight: typography.fontWeight.semibold,
+                                                            transition: "all 0.2s ease"
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            if (!passwordLoading) {
+                                                                e.target.style.transform = "translateY(-1px)";
+                                                                e.target.style.boxShadow = `0 4px 12px ${colors.primary}40`;
+                                                            }
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.target.style.transform = "translateY(0)";
+                                                            e.target.style.boxShadow = "none";
+                                                        }}
+                                                    >
+                                                        {passwordLoading ? "Verifying..." : "Continue"}
+                                                    </Button>
+                                                </div>
+                                                
+                                                <div style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    justifyContent: "center",
+                                                    gap: spacing.sm,
+                                                    marginTop: spacing.lg,
+                                                    paddingTop: spacing.lg,
+                                                    borderTop: `1px solid ${colors.gray[200]}`
+                                                }}>
+                                                    <span style={{ 
+                                                        color: colors.gray[500],
+                                                        fontSize: typography.fontSize.sm
+                                                    }}>
+                                                        Don't remember your password?
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={handleForgotPassword}
+                                                        disabled={forgotPasswordLoading}
+                                                        style={{
+                                                            background: "none",
+                                                            border: "none",
+                                                            color: colors.primary,
+                                                            cursor: forgotPasswordLoading ? "not-allowed" : "pointer",
+                                                            fontSize: typography.fontSize.sm,
+                                                            fontWeight: typography.fontWeight.semibold,
+                                                            textDecoration: "underline",
+                                                            opacity: forgotPasswordLoading ? 0.6 : 1
+                                                        }}
+                                                    >
+                                                        {forgotPasswordLoading ? "Sending..." : "Forgot Password"}
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ marginBottom: spacing.lg, textAlign: "left" }}>
+                                                    <label style={{ 
+                                                        display: "block", 
+                                                        marginBottom: spacing.sm,
+                                                        fontWeight: typography.fontWeight.semibold,
+                                                        color: colors.gray[800],
+                                                        fontSize: typography.fontSize.sm
+                                                    }}>
+                                                        New Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        value={newPassword}
+                                                        onChange={(e) => setNewPassword(e.target.value)}
+                                                        placeholder="Enter your new password"
+                                                        style={{
+                                                            width: "100%",
+                                                            padding: "14px 16px",
+                                                            border: `2px solid ${colors.gray[200]}`,
+                                                            borderRadius: "12px",
+                                                            fontSize: typography.fontSize.base,
+                                                            outline: "none",
+                                                            transition: "all 0.2s ease",
+                                                            backgroundColor: colors.gray[50]
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.target.style.borderColor = colors.primary;
+                                                            e.target.style.backgroundColor = colors.white;
+                                                            e.target.style.boxShadow = `0 0 0 3px ${colors.primary}20`;
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.target.style.borderColor = colors.gray[200];
+                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                            e.target.style.boxShadow = "none";
+                                                        }}
+                                                    />
+                                                </div>
+                                                
+                                                <div style={{ marginBottom: spacing.lg, textAlign: "left" }}>
+                                                    <label style={{ 
+                                                        display: "block", 
+                                                        marginBottom: spacing.sm,
+                                                        fontWeight: typography.fontWeight.semibold,
+                                                        color: colors.gray[800],
+                                                        fontSize: typography.fontSize.sm
+                                                    }}>
+                                                        Confirm New Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        value={confirmPassword}
+                                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                                        placeholder="Confirm your new password"
+                                                        style={{
+                                                            width: "100%",
+                                                            padding: "14px 16px",
+                                                            border: `2px solid ${colors.gray[200]}`,
+                                                            borderRadius: "12px",
+                                                            fontSize: typography.fontSize.base,
+                                                            outline: "none",
+                                                            transition: "all 0.2s ease",
+                                                            backgroundColor: colors.gray[50]
+                                                        }}
+                                                        onFocus={(e) => {
+                                                            e.target.style.borderColor = colors.primary;
+                                                            e.target.style.backgroundColor = colors.white;
+                                                            e.target.style.boxShadow = `0 0 0 3px ${colors.primary}20`;
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            e.target.style.borderColor = colors.gray[200];
+                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                            e.target.style.boxShadow = "none";
+                                                        }}
+                                                    />
+                                                </div>
+                                                
+                                                <div style={{ 
+                                                    display: "flex", 
+                                                    gap: spacing.md, 
+                                                    justifyContent: "center"
+                                                }}>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPasswordStep(1);
+                                                            setNewPassword("");
+                                                            setConfirmPassword("");
+                                                            setPasswordError("");
+                                                            // Keep oldPassword value since it was already verified
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: colors.gray[100],
+                                                            color: colors.gray[700],
+                                                            border: `2px solid ${colors.gray[200]}`,
+                                                            padding: "12px 24px",
+                                                            borderRadius: "12px",
+                                                            cursor: "pointer",
+                                                            fontWeight: typography.fontWeight.medium,
+                                                            transition: "all 0.2s ease"
+                                                        }}
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    <Button
+                                                        type="submit"
+                                                        disabled={passwordLoading}
+                                                        style={{
+                                                            backgroundColor: colors.primary,
+                                                            color: colors.white,
+                                                            border: `2px solid ${colors.primary}`,
+                                                            padding: "12px 24px",
+                                                            borderRadius: "12px",
+                                                            opacity: passwordLoading ? 0.6 : 1,
+                                                            cursor: passwordLoading ? "not-allowed" : "pointer",
+                                                            fontWeight: typography.fontWeight.semibold,
+                                                            transition: "all 0.2s ease"
+                                                        }}
+                                                    >
+                                                        {passwordLoading ? "Changing..." : "Change Password"}
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+                                        
+                                        {passwordError && (
+                                            <div style={{ 
+                                                color: colors.danger, 
+                                                marginTop: spacing.md,
+                                                fontSize: typography.fontSize.sm,
+                                                textAlign: "center",
+                                                backgroundColor: colors.danger + "10",
+                                                padding: "8px 12px",
+                                                borderRadius: "8px",
+                                                border: `1px solid ${colors.danger}30`
+                                            }}>
+                                                {passwordError}
+                                            </div>
+                                        )}
+                                    </form>
+                                )}
                             </div>
                         </Card>
                     </div>

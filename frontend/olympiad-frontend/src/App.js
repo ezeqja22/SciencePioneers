@@ -16,6 +16,7 @@ import Forums from "./Forums";
 import ForumDetail from "./ForumDetail";
 import SubjectPage from "./SubjectPage";
 import Settings from "./Settings";
+import ResetPassword from "./ResetPassword";
 import FollowersFollowing from "./components/FollowersFollowing";
 import AuthGuard from "./AuthGuard";
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/" element={<Navigate to="/homepage" replace />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route 
           path="/homepage" 
           element={<Homepage />} />

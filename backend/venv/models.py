@@ -19,6 +19,7 @@ class User(Base):
     verification_code = Column(String, nullable=True)
     verification_expires = Column(DateTime, nullable=True)
     marketing_emails = Column(Boolean, default=False)
+    reset_token = Column(String, nullable=True)
     problems = relationship("Problem", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     votes = relationship("Vote", back_populates="user")
