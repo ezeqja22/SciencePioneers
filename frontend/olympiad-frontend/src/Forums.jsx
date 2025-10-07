@@ -34,6 +34,7 @@ const Forums = () => {
         tags: [],
         isPrivate: null
     });
+    const [forumOnlineCounts, setForumOnlineCounts] = useState({});
 
     const navigate = useNavigate();
 
@@ -92,6 +93,9 @@ const Forums = () => {
             });
             
             setForums(response.data);
+            
+            // Fetch online counts for all forums
+            fetchAllOnlineCounts(response.data);
         } catch (error) {
             console.error("Error fetching forums:", error);
             console.error("Error response:", error.response);
@@ -100,6 +104,35 @@ const Forums = () => {
             setError(`Failed to load forums: ${error.response?.data?.detail || error.message}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAllOnlineCounts = async (forums) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const onlineCountPromises = forums.map(async (forum) => {
+                try {
+                    const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forum.id}/online-count`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    return { forumId: forum.id, onlineCount: response.data.online_count };
+                } catch (error) {
+                    console.error(`Error fetching online count for forum ${forum.id}:`, error);
+                    return { forumId: forum.id, onlineCount: 0 };
+                }
+            });
+
+            const results = await Promise.all(onlineCountPromises);
+            const onlineCountsMap = {};
+            results.forEach(({ forumId, onlineCount }) => {
+                onlineCountsMap[forumId] = onlineCount;
+            });
+            
+            setForumOnlineCounts(onlineCountsMap);
+        } catch (error) {
+            console.error("Error fetching online counts:", error);
         }
     };
 
@@ -718,12 +751,29 @@ const Forums = () => {
                                     alignItems: "center",
                                     marginBottom: spacing.sm
                                 }}>
-                                    <span style={{ 
-                                        color: colors.gray[500], 
-                                        fontSize: "0.85rem" 
-                                    }}>
-                                        {forum.member_count}/{forum.max_members} members
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ 
+                                            color: colors.gray[500], 
+                                            fontSize: "0.85rem" 
+                                        }}>
+                                            {forum.member_count}/{forum.max_members} members
+                                        </span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <div style={{
+                                                width: '8px',
+                                                height: '8px',
+                                                borderRadius: '50%',
+                                                backgroundColor: (forumOnlineCounts[forum.id] || 0) > 0 ? '#10b981' : '#ef4444'
+                                            }}></div>
+                                            <span style={{ 
+                                                color: colors.gray[600], 
+                                                fontSize: "0.8rem",
+                                                fontWeight: "500"
+                                            }}>
+                                                {forumOnlineCounts[forum.id] || 0} online
+                                            </span>
+                                        </div>
+                                    </div>
                                     <span style={{ 
                                         color: forum.is_private ? colors.warning : colors.success,
                                         fontSize: "0.85rem",

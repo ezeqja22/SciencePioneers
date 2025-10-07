@@ -352,3 +352,12 @@ class DraftResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class UserOnlineStatusResponse(BaseModel):
+    user_id: int
+    forum_id: int
+    last_heartbeat: datetime
+    is_online: bool
+    
+    class Config:
+        from_attributes = True

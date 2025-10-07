@@ -57,6 +57,9 @@ const ForumDetail = () => {
     const [mathLatex, setMathLatex] = useState('');
     const [activeMathTab, setActiveMathTab] = useState('basic');
     const [problemData, setProblemData] = useState({});
+    const [onlineCount, setOnlineCount] = useState(0);
+    const [isUserOnline, setIsUserOnline] = useState(false);
+    const [onlineStatusInitialized, setOnlineStatusInitialized] = useState(false);
     const messagesEndRef = useRef(null);
     const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
@@ -98,6 +101,11 @@ const ForumDetail = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             setLoading(true);
+            // Reset online status when forum changes
+            setOnlineStatusInitialized(false);
+            setIsUserOnline(false);
+            setOnlineCount(0);
+            
             try {
                 await Promise.all([
                     fetchCurrentUser(),
@@ -115,14 +123,75 @@ const ForumDetail = () => {
         loadInitialData();
     }, [forumId]);
 
+    // Production-ready online status management
     useEffect(() => {
-        if (showChat) {
-            fetchMessages();
-            // Set up polling for new messages
-            const interval = setInterval(fetchMessages, 2000);
-            return () => clearInterval(interval);
+        if (showChat && !onlineStatusInitialized) {
+            
+            // Initialize online status sequence
+            const initializeOnlineStatus = async () => {
+                try {
+                    // Step 1: Mark user online
+                    await markUserOnline();
+                    
+                    // Step 2: Wait for online status to be saved
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Step 3: Fetch initial online count
+                    await fetchOnlineCount();
+                    
+                    // Step 4: Mark as initialized
+                    setOnlineStatusInitialized(true);
+                } catch (error) {
+                    console.error("Failed to initialize online status:", error);
+                }
+            };
+            
+            initializeOnlineStatus();
         }
-    }, [showChat, forumId]);
+    }, [showChat, forumId, onlineStatusInitialized]);
+
+    // Chat management with proper cleanup
+    useEffect(() => {
+        if (showChat && onlineStatusInitialized) {
+            
+            // Set up polling for new messages
+            const messageInterval = setInterval(fetchMessages, 2000);
+            
+            // Set up heartbeat to keep user online (only if not already online)
+            const heartbeatInterval = setInterval(() => {
+                if (isUserOnline) {
+                    markUserOnline();
+                }
+            }, 30000); // Every 30 seconds
+            
+            // Poll for online count updates
+            const onlineCountInterval = setInterval(fetchOnlineCount, 10000); // Every 10 seconds
+            
+            // Handle browser close/tab close
+            const handleBeforeUnload = () => {
+                markUserOffline();
+            };
+            
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            
+            return () => {
+                clearInterval(messageInterval);
+                clearInterval(heartbeatInterval);
+                clearInterval(onlineCountInterval);
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
+    }, [showChat, onlineStatusInitialized, isUserOnline]);
+
+    // Cleanup when chat closes
+    useEffect(() => {
+        if (!showChat && onlineStatusInitialized) {
+            markUserOffline();
+            setOnlineStatusInitialized(false);
+            setIsUserOnline(false);
+            setOnlineCount(0);
+        }
+    }, [showChat, onlineStatusInitialized]);
 
     const fetchCurrentUser = async () => {
         try {
@@ -225,6 +294,67 @@ const ForumDetail = () => {
             }
         } catch (error) {
             console.error("Error fetching messages:", error);
+        }
+    };
+
+    // Production-ready online status functions
+    const markUserOnline = async () => {
+        // Prevent duplicate calls
+        if (isUserOnline) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setIsUserOnline(true);
+        } catch (error) {
+            console.error("Error marking user online:", error);
+            setIsUserOnline(false);
+        }
+    };
+
+    const markUserOffline = async () => {
+        // Prevent duplicate calls
+        if (!isUserOnline) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            setIsUserOnline(false);
+        } catch (error) {
+            console.error("Error marking user offline:", error);
+            // Still set as offline locally even if API fails
+            setIsUserOnline(false);
+        }
+    };
+
+    const fetchOnlineCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/online-count`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            const newCount = response.data.online_count;
+            setOnlineCount(newCount);
+        } catch (error) {
+            console.error("Error fetching online count:", error);
+            // Don't update count on error, keep current value
         }
     };
 
@@ -1116,9 +1246,17 @@ const ForumDetail = () => {
                                 <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.primary }}>
                                     Chat
                                 </h3>
-                                <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.gray[600] }}>
-                                    {members.length} members online
-                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{
+                                        width: '8px',
+                                        height: '8px',
+                                        borderRadius: '50%',
+                                        backgroundColor: onlineCount > 0 ? '#10b981' : '#ef4444'
+                                    }}></div>
+                                    <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.gray[600] }}>
+                                        {onlineCount} online
+                                    </p>
+                                </div>
                             </div>
                             {isMobile && (
                                 <button

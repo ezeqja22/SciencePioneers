@@ -38,9 +38,11 @@ const ForumChat = () => {
     const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
     const [showProblemModal, setShowProblemModal] = useState(false);
     const [problemData, setProblemData] = useState({});
+    const [onlineCount, setOnlineCount] = useState(0);
     const messagesEndRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const pollingIntervalRef = useRef(null);
+    const heartbeatIntervalRef = useRef(null);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -60,13 +62,32 @@ const ForumChat = () => {
         
         loadInitialData();
         
+        // Mark user as online when entering chat
+        markUserOnline();
+        
         // Set up polling for new messages (simple approach, can be upgraded to WebSocket later)
         // Increased to 10 seconds to reduce server load
         pollingIntervalRef.current = setInterval(fetchMessages, 2000);
+        
+        // Set up heartbeat to keep user online
+        heartbeatIntervalRef.current = setInterval(markUserOnline, 30000); // Every 30 seconds
+        
+        // Fetch initial online count
+        fetchOnlineCount();
+        
+        // Poll for online count updates
+        const onlineCountInterval = setInterval(fetchOnlineCount, 10000); // Every 10 seconds
+        
         return () => {
             if (pollingIntervalRef.current) {
                 clearInterval(pollingIntervalRef.current);
             }
+            if (heartbeatIntervalRef.current) {
+                clearInterval(heartbeatIntervalRef.current);
+            }
+            clearInterval(onlineCountInterval);
+            // Mark user as offline when leaving
+            markUserOffline();
         };
     }, [forumId]);
 
@@ -168,6 +189,49 @@ const ForumChat = () => {
                     pollingIntervalRef.current = null;
                 }
             }
+        }
+    };
+
+    // Online status functions
+    const markUserOnline = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Marked user online:", response.data);
+        } catch (error) {
+            console.error("Error marking user online:", error);
+        }
+    };
+
+    const markUserOffline = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (error) {
+            console.error("Error marking user offline:", error);
+        }
+    };
+
+    const fetchOnlineCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/online-count`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Online count response:", response.data);
+            setOnlineCount(response.data.online_count);
+        } catch (error) {
+            console.error("Error fetching online count:", error);
         }
     };
 
@@ -349,7 +413,7 @@ const ForumChat = () => {
                             {forum.title}
                         </h1>
                         <p style={{ margin: 0, fontSize: "12px", opacity: 0.8 }}>
-                            {forum.member_count} members
+                            {onlineCount > 0 ? `${onlineCount} online` : `${forum.member_count} members`}
                         </p>
                     </div>
                 </div>

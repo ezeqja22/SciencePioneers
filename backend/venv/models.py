@@ -247,3 +247,15 @@ class Draft(Base):
     
     # Relationships
     author = relationship("User", back_populates="drafts")
+
+class UserOnlineStatus(Base):
+    __tablename__ = "user_online_status"
+    
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    forum_id = Column(Integer, ForeignKey("forums.id"), primary_key=True)
+    last_heartbeat = Column(DateTime, default=datetime.utcnow)
+    is_online = Column(Boolean, default=True)
+    
+    # Relationships
+    user = relationship("User")
+    forum = relationship("Forum")

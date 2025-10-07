@@ -3,16 +3,16 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft, UserOnlineStatus
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate, PasswordVerifyRequest, PasswordChangeRequest, ForgotPasswordRequest, ResetPasswordRequest
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, ThreadedCommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
-from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse
+from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse, UserOnlineStatusResponse
 from notification_service import NotificationService
 from typing import List
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import UploadFile, File, Form
 import os
 import uuid
@@ -3471,3 +3471,108 @@ def reset_password(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to reset password")
+
+# Online Status Endpoints
+@router.post("/forums/{forum_id}/online")
+def mark_user_online(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark user as online in a forum"""
+    # Check if forum exists
+    forum = db.query(Forum).filter(Forum.id == forum_id).first()
+    if not forum:
+        raise HTTPException(status_code=404, detail="Forum not found")
+    
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this forum")
+    
+    # Update or create online status
+    online_status = db.query(UserOnlineStatus).filter(
+        UserOnlineStatus.user_id == current_user.id,
+        UserOnlineStatus.forum_id == forum_id
+    ).first()
+    
+    if online_status:
+        online_status.last_heartbeat = datetime.utcnow()
+        online_status.is_online = True
+    else:
+        online_status = UserOnlineStatus(
+            user_id=current_user.id,
+            forum_id=forum_id,
+            last_heartbeat=datetime.utcnow(),
+            is_online=True
+        )
+        db.add(online_status)
+    
+    db.commit()
+    
+    return {"message": "Marked as online"}
+
+@router.delete("/forums/{forum_id}/online")
+def mark_user_offline(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark user as offline in a forum"""
+    online_status = db.query(UserOnlineStatus).filter(
+        UserOnlineStatus.user_id == current_user.id,
+        UserOnlineStatus.forum_id == forum_id
+    ).first()
+    
+    if online_status:
+        online_status.is_online = False
+        db.commit()
+    
+    return {"message": "Marked as offline"}
+
+@router.get("/forums/{forum_id}/online-count")
+def get_online_count(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get count of online users in a forum"""
+    # Check if user is a member
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this forum")
+    
+    # Production-ready cleanup and counting
+    cutoff_time = datetime.utcnow() - timedelta(minutes=1)  # 1 minute for testing
+    
+    # Clean up old online statuses (mark as offline if no heartbeat in 1 minute)
+    old_online_users = db.query(UserOnlineStatus).filter(
+        UserOnlineStatus.forum_id == forum_id,
+        UserOnlineStatus.is_online == True,
+        UserOnlineStatus.last_heartbeat <= cutoff_time
+    ).all()
+    
+    if old_online_users:
+        for user_status in old_online_users:
+            user_status.is_online = False
+    
+    # Count online users (active within last 1 minute)
+    online_count = db.query(UserOnlineStatus).filter(
+        UserOnlineStatus.forum_id == forum_id,
+        UserOnlineStatus.is_online == True,
+        UserOnlineStatus.last_heartbeat > cutoff_time
+    ).count()
+    
+    db.commit()
+    
+    return {"online_count": online_count}
