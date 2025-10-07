@@ -7,7 +7,7 @@ from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage,
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate
-from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
+from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, ThreadedCommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
 from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse
 from notification_service import NotificationService
@@ -553,7 +553,8 @@ def create_comment(
     db_comment = Comment(
         text=comment.text,
         author_id=current_user.id,
-        problem_id=problem_id
+        problem_id=problem_id,
+        parent_comment_id=comment.parent_comment_id
     )
     db.add(db_comment)
     db.commit()
@@ -572,7 +573,7 @@ def create_comment(
     db_comment = db.query(Comment).options(joinedload(Comment.author)).filter(Comment.id == db_comment.id).first()
     return db_comment
 
-@router.get("/problems/{problem_id}/comments", response_model=List[CommentResponse])
+@router.get("/problems/{problem_id}/comments")
 def get_comments(problem_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Check if problem exists
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
@@ -597,18 +598,40 @@ def get_comments(problem_id: int, current_user: User = Depends(get_current_user)
         if not is_author and not membership and not is_creator:
             raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
-    # Get comments first, then manually load author info to handle inactive users
-    comments = db.query(Comment).filter(Comment.problem_id == problem_id).order_by(Comment.created_at.desc()).all()
+    # Get top-level comments (no parent) first, then manually load author info
+    top_level_comments = db.query(Comment).filter(
+        Comment.problem_id == problem_id,
+        Comment.parent_comment_id.is_(None)
+    ).order_by(Comment.created_at.desc()).all()
     
     # Manually load author info for each comment to handle inactive users
-    for comment in comments:
+    for comment in top_level_comments:
         if comment.author_id:
             # Query for user regardless of is_active status
             author = db.query(User).filter(User.id == comment.author_id).first()
             comment.author = author
     
+    # Build threaded structure using the relationship
+    def build_comment_tree(comment):
+        # Get replies using the relationship
+        replies = db.query(Comment).filter(
+            Comment.parent_comment_id == comment.id
+        ).order_by(Comment.created_at.asc()).all()
+        
+        # Load author info for replies
+        for reply in replies:
+            if reply.author_id:
+                author = db.query(User).filter(User.id == reply.author_id).first()
+                reply.author = author
+        
+        # Recursively build replies
+        comment.replies = [build_comment_tree(reply) for reply in replies]
+        return comment
     
-    return comments
+    # Build the threaded structure
+    threaded_comments = [build_comment_tree(comment) for comment in top_level_comments]
+    
+    return threaded_comments
 
 
 @router.delete("/problems/{problem_id}")

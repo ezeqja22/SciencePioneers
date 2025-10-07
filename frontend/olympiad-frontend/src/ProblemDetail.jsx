@@ -33,6 +33,312 @@ const renderMathContent = (text) => {
     }
 };
 
+// Recursive Comment Thread Component
+const CommentThread = ({ 
+    comment, 
+    currentUser, 
+    problem, 
+    onEditComment, 
+    onDeleteComment, 
+    onMarkAsSolution, 
+    onReply,
+    replyingTo,
+    setReplyingTo,
+    replyText,
+    setReplyText,
+    onSubmitReply,
+    depth = 0 
+}) => {
+    const maxDepth = 3; // Limit nesting depth
+    const isNested = depth > 0;
+    
+    return (
+        <div style={{
+            marginLeft: isNested ? "20px" : "0",
+            marginBottom: "12px",
+            position: "relative"
+        }}>
+            <div style={{
+                backgroundColor: comment.is_solution ? "#e8f5e8" : isNested ? "#f8f9ff" : "#ffffff",
+                border: comment.is_solution ? "2px solid #28a745" : isNested ? "1px solid #d1ecf1" : "1px solid #dee2e6",
+                borderRadius: isNested ? "8px" : "12px",
+                padding: isNested ? "12px" : "16px",
+                boxShadow: isNested ? "0 1px 3px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.1)",
+                position: "relative",
+                transition: "all 0.2s ease",
+                marginLeft: isNested ? "8px" : "0",
+                borderLeft: isNested ? "3px solid #007bff" : "none"
+            }}>
+                {comment.is_solution && (
+                    <div style={{
+                        position: "absolute",
+                        top: "12px",
+                        right: "12px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        padding: "4px 8px",
+                        borderRadius: "12px",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                        zIndex: 1
+                    }}>
+                        ✅ SOLUTION
+                    </div>
+                )}
+                
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        flexShrink: 0
+                    }}>
+                        {getUserInitial(comment.author.username)}
+                    </div>
+                    
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                            <span style={{ fontWeight: "600", color: "#333", fontSize: "14px" }}>
+                                {getDisplayName(comment.author.username)}
+                            </span>
+                            <span style={{ color: "#6c757d", fontSize: "12px" }}>
+                                {new Date(comment.created_at).toLocaleDateString()}
+                            </span>
+                            {comment.updated_at && new Date(comment.updated_at).getTime() > new Date(comment.created_at).getTime() && (
+                                <span style={{ color: "#6c757d", fontSize: "11px" }}>(Edited)</span>
+                            )}
+                        </div>
+                        
+                        <div style={{ 
+                            color: "#333", 
+                            lineHeight: "1.5",
+                            marginBottom: "12px",
+                            wordBreak: "break-word"
+                        }}>
+                            {renderMathContent(comment.text)}
+                        </div>
+                        
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <button
+                                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#007bff",
+                                    cursor: "pointer",
+                                    fontSize: "13px",
+                                    fontWeight: "500",
+                                    padding: "4px 8px",
+                                    borderRadius: "6px",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = "#e3f2fd";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "transparent";
+                                }}
+                            >
+                                💬 Reply
+                            </button>
+                            
+                            {currentUser && currentUser.id === comment.author_id && (
+                                <>
+                                    <button
+                                        onClick={() => onEditComment(comment)}
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#6c757d",
+                                            cursor: "pointer",
+                                            fontSize: "13px",
+                                            padding: "4px 8px",
+                                            borderRadius: "6px",
+                                            transition: "all 0.2s ease"
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = "#f8f9fa";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = "transparent";
+                                        }}
+                                    >
+                                        ✏️ Edit
+                                    </button>
+                                    <button
+                                        onClick={() => onDeleteComment(comment.id)}
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            color: "#dc3545",
+                                            cursor: "pointer",
+                                            fontSize: "13px",
+                                            padding: "4px 8px",
+                                            borderRadius: "6px",
+                                            transition: "all 0.2s ease"
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = "#f8d7da";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = "transparent";
+                                        }}
+                                    >
+                                        🗑️ Delete
+                                    </button>
+                                </>
+                            )}
+                            
+                            {currentUser && currentUser.id === problem.author_id && (
+                                <button
+                                    onClick={() => onMarkAsSolution(comment.id)}
+                                    style={{
+                                        background: comment.is_solution ? "#dc3545" : "#28a745",
+                                        border: "none",
+                                        color: "white",
+                                        cursor: "pointer",
+                                        fontSize: "12px",
+                                        padding: "4px 8px",
+                                        borderRadius: "6px",
+                                        fontWeight: "500",
+                                        transition: "all 0.2s ease"
+                                    }}
+                                >
+                                    {comment.is_solution ? "Unmark Solution" : "Mark as Solution"}
+                                </button>
+                            )}
+                        </div>
+                        
+                        {replyingTo === comment.id && (
+                            <div style={{ marginTop: "12px", padding: "12px", backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
+                                <textarea
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    placeholder="Write a reply..."
+                                    style={{
+                                        width: "100%",
+                                        minHeight: "60px",
+                                        padding: "8px",
+                                        border: "1px solid #dee2e6",
+                                        borderRadius: "6px",
+                                        resize: "vertical",
+                                        fontFamily: "inherit",
+                                        fontSize: "14px"
+                                    }}
+                                />
+                                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                                    <button
+                                        onClick={() => onSubmitReply(comment.id)}
+                                        disabled={!replyText.trim()}
+                                        style={{
+                                            padding: "6px 12px",
+                                            backgroundColor: replyText.trim() ? "#007bff" : "#6c757d",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: replyText.trim() ? "pointer" : "not-allowed",
+                                            fontSize: "13px",
+                                            fontWeight: "500"
+                                        }}
+                                    >
+                                        Reply
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setReplyingTo(null);
+                                            setReplyText("");
+                                        }}
+                                        style={{
+                                            padding: "6px 12px",
+                                            backgroundColor: "#6c757d",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: "6px",
+                                            cursor: "pointer",
+                                            fontSize: "13px"
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            
+            {/* Render replies with connection lines */}
+            {comment.replies && comment.replies.length > 0 && depth < maxDepth && (
+                <div style={{ 
+                    marginTop: "8px",
+                    position: "relative",
+                    paddingLeft: "20px"
+                }}>
+                    {/* Connection line from parent to replies - positioned to connect with parent */}
+                    <div style={{
+                        position: "absolute",
+                        left: "-20px",
+                        top: "-8px",
+                        width: "3px",
+                        height: "calc(100% + 8px)",
+                        backgroundColor: "#007bff",
+                        borderRadius: "2px",
+                        zIndex: 0,
+                        opacity: 0.6
+                    }} />
+                    
+                    {/* Horizontal connector line */}
+                    <div style={{
+                        position: "absolute",
+                        left: "-20px",
+                        top: "-8px",
+                        width: "20px",
+                        height: "3px",
+                        backgroundColor: "#007bff",
+                        borderRadius: "2px",
+                        zIndex: 0,
+                        opacity: 0.6
+                    }} />
+                    
+                    {comment.replies.map((reply, index) => (
+                        <div key={reply.id} style={{ 
+                            position: "relative",
+                            backgroundColor: "#f8f9ff",
+                            borderRadius: "8px",
+                            padding: "12px",
+                            border: "1px solid #e3f2fd",
+                            marginBottom: "8px"
+                        }}>
+                            <CommentThread
+                                comment={reply}
+                                currentUser={currentUser}
+                                problem={problem}
+                                onEditComment={onEditComment}
+                                onDeleteComment={onDeleteComment}
+                                onMarkAsSolution={onMarkAsSolution}
+                                onReply={onReply}
+                                replyingTo={replyingTo}
+                                setReplyingTo={setReplyingTo}
+                                replyText={replyText}
+                                setReplyText={setReplyText}
+                                onSubmitReply={onSubmitReply}
+                                depth={depth + 1}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 function ProblemDetail() {
     const [problem, setProblem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -97,6 +403,8 @@ function ProblemDetail() {
     const [currentUser, setCurrentUser] = useState(null);
     const [editingComment, setEditingComment] = useState(null);
     const [editText, setEditText] = useState("");
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyText, setReplyText] = useState("");
     const [editingProblem, setEditingProblem] = useState(false);
     const [showMathEditor, setShowMathEditor] = useState(false);
     const [mathEditorTarget, setMathEditorTarget] = useState(null);
@@ -247,6 +555,7 @@ function ProblemDetail() {
             const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/comments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            
             // Sort comments with solutions first, then by creation date
             const sortedComments = response.data.sort((a, b) => {
                 if (a.is_solution && !b.is_solution) return -1;
@@ -321,10 +630,36 @@ function ProblemDetail() {
                     }
                 });
             
-            setComments([...comments, response.data]);
+            // Refresh comments to get the updated threaded structure
+            fetchComments();
             setNewComment("");
         } catch (error) {
             console.error("Error adding comment:", error);
+        }
+    }
+
+    const handleSubmitReply = async (parentCommentId) => {
+        if (!replyText.trim()) return;
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/comments`,
+                { 
+                    text: replyText,
+                    parent_comment_id: parentCommentId
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            
+            // Refresh comments to get the updated threaded structure
+            fetchComments();
+            setReplyText("");
+            setReplyingTo(null);
+        } catch (error) {
+            console.error("Error adding reply:", error);
         }
     }
 
@@ -1447,162 +1782,22 @@ function ProblemDetail() {
                 </div>
 
                 {comments.map((comment) => (
-                    <div key={comment.id} style={{
-                        backgroundColor: comment.is_solution ? "#e8f5e8" : "#f9f9f9",
-                        padding: "15px",
-                        marginBottom: "10px",
-                        borderRadius: "5px",
-                        border: comment.is_solution ? "2px solid #28a745" : "1px solid #ddd",
-                        position: "relative"
-                    }}>
-                        {editingComment === comment.id ? (
-                            <div>
-                                <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-                                    <textarea
-                                        value={editText}
-                                        onChange={(e) => setEditText(e.target.value)}
-                                        style={{
-                                            width: "100%",
-                                            minHeight: "60px",
-                                            padding: "8px",
-                                            border: "1px solid #ddd",
-                                            whiteSpace: "pre-wrap",
-                                            borderRadius: "4px",
-                                            resize: "vertical",
-                                            fontFamily: "inherit"
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setMathEditorTarget('editComment');
-                                            setShowMathEditor(true);
-                                        }}
-                                        style={{
-                                            marginLeft: "10px",
-                                            padding: "6px 10px",
-                                            backgroundColor: "#4caf50",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                            fontSize: "12px"
-                                        }}
-                                        title="Add Math"
-                                    >
-                                        📐 Math
-                                    </button>
-                                </div>
-                                <div style={{ display: "flex", gap: "10px" }}>
-                                    <button
-                                        onClick={() => handleSaveEdit(comment.id)}
-                                        disabled={!editText.trim()}
-                                        style={{
-                                            padding: "6px 12px",
-                                            backgroundColor: editText.trim() ? "#28a745" : "#ccc",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: editText.trim() ? "pointer" : "not-allowed",
-                                            fontSize: "12px"
-                                        }}
-                                    >
-                                        Save
-                                    </button>
-                                    <button
-                                        onClick={handleCancelEdit}
-                                        style={{
-                                            padding: "6px 12px",
-                                            backgroundColor: "#6c757d",
-                                            color: "white",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                            fontSize: "12px"
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                {comment.is_solution && (
-                                    <div style={{
-                                        backgroundColor: "#28a745",
-                                        color: "white",
-                                        padding: "4px 8px",
-                                        borderRadius: "3px",
-                                        fontSize: "12px",
-                                        fontWeight: "bold",
-                                        display: "inline-block",
-                                        marginBottom: "10px"
-                                    }}>
-                                        ✅ SOLUTION
-                                    </div>
-                                )}
-                                <div style={{ margin: "0 0 10px 0", color: "#333", whiteSpace: "pre-wrap" }}>{renderMathContent(comment.text)}</div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div style={{ fontSize: "12px", color: "#666" }}>
-                                        By: {getDisplayName(comment.author.username)} 
-                                        {comment.updated_at && new Date(comment.updated_at).getTime() > new Date(comment.created_at).getTime() && " (Edited)"}
-                                        • {new Date(comment.created_at).toLocaleDateString()}
-                                    </div>
-                                    <div style={{ display: "flex", gap: "5px" }}>
-                                        {currentUser && currentUser.id === comment.author_id && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleEditComment(comment)}
-                                                    style={{
-                                                        padding: "4px 8px",
-                                                        backgroundColor: "#007bff",
-                                                        color: "white",
-                                                        border: "none",
-                                                        borderRadius: "3px",
-                                                        cursor: "pointer",
-                                                        fontSize: "11px"
-                                                    }}
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteComment(comment.id)}
-                                                    style={{
-                                                        padding: "4px 8px",
-                                                        backgroundColor: "#dc3545",
-                                                        color: "white",
-                                                        border: "none",
-                                                        borderRadius: "3px",
-                                                        cursor: "pointer",
-                                                        fontSize: "11px"
-                                                    }}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        )}
-                                        {currentUser && currentUser.id === problem.author_id && (
-                                            <button
-                                                onClick={() => handleMarkAsSolution(comment.id)}
-                                                style={{
-                                                    padding: "4px 8px",
-                                                    backgroundColor: comment.is_solution ? "#dc3545" : "#28a745",
-                                                    color: "white",
-                                                    border: "none",
-                                                    borderRadius: "3px",
-                                                    cursor: "pointer",
-                                                    fontSize: "11px"
-                                                }}
-                                            >
-                                                {comment.is_solution ? "Unmark Solution" : "Mark as Solution"}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-    ))}
+                    <CommentThread
+                        key={comment.id}
+                        comment={comment}
+                        currentUser={currentUser}
+                        problem={problem}
+                        onEditComment={handleEditComment}
+                        onDeleteComment={handleDeleteComment}
+                        onMarkAsSolution={handleMarkAsSolution}
+                        onReply={() => {}}
+                        replyingTo={replyingTo}
+                        setReplyingTo={setReplyingTo}
+                        replyText={replyText}
+                        setReplyText={setReplyText}
+                        onSubmitReply={handleSubmitReply}
+                    />
+                ))}
             </div>
             
             {/* Math Editor Modal */}

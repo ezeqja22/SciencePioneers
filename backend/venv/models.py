@@ -59,11 +59,13 @@ class Comment(Base):
     text = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("problems.id"))
+    parent_comment_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
     is_solution = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     author = relationship("User", back_populates="comments")
     problem = relationship("Problem", back_populates="comments")
+    parent_comment = relationship("Comment", remote_side=[id], backref="replies")
 
 class Vote(Base):
     __tablename__ = "votes"

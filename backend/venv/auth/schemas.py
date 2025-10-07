@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class RegisterRequest(BaseModel):
@@ -59,17 +59,24 @@ class ProblemResponse(BaseModel):
 
 class CommentCreate(BaseModel):
     text: str
+    parent_comment_id: Optional[int] = None
 
 class CommentResponse(BaseModel):
     id: int
     text: str
     author_id: int
     problem_id: int
+    parent_comment_id: Optional[int] = None
     is_solution: bool = False
     created_at: datetime
     author: UserOut
     updated_at: Optional[datetime] = None
 
+    class Config:
+        from_attributes = True
+
+class ThreadedCommentResponse(CommentResponse):
+    replies: Optional[List['ThreadedCommentResponse']] = []
 
     class Config:
         from_attributes = True
