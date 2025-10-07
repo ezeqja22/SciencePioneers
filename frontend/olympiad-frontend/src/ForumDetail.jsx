@@ -14,7 +14,7 @@ import ForumProblemModal from './ForumProblemModal';
 import ForumProblemCard from './ForumProblemCard';
 import ForumInviteModal from './ForumInviteModal';
 
-// CSS for typing animation
+// CSS for typing animation and new message indicator
 const typingAnimation = `
 @keyframes typing {
     0%, 60%, 100% {
@@ -24,6 +24,29 @@ const typingAnimation = `
     30% {
         transform: translateY(-10px);
         opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateX(-50%) scale(1.05);
+        opacity: 0.8;
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-3px);
+    }
+    60% {
+        transform: translateY(-2px);
     }
 }
 `;
@@ -89,23 +112,128 @@ const ForumDetail = () => {
     const [isTyping, setIsTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState(null);
     const messagesEndRef = useRef(null);
-    const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
+    const [showNewMessageIndicator, setShowNewMessageIndicator] = useState(false);
+    const [newMessageCount, setNewMessageCount] = useState(0);
     
-    // Auto-scroll to bottom only when chat is first opened
+    // Auto-scroll to bottom of messages
     const scrollToBottom = () => {
         setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
+            if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ 
+                    behavior: "smooth", 
+                    block: "end",
+                    inline: "nearest"
+                });
+            }
+        }, 300); // Increased delay to ensure DOM is ready
+    };
+
+    // Handle clicking the new message indicator
+    const handleNewMessageClick = () => {
+        setUserHasScrolledUp(false);
+        setShowNewMessageIndicator(false);
+        setNewMessageCount(0);
+        scrollToBottom();
     };
 
     useEffect(() => {
-        // Only auto-scroll if chat is open and we haven't scrolled yet
-        if (showChat && !hasScrolledToBottom) {
-            scrollToBottom();
-            setHasScrolledToBottom(true);
+        // Reset scroll state when chat is opened
+        if (showChat) {
+            setUserHasScrolledUp(false);
+            setShowNewMessageIndicator(false);
+            setNewMessageCount(0);
+            setPrevMessageCount(0);
+            // Scroll to bottom when chat is first opened
+            setTimeout(() => scrollToBottom(), 200);
         }
-    }, [showChat, messages]);
+    }, [showChat]);
+
+    // Only scroll to bottom when chat is first opened, not on every message change
+    useEffect(() => {
+        if (showChat && messages.length > 0) {
+            // Only scroll if user hasn't manually scrolled up
+            if (!userHasScrolledUp) {
+                scrollToBottom();
+            }
+        }
+    }, [showChat]); // Only trigger when chat opens, not on every message
+
+    // Track previous message count to detect new messages
+    const [prevMessageCount, setPrevMessageCount] = useState(0);
+    
+    useEffect(() => {
+        // Handle new messages - only show indicator when scrolled up
+        if (showChat && messages.length > 0) {
+            const currentMessageCount = messages.length;
+            const hasNewMessages = currentMessageCount > prevMessageCount;
+            
+            if (userHasScrolledUp && hasNewMessages) {
+                // User is scrolled up and there are new messages, show indicator
+                setNewMessageCount(currentMessageCount - prevMessageCount); // Set to actual new message count, don't add to previous
+                setShowNewMessageIndicator(true);
+                
+                // Auto-hide indicator after 5 seconds
+                const timer = setTimeout(() => {
+                    setShowNewMessageIndicator(false);
+                }, 5000);
+                
+                return () => clearTimeout(timer);
+            } else if (!userHasScrolledUp) {
+                // User is at bottom, hide any existing indicator
+                setShowNewMessageIndicator(false);
+                setNewMessageCount(0);
+            }
+            
+            setPrevMessageCount(currentMessageCount);
+        }
+    }, [showChat, messages, userHasScrolledUp, prevMessageCount]);
+
+    // Add scroll listener to detect when user scrolls up
+    useEffect(() => {
+        if (!showChat) return;
+
+        // Wait a bit for the DOM to be ready
+        const timer = setTimeout(() => {
+            const messagesContainer = document.querySelector('[data-messages-container]');
+            if (!messagesContainer) {
+                // Try alternative selector
+                const altContainer = document.querySelector('div[style*="overflowY: auto"]');
+                if (altContainer) {
+                    attachScrollListener(altContainer);
+                }
+                return;
+            }
+            attachScrollListener(messagesContainer);
+        }, 500);
+
+        const attachScrollListener = (container) => {
+            let scrollTimeout;
+            const handleScroll = () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    const { scrollTop, scrollHeight, clientHeight } = container;
+                    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 20;
+                    
+                    if (isAtBottom) {
+                        setUserHasScrolledUp(false);
+                    } else {
+                        setUserHasScrolledUp(true);
+                    }
+                }, 100);
+            };
+
+            container.addEventListener('scroll', handleScroll);
+            
+            return () => {
+                container.removeEventListener('scroll', handleScroll);
+                clearTimeout(scrollTimeout);
+            };
+        };
+
+        return () => clearTimeout(timer);
+    }, [showChat]);
     
     // Filter states
     const [filters, setFilters] = useState({
@@ -268,7 +396,6 @@ const ForumDetail = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/problems`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("DEBUG: Forum problems fetched:", response.data);
             setProblems(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
@@ -866,7 +993,6 @@ const ForumDetail = () => {
                                             e.target.style.backgroundColor = colors.danger;
                                         }}
                                         onMouseLeave={(e) => {
-
                                             e.target.style.backgroundColor = colors.gray[400];
                                         }}
                                     >
@@ -1376,14 +1502,17 @@ const ForumDetail = () => {
                         </div>
 
                         {/* Messages */}
-                        <div style={{
-                            flex: 1,
-                            padding: spacing.md,
-                            overflowY: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: spacing.sm
-                        }}>
+                        <div 
+                            data-messages-container
+                            style={{
+                                flex: 1,
+                                padding: spacing.md,
+                                overflowY: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: spacing.sm,
+                                position: 'relative'
+                            }}>
                             {messages.length === 0 ? (
                                 <div style={{ 
                                     textAlign: 'center', 
@@ -1551,6 +1680,51 @@ const ForumDetail = () => {
                             
                             <div ref={messagesEndRef} />
                         </div>
+
+                        {/* New Message Indicator - Outside scrollable container */}
+                        {showNewMessageIndicator && (
+                            <div
+                                onClick={handleNewMessageClick}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '100px', // Positioned higher
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    backgroundColor: colors.primary,
+                                    color: colors.white,
+                                    padding: '8px 16px',
+                                    borderRadius: '20px', // Pill/stadium shape with very rounded ends
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: spacing.sm,
+                                    fontSize: typography.fontSize.sm,
+                                    fontWeight: '500',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                    zIndex: 1000,
+                                    transition: 'all 0.3s ease',
+                                    opacity: 0.9
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = colors.secondary;
+                                    e.target.style.transform = 'translateX(-50%) scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = colors.primary;
+                                    e.target.style.transform = 'translateX(-50%) scale(1)';
+                                }}
+                            >
+                                <span>
+                                    {newMessageCount === 1 ? 'New message' : `${newMessageCount} new messages`}
+                                </span>
+                                <div style={{
+                                    fontSize: '16px',
+                                    animation: 'bounce 1s infinite'
+                                }}>
+                                    ↓
+                                </div>
+                            </div>
+                        )}
 
                         {/* Message Input */}
                         <form onSubmit={sendMessage} style={{

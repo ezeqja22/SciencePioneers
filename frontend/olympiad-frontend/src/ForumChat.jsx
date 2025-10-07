@@ -201,7 +201,6 @@ const ForumChat = () => {
             const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Marked user online:", response.data);
         } catch (error) {
             console.error("Error marking user online:", error);
         }
@@ -228,7 +227,6 @@ const ForumChat = () => {
             const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/online-count`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Online count response:", response.data);
             setOnlineCount(response.data.online_count);
         } catch (error) {
             console.error("Error fetching online count:", error);
