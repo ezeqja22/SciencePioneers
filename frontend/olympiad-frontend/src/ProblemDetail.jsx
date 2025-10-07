@@ -54,20 +54,21 @@ const CommentThread = ({
     
     return (
         <div style={{
-            marginLeft: isNested ? "20px" : "0",
-            marginBottom: "12px",
+            marginBottom: "16px",
             position: "relative"
         }}>
             <div style={{
-                backgroundColor: comment.is_solution ? "#e8f5e8" : isNested ? "#f8f9ff" : "#ffffff",
-                border: comment.is_solution ? "2px solid #28a745" : isNested ? "1px solid #d1ecf1" : "1px solid #dee2e6",
-                borderRadius: isNested ? "8px" : "12px",
-                padding: isNested ? "12px" : "16px",
-                boxShadow: isNested ? "0 1px 3px rgba(0,0,0,0.08)" : "0 2px 8px rgba(0,0,0,0.1)",
+                backgroundColor: comment.is_solution ? "#f0f9ff" : isNested ? "#f1f5f9" : "#ffffff",
+                border: comment.is_solution ? "2px solid #0ea5e9" : isNested ? "1px solid #94a3b8" : "1px solid #e2e8f0",
+                borderRadius: isNested ? "8px" : "16px",
+                padding: isNested ? "12px" : "18px",
+                boxShadow: isNested ? "0 1px 4px rgba(0,0,0,0.05)" : "0 4px 12px rgba(0,0,0,0.1)",
                 position: "relative",
-                transition: "all 0.2s ease",
-                marginLeft: isNested ? "8px" : "0",
-                borderLeft: isNested ? "3px solid #007bff" : "none"
+                transition: "all 0.3s ease",
+                marginLeft: isNested ? "60px" : "0",
+                borderLeft: isNested ? "4px solid #6366f1" : "none",
+                transform: isNested ? "translateX(6px)" : "translateX(0)",
+                opacity: isNested ? "0.95" : "1"
             }}>
                 {comment.is_solution && (
                     <div style={{
@@ -85,6 +86,7 @@ const CommentThread = ({
                         ✅ SOLUTION
                     </div>
                 )}
+                
                 
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
                     <div style={{
@@ -125,25 +127,28 @@ const CommentThread = ({
                             {renderMathContent(comment.text)}
                         </div>
                         
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "16px" }}>
                             <button
                                 onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                                 style={{
-                                    background: "none",
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                                     border: "none",
-                                    color: "#007bff",
+                                    color: "white",
                                     cursor: "pointer",
                                     fontSize: "13px",
-                                    fontWeight: "500",
-                                    padding: "4px 8px",
-                                    borderRadius: "6px",
-                                    transition: "all 0.2s ease"
+                                    fontWeight: "600",
+                                    padding: "8px 16px",
+                                    borderRadius: "20px",
+                                    transition: "all 0.3s ease",
+                                    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)"
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.backgroundColor = "#e3f2fd";
+                                    e.target.style.transform = "translateY(-2px)";
+                                    e.target.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.6)";
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.backgroundColor = "transparent";
+                                    e.target.style.transform = "translateY(0)";
+                                    e.target.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
                                 }}
                             >
                                 💬 Reply
@@ -156,42 +161,46 @@ const CommentThread = ({
                                         style={{
                                             background: "none",
                                             border: "none",
-                                            color: "#6c757d",
+                                            color: "#656d76",
                                             cursor: "pointer",
-                                            fontSize: "13px",
-                                            padding: "4px 8px",
+                                            fontSize: "14px",
+                                            padding: "4px 0",
                                             borderRadius: "6px",
                                             transition: "all 0.2s ease"
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = "#f8f9fa";
+                                            e.target.style.backgroundColor = "#f6f8fa";
+                                            e.target.style.color = "#0969da";
                                         }}
                                         onMouseLeave={(e) => {
                                             e.target.style.backgroundColor = "transparent";
+                                            e.target.style.color = "#656d76";
                                         }}
                                     >
-                                        ✏️ Edit
+                                        Edit
                                     </button>
                                     <button
                                         onClick={() => onDeleteComment(comment.id)}
                                         style={{
                                             background: "none",
                                             border: "none",
-                                            color: "#dc3545",
+                                            color: "#656d76",
                                             cursor: "pointer",
-                                            fontSize: "13px",
-                                            padding: "4px 8px",
+                                            fontSize: "14px",
+                                            padding: "4px 0",
                                             borderRadius: "6px",
                                             transition: "all 0.2s ease"
                                         }}
                                         onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = "#f8d7da";
+                                            e.target.style.backgroundColor = "#f6f8fa";
+                                            e.target.style.color = "#d1242f";
                                         }}
                                         onMouseLeave={(e) => {
                                             e.target.style.backgroundColor = "transparent";
+                                            e.target.style.color = "#656d76";
                                         }}
                                     >
-                                        🗑️ Delete
+                                        Delete
                                     </button>
                                 </>
                             )}
@@ -200,18 +209,27 @@ const CommentThread = ({
                                 <button
                                     onClick={() => onMarkAsSolution(comment.id)}
                                     style={{
-                                        background: comment.is_solution ? "#dc3545" : "#28a745",
+                                        background: comment.is_solution ? "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
                                         border: "none",
                                         color: "white",
                                         cursor: "pointer",
                                         fontSize: "12px",
-                                        padding: "4px 8px",
-                                        borderRadius: "6px",
-                                        fontWeight: "500",
-                                        transition: "all 0.2s ease"
+                                        padding: "6px 12px",
+                                        borderRadius: "16px",
+                                        fontWeight: "600",
+                                        transition: "all 0.3s ease",
+                                        boxShadow: comment.is_solution ? "0 4px 15px rgba(239, 68, 68, 0.4)" : "0 4px 15px rgba(16, 185, 129, 0.4)"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.transform = "translateY(-1px)";
+                                        e.target.style.boxShadow = comment.is_solution ? "0 6px 20px rgba(239, 68, 68, 0.6)" : "0 6px 20px rgba(16, 185, 129, 0.6)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = "translateY(0)";
+                                        e.target.style.boxShadow = comment.is_solution ? "0 4px 15px rgba(239, 68, 68, 0.4)" : "0 4px 15px rgba(16, 185, 129, 0.4)";
                                     }}
                                 >
-                                    {comment.is_solution ? "Unmark Solution" : "Mark as Solution"}
+                                    {comment.is_solution ? "❌ Unmark Solution" : "✅ Mark as Solution"}
                                 </button>
                             )}
                         </div>
@@ -274,46 +292,52 @@ const CommentThread = ({
                 </div>
             </div>
             
-            {/* Render replies with connection lines */}
+            {/* Render replies with proper L-shaped connection lines */}
             {comment.replies && comment.replies.length > 0 && depth < maxDepth && (
                 <div style={{ 
-                    marginTop: "8px",
+                    marginTop: "12px",
                     position: "relative",
-                    paddingLeft: "20px"
+                    marginLeft: "30px"
                 }}>
-                    {/* Connection line from parent to replies - positioned to connect with parent */}
+                    {/* L-shaped connection line from parent center to replies center */}
                     <div style={{
                         position: "absolute",
-                        left: "-20px",
-                        top: "-8px",
-                        width: "3px",
-                        height: "calc(100% + 8px)",
-                        backgroundColor: "#007bff",
-                        borderRadius: "2px",
-                        zIndex: 0,
-                        opacity: 0.6
+                        left: "-80px",
+                        top: "-80px",
+                        width: "2px",
+                        height: "calc(100% + 30px)",
+                        backgroundColor: "#6366f1",
+                        borderRadius: "1px",
+                        opacity: 0.7
                     }} />
                     
-                    {/* Horizontal connector line */}
+                    {/* Horizontal line connecting to parent center */}
                     <div style={{
                         position: "absolute",
-                        left: "-20px",
-                        top: "-8px",
-                        width: "20px",
-                        height: "3px",
-                        backgroundColor: "#007bff",
-                        borderRadius: "2px",
-                        zIndex: 0,
-                        opacity: 0.6
+                        left: "-80px",
+                        top: "-80px",
+                        width: "50px",
+                        height: "2px",
+                        backgroundColor: "#6366f1",
+                        borderRadius: "1px",
+                        opacity: 0.7
+                    }} />
+                    
+                    {/* Connection dot at the junction */}
+                    <div style={{
+                        position: "absolute",
+                        left: "-82px",
+                        top: "-82px",
+                        width: "6px",
+                        height: "6px",
+                        backgroundColor: "#6366f1",
+                        borderRadius: "50%",
+                        zIndex: 1
                     }} />
                     
                     {comment.replies.map((reply, index) => (
                         <div key={reply.id} style={{ 
                             position: "relative",
-                            backgroundColor: "#f8f9ff",
-                            borderRadius: "8px",
-                            padding: "12px",
-                            border: "1px solid #e3f2fd",
                             marginBottom: "8px"
                         }}>
                             <CommentThread
@@ -728,12 +752,22 @@ function ProblemDetail() {
                 }
             );
             
+            // Recursive function to update comment in nested structure
+            const updateCommentInTree = (commentList) => {
+                return commentList.map(comment => {
+                    if (comment.id === commentId) {
+                        return { ...comment, is_solution: response.data.is_solution };
+                    }
+                    if (comment.replies && comment.replies.length > 0) {
+                        return { ...comment, replies: updateCommentInTree(comment.replies) };
+                    }
+                    return comment;
+                });
+            };
+            
             // Update the comment in the state and re-sort
-            const updatedComments = comments.map(comment => 
-                comment.id === commentId 
-                    ? { ...comment, is_solution: response.data.is_solution }
-                    : comment
-            );
+            const updatedComments = updateCommentInTree(comments);
+            
             // Re-sort with solutions first
             const sortedComments = updatedComments.sort((a, b) => {
                 if (a.is_solution && !b.is_solution) return -1;
@@ -1797,7 +1831,7 @@ function ProblemDetail() {
                         setReplyText={setReplyText}
                         onSubmitReply={handleSubmitReply}
                     />
-                ))}
+    ))}
             </div>
             
             {/* Math Editor Modal */}
