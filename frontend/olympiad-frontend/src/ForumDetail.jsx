@@ -1316,9 +1316,10 @@ const ForumDetail = () => {
                                             border: `1px solid ${colors.gray[300]}`,
                                             borderRadius: borderRadius.md,
                                             boxShadow: shadows.md,
-                                            zIndex: 1000,
+                                            zIndex: 10000,
                                             minWidth: '160px',
-                                            marginTop: spacing.xs
+                                            marginTop: spacing.xs,
+                                            opacity: 1
                                         }}>
                                             {isCreator ? (
                                                 <>
@@ -1652,8 +1653,9 @@ const ForumDetail = () => {
                                                                 border: `1px solid ${colors.gray[200]}`,
                                                                 borderRadius: borderRadius.md,
                                                                 boxShadow: shadows.lg,
-                                                                zIndex: 1000,
-                                                                minWidth: '120px'
+                                                                zIndex: 10000,
+                                                                minWidth: '120px',
+                                                                opacity: 1
                                                             }}>
                                                                 {/* Role Assignment - Only for creators */}
                                                                 {isCreator && member.role !== 'creator' && (
@@ -2356,7 +2358,8 @@ const ForumDetail = () => {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: spacing.sm,
-                                position: 'relative'
+                                position: 'relative',
+                                zIndex: showMessageDropdown ? 0 : 1
                             }}>
                             {messages.length === 0 ? (
                                 <div style={{ 
@@ -2378,7 +2381,9 @@ const ForumDetail = () => {
                                                 justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
                                                 marginBottom: spacing.sm,
                                                 alignItems: 'flex-end',
-                                                gap: spacing.sm
+                                                gap: spacing.sm,
+                                                position: 'relative',
+                                                zIndex: showMessageDropdown === message.id ? 10001 : 'auto'
                                             }}
                                             onMouseEnter={(e) => {
                                                 const dropdown = e.currentTarget.querySelector('[data-message-dropdown]');
@@ -2422,7 +2427,8 @@ const ForumDetail = () => {
                                                     padding: spacing.md,
                                                     borderRadius: borderRadius.lg,
                                                     boxShadow: shadows.sm,
-                                                    position: 'relative'
+                                                    position: 'relative',
+                                                    zIndex: showMessageDropdown === message.id ? 10001 : 0
                                                 }}>
                                                 {!isOwnMessage && (
                                                     <div style={{
@@ -2544,15 +2550,17 @@ const ForumDetail = () => {
                                                             {showMessageDropdown === message.id && (
                                                                 <div style={{
                                                                     position: 'absolute',
-                                                                    right: 0,
+                                                                    [isOwnMessage ? 'right' : 'left']: 0,
                                                                     top: '100%',
                                                                     backgroundColor: colors.white,
                                                                     border: `1px solid ${colors.gray[200]}`,
                                                                     borderRadius: borderRadius.md,
-                                                                    boxShadow: shadows.lg,
-                                                                    zIndex: 1000,
+                                                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                                                                    zIndex: 10002,
                                                                     minWidth: '120px',
-                                                                    marginTop: '4px'
+                                                                    marginTop: '4px',
+                                                                    opacity: 1,
+                                                                    transform: 'translateZ(0)'
                                                                 }}>
                                                                     {/* Reply Option - Available to all users */}
                                                                     <button
