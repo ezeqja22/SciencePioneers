@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -127,6 +127,7 @@ const ForumDetail = () => {
         is_private: false
     });
     const [showActionsDropdown, setShowActionsDropdown] = useState(false);
+    const [replyCounts, setReplyCounts] = useState({});
     
     // Auto-scroll to bottom of messages
     const scrollToBottom = () => {
@@ -140,6 +141,9 @@ const ForumDetail = () => {
             }
         }, 300); // Increased delay to ensure DOM is ready
     };
+
+    // Get location for scroll position restoration
+    const location = useLocation();
 
     // Handle clicking the new message indicator
     const handleNewMessageClick = () => {
@@ -315,6 +319,45 @@ const ForumDetail = () => {
         }
     };
 
+    // Fetch reply counts for all messages
+    const fetchReplyCounts = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const counts = {};
+            for (const message of messages) {
+                try {
+                    const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${message.id}/reply-count`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    counts[message.id] = response.data.reply_count;
+                } catch (error) {
+                    console.error(`Error fetching reply count for message ${message.id}:`, error);
+                    counts[message.id] = 0;
+                }
+            }
+            setReplyCounts(counts);
+        } catch (error) {
+            console.error("Error fetching reply counts:", error);
+        }
+    };
+
+    // Navigate to thread
+    const navigateToThread = (messageId) => {
+        // Store current scroll position
+        const messagesContainer = document.querySelector('[data-messages-container]');
+        const scrollPosition = messagesContainer?.scrollTop || 0;
+        
+        // Store in sessionStorage as backup
+        sessionStorage.setItem(`forum_${forumId}_scroll`, scrollPosition.toString());
+        sessionStorage.setItem(`forum_${forumId}_target_message`, messageId.toString());
+        
+        navigate(`/forum/${forumId}/thread/${messageId}`, { 
+            state: { scrollPosition: scrollPosition, targetMessageId: messageId }
+        });
+    };
+
     // Scroll to pinned message and highlight it
     const scrollToPinnedMessage = () => {
         if (!pinnedMessage) return;
@@ -383,8 +426,8 @@ const ForumDetail = () => {
             setShowNewMessageIndicator(false);
             setNewMessageCount(0);
             setPrevMessageCount(0);
-            // Scroll to bottom when chat is first opened
-            setTimeout(() => scrollToBottom(), 200);
+            // Scroll to bottom when chat is first opened - increased delay
+            setTimeout(() => scrollToBottom(), 500);
         }
     }, [showChat]);
 
@@ -406,6 +449,39 @@ const ForumDetail = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showMessageDropdown, showMemberDropdown, showActionsDropdown]);
 
+    // Fetch reply counts when messages change
+    useEffect(() => {
+        if (messages.length > 0) {
+            fetchReplyCounts();
+        }
+    }, [messages]);
+
+    // Restore scroll position when component mounts (returning from thread)
+    useEffect(() => {
+        const targetMessageId = location.state?.targetMessageId || 
+                               sessionStorage.getItem(`forum_${forumId}_target_message`);
+        
+        if (targetMessageId) {
+            // Scroll to specific message
+            setTimeout(() => {
+                const targetElement = document.querySelector(`[data-message-id="${targetMessageId}"]`);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // If element not found, try again after a longer delay
+                    setTimeout(() => {
+                        const retryElement = document.querySelector(`[data-message-id="${targetMessageId}"]`);
+                        if (retryElement) {
+                            retryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 1000);
+                }
+                // Clear stored data
+                sessionStorage.removeItem(`forum_${forumId}_target_message`);
+            }, 500);
+        }
+    }, [forumId, location.state?.targetMessageId]);
+
     // Only scroll to bottom when chat is first opened, not on every message change
     useEffect(() => {
         if (showChat && messages.length > 0) {
@@ -415,6 +491,16 @@ const ForumDetail = () => {
             }
         }
     }, [showChat]); // Only trigger when chat opens, not on every message
+
+    // Auto-scroll when chat is opened (including on page refresh)
+    useEffect(() => {
+        if (showChat && messages.length > 0) {
+            // Reset scroll state and scroll to bottom
+            setUserHasScrolledUp(false);
+            setTimeout(() => scrollToBottom(), 100);
+        }
+    }, [showChat]);
+
 
     // Track previous message count to detect new messages
     const [prevMessageCount, setPrevMessageCount] = useState(0);
@@ -2465,8 +2551,34 @@ const ForumDetail = () => {
                                                                     borderRadius: borderRadius.md,
                                                                     boxShadow: shadows.lg,
                                                                     zIndex: 1000,
-                                                                    minWidth: '120px'
+                                                                    minWidth: '120px',
+                                                                    marginTop: '4px'
                                                                 }}>
+                                                                    {/* Reply Option - Available to all users */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            navigateToThread(message.id);
+                                                                            setShowMessageDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.gray[700]
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        💬 Reply
+                                                                    </button>
                                                                     {hasPermission('pin') && (
                                                                         <button
                                                                             onClick={() => {
@@ -2525,6 +2637,61 @@ const ForumDetail = () => {
                                                     )}
                                                 </div>
                                             </div>
+                                            
+                                            {/* Reply Indicators - Outside message bubble */}
+                                            {replyCounts[message.id] > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    marginTop: spacing.sm,
+                                                    marginLeft: isOwnMessage ? 'auto' : '0',
+                                                    marginRight: isOwnMessage ? '0' : 'auto',
+                                                    maxWidth: 'fit-content'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: spacing.xs,
+                                                        padding: `${spacing.xs} ${spacing.sm}`,
+                                                        backgroundColor: colors.gray[100],
+                                                        borderRadius: borderRadius.md,
+                                                        border: `1px solid ${colors.gray[200]}`,
+                                                        position: 'relative'
+                                                    }}>
+                                                        {/* Connecting line */}
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            top: '-8px',
+                                                            left: '50%',
+                                                            transform: 'translateX(-50%)',
+                                                            width: '1px',
+                                                            height: '8px',
+                                                            backgroundColor: colors.gray[300]
+                                                        }} />
+                                                        
+                                                        <button
+                                                            onClick={() => navigateToThread(message.id)}
+                                                            style={{
+                                                                backgroundColor: 'transparent',
+                                                                color: colors.primary,
+                                                                border: 'none',
+                                                                padding: 0,
+                                                                fontSize: typography.fontSize.sm,
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: spacing.xs,
+                                                                fontWeight: '500',
+                                                                transition: 'color 0.2s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.color = colors.primaryDark}
+                                                            onMouseLeave={(e) => e.target.style.color = colors.primary}
+                                                        >
+                                                            💬 {replyCounts[message.id]} {replyCounts[message.id] === 1 ? 'reply' : 'replies'}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })

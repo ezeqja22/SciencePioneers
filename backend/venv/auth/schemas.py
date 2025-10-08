@@ -362,3 +362,20 @@ class UserOnlineStatusResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class ForumReplyCreate(BaseModel):
+    content: str
+    parent_message_id: int
+
+class ForumReply(BaseModel):
+    id: int
+    content: str
+    author_id: int
+    forum_id: int
+    parent_message_id: int
+    created_at: datetime
+    is_deleted: bool = False
+    author: Optional[UserOut] = None
+    
+    class Config:
+        from_attributes = True

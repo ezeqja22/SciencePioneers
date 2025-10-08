@@ -14,6 +14,7 @@ import EmailVerification from "./EmailVerification";
 import SearchResults from "./SearchResults";
 import Forums from "./Forums";
 import ForumDetail from "./ForumDetail";
+import ThreadPage from "./ThreadPage";
 import SubjectPage from "./SubjectPage";
 import Settings from "./Settings";
 import ResetPassword from "./ResetPassword";
@@ -96,6 +97,13 @@ function App() {
           element={
             <ProtectedRoute>
           <ForumDetail />
+          </ProtectedRoute>
+          } />
+          <Route 
+          path="/forum/:forumId/thread/:messageId" 
+          element={
+            <ProtectedRoute>
+          <ThreadPage />
           </ProtectedRoute>
           } />
           <Route 

@@ -3,13 +3,13 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft, UserOnlineStatus
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft, UserOnlineStatus, ForumReply
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate, PasswordVerifyRequest, PasswordChangeRequest, ForgotPasswordRequest, ResetPasswordRequest
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, ThreadedCommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
-from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse, UserOnlineStatusResponse
+from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse, UserOnlineStatusResponse, ForumReplyCreate, ForumReply as ForumReplySchema
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime, timedelta
@@ -4055,6 +4055,175 @@ async def assign_member_role(
         raise
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Thread/Reply Endpoints
+@router.get("/forums/{forum_id}/messages/{message_id}/replies", response_model=List[ForumReplySchema])
+async def get_message_replies(
+    forum_id: int,
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all replies to a specific message"""
+    try:
+        # Check if user has access to forum
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get replies
+        replies = db.query(ForumReply).options(
+            selectinload(ForumReply.author)
+        ).filter(
+            ForumReply.forum_id == forum_id,
+            ForumReply.parent_message_id == message_id,
+            ForumReply.is_deleted == False
+        ).order_by(ForumReply.created_at.asc()).all()
+        
+        return replies
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/forums/{forum_id}/messages/{message_id}/replies", response_model=ForumReplySchema)
+async def create_message_reply(
+    forum_id: int,
+    message_id: int,
+    reply_data: ForumReplyCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a reply to a message"""
+    try:
+        # Check if user has access to forum
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Verify parent message exists
+        parent_message = db.query(ForumMessage).filter(
+            ForumMessage.id == message_id,
+            ForumMessage.forum_id == forum_id
+        ).first()
+        
+        if not parent_message:
+            raise HTTPException(status_code=404, detail="Parent message not found")
+        
+        # Create reply
+        reply = ForumReply(
+            content=reply_data.content,
+            author_id=current_user.id,
+            forum_id=forum_id,
+            parent_message_id=message_id
+        )
+        
+        db.add(reply)
+        db.commit()
+        db.refresh(reply)
+        
+        # Load author data
+        db.refresh(reply)
+        reply.author = current_user
+        
+        return reply
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/forums/{forum_id}/replies/{reply_id}")
+async def delete_reply(
+    forum_id: int,
+    reply_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a reply (author or moderator/creator only)"""
+    try:
+        # Check if user has access to forum
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get reply
+        reply = db.query(ForumReply).filter(
+            ForumReply.id == reply_id,
+            ForumReply.forum_id == forum_id
+        ).first()
+        
+        if not reply:
+            raise HTTPException(status_code=404, detail="Reply not found")
+        
+        # Check permissions (author or moderator/creator)
+        user_role = membership.role
+        can_delete = (
+            reply.author_id == current_user.id or  # Author can delete their own reply
+            user_role == 'creator' or  # Creator can delete any reply
+            (user_role == 'moderator' and check_forum_permission(db, forum_id, current_user.id, 'moderate'))  # Moderator can delete
+        )
+        
+        if not can_delete:
+            raise HTTPException(status_code=403, detail="You don't have permission to delete this reply")
+        
+        # Soft delete
+        reply.is_deleted = True
+        db.commit()
+        
+        return {"message": "Reply deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/forums/{forum_id}/messages/{message_id}/reply-count")
+async def get_reply_count(
+    forum_id: int,
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get reply count for a message"""
+    try:
+        # Check if user has access to forum
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get reply count
+        count = db.query(ForumReply).filter(
+            ForumReply.forum_id == forum_id,
+            ForumReply.parent_message_id == message_id,
+            ForumReply.is_deleted == False
+        ).count()
+        
+        return {"reply_count": count}
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -263,3 +263,19 @@ class UserOnlineStatus(Base):
     # Relationships
     user = relationship("User")
     forum = relationship("Forum")
+
+class ForumReply(Base):
+    __tablename__ = "forum_replies"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text, nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    forum_id = Column(Integer, ForeignKey("forums.id"), nullable=False)
+    parent_message_id = Column(Integer, ForeignKey("forum_messages.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)
+    
+    # Relationships
+    author = relationship("User")
+    forum = relationship("Forum")
+    parent_message = relationship("ForumMessage")
