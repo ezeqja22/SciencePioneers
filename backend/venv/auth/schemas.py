@@ -245,6 +245,7 @@ class ForumMessage(ForumMessageBase):
     created_at: datetime
     is_edited: bool = False
     edited_at: Optional[datetime] = None
+    is_pinned: bool = False
     author: Optional[UserOut] = None
     
     class Config:

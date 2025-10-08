@@ -193,6 +193,7 @@ class ForumMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_edited = Column(Boolean, default=False)
     edited_at = Column(DateTime, nullable=True)
+    is_pinned = Column(Boolean, default=False)
     
     # Relationships
     forum = relationship("Forum")

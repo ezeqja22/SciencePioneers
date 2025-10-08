@@ -3652,3 +3652,120 @@ def get_typing_users(
         })
     
     return {"typing_users": typing_users_data}
+
+
+@router.post("/forums/{forum_id}/messages/{message_id}/pin")
+async def pin_message(
+    forum_id: int,
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Pin a message in the forum (only forum creator can pin)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can pin messages")
+        
+        # Get the message
+        message = db.query(ForumMessage).filter(
+            ForumMessage.id == message_id,
+            ForumMessage.forum_id == forum_id
+        ).first()
+        
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        # Unpin any currently pinned message
+        db.query(ForumMessage).filter(
+            ForumMessage.forum_id == forum_id,
+            ForumMessage.is_pinned == True
+        ).update({"is_pinned": False})
+        
+        # Pin the new message
+        message.is_pinned = True
+        db.commit()
+        
+        return {"message": "Message pinned successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/forums/{forum_id}/messages/unpin")
+async def unpin_message(
+    forum_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Unpin the currently pinned message (only forum creator can unpin)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can unpin messages")
+        
+        # Unpin the currently pinned message
+        result = db.query(ForumMessage).filter(
+            ForumMessage.forum_id == forum_id,
+            ForumMessage.is_pinned == True
+        ).update({"is_pinned": False})
+        
+        if result == 0:
+            raise HTTPException(status_code=404, detail="No pinned message found")
+        
+        db.commit()
+        
+        return {"message": "Message unpinned successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/forums/{forum_id}/messages/{message_id}")
+async def delete_message(
+    forum_id: int,
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a message (only forum creator can delete)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can delete messages")
+        
+        # Get the message
+        message = db.query(ForumMessage).filter(
+            ForumMessage.id == message_id,
+            ForumMessage.forum_id == forum_id
+        ).first()
+        
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        # Delete the message
+        db.delete(message)
+        db.commit()
+        
+        return {"message": "Message deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

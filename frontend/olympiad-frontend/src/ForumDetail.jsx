@@ -116,6 +116,8 @@ const ForumDetail = () => {
     const [userHasScrolledUp, setUserHasScrolledUp] = useState(false);
     const [showNewMessageIndicator, setShowNewMessageIndicator] = useState(false);
     const [newMessageCount, setNewMessageCount] = useState(0);
+    const [pinnedMessage, setPinnedMessage] = useState(null);
+    const [showMessageDropdown, setShowMessageDropdown] = useState(null);
     
     // Auto-scroll to bottom of messages
     const scrollToBottom = () => {
@@ -138,6 +140,120 @@ const ForumDetail = () => {
         scrollToBottom();
     };
 
+    // Pin a message
+    const pinMessage = async (messageId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}/pin`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // Refresh messages to get updated pinned status
+            fetchMessages();
+        } catch (error) {
+            console.error("Error pinning message:", error);
+            console.error("Error details:", error.response?.data);
+        }
+    };
+
+    // Unpin a message
+    const unpinMessage = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            console.log("Attempting to unpin message for forum:", forumId);
+            const response = await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/unpin`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log("Unpin response:", response.data);
+            setPinnedMessage(null);
+        } catch (error) {
+            console.error("Error unpinning message:", error);
+            console.error("Error details:", error.response?.data);
+            console.error("Status:", error.response?.status);
+        }
+    };
+
+    // Delete a message
+    const deleteMessage = async (messageId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Refresh messages
+            fetchMessages();
+        } catch (error) {
+            console.error("Error deleting message:", error);
+        }
+    };
+
+    // Scroll to pinned message and highlight it
+    const scrollToPinnedMessage = () => {
+        if (!pinnedMessage) return;
+        
+        // Find the pinned message element
+        const messageElements = document.querySelectorAll('[data-message-id]');
+        const pinnedElement = Array.from(messageElements).find(el => 
+            el.getAttribute('data-message-id') === pinnedMessage.id.toString()
+        );
+        
+        if (pinnedElement) {
+            // Find the message bubble (the actual message content container)
+            const messageBubble = pinnedElement.querySelector('[data-message-bubble]');
+            
+            // Scroll to the message
+            pinnedElement.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+            
+            // Add subtle highlight effect to the area around the message bubble
+            pinnedElement.style.position = 'relative';
+            pinnedElement.style.transition = 'all 0.3s ease';
+            
+            // Create a pseudo-element for the background that doesn't cover the bubble
+            const highlightDiv = document.createElement('div');
+            highlightDiv.style.position = 'absolute';
+            highlightDiv.style.top = '0';
+            highlightDiv.style.left = '0';
+            highlightDiv.style.right = '0';
+            highlightDiv.style.bottom = '0';
+            highlightDiv.style.backgroundColor = colors.primary;
+            highlightDiv.style.opacity = '0.1';
+            highlightDiv.style.borderRadius = borderRadius.md;
+            highlightDiv.style.zIndex = '1';
+            highlightDiv.setAttribute('data-highlight', 'true');
+            
+            // Insert the highlight div before the message bubble
+            pinnedElement.insertBefore(highlightDiv, messageBubble);
+            
+            // Make sure the message bubble stays on top
+            if (messageBubble) {
+                messageBubble.style.position = 'relative';
+                messageBubble.style.zIndex = '10';
+            }
+            
+            // Remove highlight after 2 seconds
+            setTimeout(() => {
+                const highlight = pinnedElement.querySelector('[data-highlight="true"]');
+                if (highlight) {
+                    highlight.remove();
+                }
+                pinnedElement.style.position = '';
+                if (messageBubble) {
+                    messageBubble.style.position = '';
+                    messageBubble.style.zIndex = '';
+                }
+            }, 2000);
+        }
+    };
+
     useEffect(() => {
         // Reset scroll state when chat is opened
         if (showChat) {
@@ -149,6 +265,18 @@ const ForumDetail = () => {
             setTimeout(() => scrollToBottom(), 200);
         }
     }, [showChat]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showMessageDropdown && !event.target.closest('[data-message-dropdown]')) {
+                setShowMessageDropdown(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showMessageDropdown]);
 
     // Only scroll to bottom when chat is first opened, not on every message change
     useEffect(() => {
@@ -426,6 +554,14 @@ const ForumDetail = () => {
             });
             const messages = response.data.reverse();
             setMessages(messages);
+            
+            // Check for pinned message
+            const pinned = messages.find(msg => msg.is_pinned);
+            if (pinned) {
+                setPinnedMessage(pinned);
+            } else {
+                setPinnedMessage(null);
+            }
 
             // Fetch problem data for problem messages
             const problemIds = messages
@@ -1501,6 +1637,56 @@ const ForumDetail = () => {
                             )}
                         </div>
 
+                        {/* Pinned Message Banner */}
+                        {pinnedMessage && (
+                            <div style={{
+                                backgroundColor: colors.primary,
+                                color: colors.white,
+                                padding: spacing.sm,
+                                margin: `0 ${spacing.md}`,
+                                borderRadius: borderRadius.md,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                boxShadow: shadows.sm,
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 100
+                            }}>
+                                <div 
+                                    style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, cursor: 'pointer' }}
+                                    onClick={() => scrollToPinnedMessage()}
+                                >
+                                    <div style={{ fontSize: '16px' }}>📌</div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>
+                                        {pinnedMessage.content}
+                                    </div>
+                                </div>
+                                {currentUser?.id === forum?.creator_id && (
+                                    <button
+                                        onClick={() => unpinMessage()}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                            color: colors.white,
+                                            cursor: 'pointer',
+                                            padding: '4px',
+                                            borderRadius: '4px',
+                                            fontSize: '14px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = 'transparent';
+                                        }}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         {/* Messages */}
                         <div 
                             data-messages-container
@@ -1527,12 +1713,25 @@ const ForumDetail = () => {
                                     return (
                                         <div
                                             key={message.id}
+                                            data-message-id={message.id}
                                             style={{
                                                 display: 'flex',
                                                 justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
                                                 marginBottom: spacing.sm,
                                                 alignItems: 'flex-end',
                                                 gap: spacing.sm
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                const dropdown = e.currentTarget.querySelector('[data-message-dropdown]');
+                                                if (dropdown) {
+                                                    dropdown.style.opacity = '1';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                const dropdown = e.currentTarget.querySelector('[data-message-dropdown]');
+                                                if (dropdown && showMessageDropdown !== message.id) {
+                                                    dropdown.style.opacity = '0';
+                                                }
                                             }}
                                         >
                                             {!isOwnMessage && (
@@ -1555,15 +1754,17 @@ const ForumDetail = () => {
                                                 </div>
                                             )}
                                             
-                                            <div style={{
-                                                maxWidth: '70%',
-                                                backgroundColor: isOwnMessage ? colors.primary : colors.white,
-                                                color: isOwnMessage ? colors.white : colors.gray[800],
-                                                padding: spacing.md,
-                                                borderRadius: borderRadius.lg,
-                                                boxShadow: shadows.sm,
-                                                position: 'relative'
-                                            }}>
+                                            <div 
+                                                data-message-bubble
+                                                style={{
+                                                    maxWidth: '70%',
+                                                    backgroundColor: isOwnMessage ? colors.primary : colors.white,
+                                                    color: isOwnMessage ? colors.white : colors.gray[800],
+                                                    padding: spacing.md,
+                                                    borderRadius: borderRadius.lg,
+                                                    boxShadow: shadows.sm,
+                                                    position: 'relative'
+                                                }}>
                                                 {!isOwnMessage && (
                                                     <div style={{
                                                         fontSize: '0.8rem',
@@ -1625,9 +1826,126 @@ const ForumDetail = () => {
                                                     fontSize: '0.7rem',
                                                     opacity: 0.7,
                                                     marginTop: spacing.xs,
-                                                    textAlign: 'right'
+                                                    textAlign: 'right',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
                                                 }}>
-                                                    {new Date(message.created_at).toLocaleTimeString()}
+                                                    <span>{new Date(message.created_at).toLocaleTimeString()}</span>
+                                                    
+                                                    {/* Message Actions Dropdown - Only for forum creator */}
+                                                    {currentUser?.id === forum?.creator_id && (
+                                                        <div 
+                                                            data-message-dropdown 
+                                                            style={{ 
+                                                                position: 'relative',
+                                                                opacity: 0,
+                                                                transition: 'opacity 0.2s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.opacity = '1';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.opacity = '0';
+                                                            }}
+                                                        >
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowMessageDropdown(showMessageDropdown === message.id ? null : message.id);
+                                                                }}
+                                                                style={{
+                                                                    backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                                                                    border: 'none',
+                                                                    color: isOwnMessage ? 'rgba(255,255,255,0.8)' : colors.gray[600],
+                                                                    cursor: 'pointer',
+                                                                    padding: '6px 8px',
+                                                                    borderRadius: '50%',
+                                                                    fontSize: '14px',
+                                                                    width: '28px',
+                                                                    height: '28px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    transition: 'all 0.2s ease'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.target.style.backgroundColor = isOwnMessage ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)';
+                                                                    e.target.style.transform = 'scale(1.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.target.style.backgroundColor = isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+                                                                    e.target.style.transform = 'scale(1)';
+                                                                }}
+                                                            >
+                                                                ⋯
+                                                            </button>
+                                                            
+                                                            {/* Dropdown Menu */}
+                                                            {showMessageDropdown === message.id && (
+                                                                <div style={{
+                                                                    position: 'absolute',
+                                                                    right: 0,
+                                                                    top: '100%',
+                                                                    backgroundColor: colors.white,
+                                                                    border: `1px solid ${colors.gray[200]}`,
+                                                                    borderRadius: borderRadius.md,
+                                                                    boxShadow: shadows.lg,
+                                                                    zIndex: 1000,
+                                                                    minWidth: '120px'
+                                                                }}>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            pinMessage(message.id);
+                                                                            setShowMessageDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.gray[700]
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        📌 Pin Message
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            deleteMessage(message.id);
+                                                                            setShowMessageDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.error || '#ef4444'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        🗑️ Delete Message
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
