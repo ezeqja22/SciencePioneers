@@ -126,6 +126,7 @@ const ForumDetail = () => {
         description: '',
         is_private: false
     });
+    const [showActionsDropdown, setShowActionsDropdown] = useState(false);
     
     // Auto-scroll to bottom of messages
     const scrollToBottom = () => {
@@ -296,6 +297,24 @@ const ForumDetail = () => {
         }
     };
 
+    // Assign role to a member
+    const assignRole = async (memberId, newRole) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/assign-role`, 
+                { role: newRole }, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            // Refresh members list
+            fetchMembers();
+        } catch (error) {
+            console.error("Error assigning role:", error);
+        }
+    };
+
     // Scroll to pinned message and highlight it
     const scrollToPinnedMessage = () => {
         if (!pinnedMessage) return;
@@ -378,11 +397,14 @@ const ForumDetail = () => {
             if (showMemberDropdown && !event.target.closest('[data-member-dropdown]')) {
                 setShowMemberDropdown(null);
             }
+            if (showActionsDropdown && !event.target.closest('[data-actions-dropdown]')) {
+                setShowActionsDropdown(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showMessageDropdown, showMemberDropdown]);
+    }, [showMessageDropdown, showMemberDropdown, showActionsDropdown]);
 
     // Only scroll to bottom when chat is first opened, not on every message change
     useEffect(() => {
@@ -1101,6 +1123,34 @@ const ForumDetail = () => {
 
     const isMember = members.some(member => member.user_id === currentUser?.id && member.is_active);
     const isCreator = members.some(member => member.user_id === currentUser?.id && member.role === 'creator');
+    
+    // Check user permissions
+    const getUserRole = () => {
+        const userMembership = members.find(member => member.user_id === currentUser?.id);
+        return userMembership?.role || 'member';
+    };
+    
+    const hasPermission = (permission) => {
+        const userRole = getUserRole();
+        if (userRole === 'creator') return true;
+        if (userRole === 'moderator') return ['pin', 'moderate', 'kick'].includes(permission);
+        if (userRole === 'helper') return ['pin'].includes(permission);
+        return false;
+    };
+    
+    const canManageMember = (targetMember) => {
+        const userRole = getUserRole();
+        const targetRole = targetMember.role;
+        
+        // Creator can manage everyone except themselves
+        if (userRole === 'creator') return targetRole !== 'creator';
+        
+        // Moderator can manage helpers and members (but not other moderators or creator)
+        if (userRole === 'moderator') return ['helper', 'member'].includes(targetRole);
+        
+        // Helper and members cannot manage anyone
+        return false;
+    };
 
     return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1124,13 +1174,161 @@ const ForumDetail = () => {
                         <BackButton fallbackPath="/forums" />
                         
                         <div style={{ marginTop: spacing.md }}>
-                            <h1 style={{ 
-                                color: colors.primary, 
-                                marginBottom: spacing.sm,
-                                fontSize: typography.fontSize["3xl"]
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'space-between',
+                                marginBottom: spacing.sm
                             }}>
-                                {forum.title}
-                            </h1>
+                                <h1 style={{ 
+                                    color: colors.primary, 
+                                    margin: 0,
+                                    fontSize: typography.fontSize["3xl"]
+                                }}>
+                                    {forum.title}
+                                </h1>
+                                
+                                {/* Actions Dropdown */}
+                                <div style={{ position: 'relative' }} data-actions-dropdown>
+                                    <button
+                                        onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+                                        style={{
+                                            backgroundColor: colors.gray[100],
+                                            border: `1px solid ${colors.gray[300]}`,
+                                            borderRadius: borderRadius.md,
+                                            padding: '8px 12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: spacing.xs,
+                                            fontSize: typography.fontSize.sm,
+                                            color: colors.gray[700],
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[200];
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = colors.gray[100];
+                                        }}
+                                    >
+                                        Actions
+                                        <span style={{ 
+                                            transform: showActionsDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s ease'
+                                        }}>
+                                            ▼
+                                        </span>
+                                    </button>
+                                    
+                                    {showActionsDropdown && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            backgroundColor: colors.white,
+                                            border: `1px solid ${colors.gray[300]}`,
+                                            borderRadius: borderRadius.md,
+                                            boxShadow: shadows.md,
+                                            zIndex: 1000,
+                                            minWidth: '160px',
+                                            marginTop: spacing.xs
+                                        }}>
+                                            {isCreator ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            openEditForumModal();
+                                                            setShowActionsDropdown(false);
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px 16px',
+                                                            border: 'none',
+                                                            backgroundColor: 'transparent',
+                                                            textAlign: 'left',
+                                                            cursor: 'pointer',
+                                                            fontSize: typography.fontSize.sm,
+                                                            color: colors.gray[700],
+                                                            borderBottom: `1px solid ${colors.gray[200]}`,
+                                                            transition: 'background-color 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                    >
+                                                        ✏️ Edit Forum
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleInviteUsers();
+                                                            setShowActionsDropdown(false);
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px 16px',
+                                                            border: 'none',
+                                                            backgroundColor: 'transparent',
+                                                            textAlign: 'left',
+                                                            cursor: 'pointer',
+                                                            fontSize: typography.fontSize.sm,
+                                                            color: colors.gray[700],
+                                                            borderBottom: `1px solid ${colors.gray[200]}`,
+                                                            transition: 'background-color 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                    >
+                                                        👥 Invite Users
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            handleDeleteForum();
+                                                            setShowActionsDropdown(false);
+                                                        }}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '12px 16px',
+                                                            border: 'none',
+                                                            backgroundColor: 'transparent',
+                                                            textAlign: 'left',
+                                                            cursor: 'pointer',
+                                                            fontSize: typography.fontSize.sm,
+                                                            color: colors.error || '#dc2626',
+                                                            transition: 'background-color 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                    >
+                                                        🗑️ Delete Forum
+                                                    </button>
+                                                </>
+                                            ) : isMember ? (
+                                                <button
+                                                    onClick={() => {
+                                                        handleLeaveForum();
+                                                        setShowActionsDropdown(false);
+                                                    }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '12px 16px',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        textAlign: 'left',
+                                                        cursor: 'pointer',
+                                                        fontSize: typography.fontSize.sm,
+                                                        color: colors.error || '#dc2626',
+                                                        transition: 'background-color 0.2s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
+                                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                >
+                                                    🚪 Leave Forum
+                                                </button>
+                                            ) : null}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                             <p style={{ 
                                 color: colors.gray[600], 
                                 marginBottom: spacing.md,
@@ -1147,133 +1345,55 @@ const ForumDetail = () => {
                             </div>
                         </div>
 
+                        {/* Chat Toggle Button */}
                         <div style={{ 
                             display: 'flex', 
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: spacing.lg,
-                            flexWrap: 'wrap'
+                            justifyContent: 'flex-start',
+                            marginBottom: spacing.lg
                         }}>
-                            <div style={{ display: 'flex', gap: spacing.sm }}>
-                                <Button
-                                    onClick={toggleChat}
-                                    style={{
-                                        backgroundColor: colors.primary,
-                                        color: colors.white,
-                                        border: 'none',
-                                        padding: '12px 24px',
-                                        borderRadius: borderRadius.md,
-                                        cursor: 'pointer',
-                                        fontSize: typography.fontSize.base,
-                                        fontWeight: '600'
-                                    }}
-                                >
-                                    {showChat ? 'Close Chat' : 'Open Chat'}
-                                </Button>
-                                
-                                {isCreator && (
-                                    <>
-                                        <Button
-                                            onClick={handleInviteUsers}
-                                            style={{
-                                                backgroundColor: colors.secondary,
-                                                color: colors.white,
-                                                border: 'none',
-                                                padding: '12px 24px',
-                                                borderRadius: borderRadius.md,
-                                                cursor: 'pointer',
-                                                fontSize: typography.fontSize.base,
-                                                fontWeight: '600',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                        >
-                                            Invite Users
-                                        </Button>
-                                        
-                                        <Button
-                                            onClick={openEditForumModal}
-                                            style={{
-                                                backgroundColor: colors.primary,
-                                                color: colors.white,
-                                                border: 'none',
-                                                padding: '12px 24px',
-                                                borderRadius: borderRadius.md,
-                                                cursor: 'pointer',
-                                                fontSize: typography.fontSize.base,
-                                                fontWeight: '600',
-                                                transition: 'all 0.2s ease'
-                                            }}
-                                        >
-                                            Edit Forum
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: spacing.sm }}>
-                                {isMember && !isCreator && (
-                                    <Button
-                                        onClick={handleLeaveForum}
-                                        style={{
-                                            backgroundColor: colors.gray[400],
-                                            color: colors.white,
-                                            border: 'none',
-                                            padding: '12px 24px',
-                                            borderRadius: borderRadius.md,
-                                            cursor: 'pointer',
-                                            fontSize: typography.fontSize.base,
-                                            fontWeight: '600',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = colors.danger;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = colors.gray[400];
-                                        }}
-                                    >
-                                        Leave Forum
-                                    </Button>
-                                )}
-                                
-                                {isCreator && (
-                                    <Button
-                                        onClick={handleDeleteForum}
-                                        style={{
-                                            backgroundColor: colors.gray[400],
-                                            color: colors.white,
-                                            border: 'none',
-                                            padding: '12px 24px',
-                                            borderRadius: borderRadius.md,
-                                            cursor: 'pointer',
-                                            fontSize: typography.fontSize.base,
-                                            fontWeight: '600',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = colors.danger;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = colors.gray[400];
-                                        }}
-                                    >
-                                        Delete Forum
-                                    </Button>
-                                )}
-                            </div>
+                            <Button
+                                onClick={toggleChat}
+                                style={{
+                                    backgroundColor: colors.primary,
+                                    color: colors.white,
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: borderRadius.md,
+                                    cursor: 'pointer',
+                                    fontSize: typography.fontSize.base,
+                                    fontWeight: '600',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = colors.secondary;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = colors.primary;
+                                }}
+                            >
+                                {showChat ? 'Close Chat' : 'Open Chat'}
+                            </Button>
                             
                             {!isMember && (
                                 <Button
                                     onClick={handleJoinForum}
                                     style={{
-                                        backgroundColor: colors.primary,
+                                        backgroundColor: colors.secondary,
                                         color: colors.white,
                                         border: 'none',
                                         padding: '12px 24px',
                                         borderRadius: borderRadius.md,
                                         cursor: 'pointer',
                                         fontSize: typography.fontSize.base,
-                                        fontWeight: '600'
+                                        fontWeight: '600',
+                                        marginLeft: spacing.sm,
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.target.style.backgroundColor = colors.primary;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.backgroundColor = colors.secondary;
                                     }}
                                 >
                                     Join Forum
@@ -1351,7 +1471,7 @@ const ForumDetail = () => {
                                         style={{ marginBottom: spacing.md }}
                                         onMouseEnter={(e) => {
                                             const dropdown = e.currentTarget.querySelector('[data-member-dropdown]');
-                                            if (dropdown && currentUser?.id === forum?.creator_id && member.role !== 'creator') {
+                                            if (dropdown && canManageMember(member)) {
                                                 dropdown.style.opacity = '1';
                                             }
                                         }}
@@ -1379,6 +1499,8 @@ const ForumDetail = () => {
                                             }}>
                                                 {!member.user?.profile_picture && getUserInitial(member.user?.username || '?')}
                                             </div>
+                                            
+                                            
                                             <div style={{ flex: 1 }}>
                                                 <h4 style={{ margin: "0 0 4px 0", color: colors.gray[800] }}>
                                                     {getDisplayName(member.user?.username || 'Unknown')}
@@ -1390,22 +1512,10 @@ const ForumDetail = () => {
                                                     Joined {new Date(member.joined_at).toLocaleDateString()}
                                                 </span>
                                             </div>
+                                            
                                             <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                                                <span style={{
-                                                    backgroundColor: member.role === 'creator' ? colors.primary : 
-                                                                  member.role === 'moderator' ? colors.warning : colors.gray[400],
-                                                    color: colors.white,
-                                                    padding: "4px 12px",
-                                                    borderRadius: borderRadius.sm,
-                                                    fontSize: "0.8rem",
-                                                    fontWeight: "600"
-                                                }}>
-                                                    {member.role === 'creator' ? 'Creator' : 
-                                                     member.role === 'moderator' ? 'Moderator' : 'Member'}
-                                                </span>
-                                                
-                                                {/* Member Actions Dropdown - Only for forum creator and not for creator */}
-                                                {currentUser?.id === forum?.creator_id && member.role !== 'creator' && (
+                                                {/* Member Actions Dropdown - Based on management permissions */}
+                                                {canManageMember(member) && (
                                                     <div 
                                                         data-member-dropdown 
                                                         style={{ 
@@ -1459,58 +1569,169 @@ const ForumDetail = () => {
                                                                 zIndex: 1000,
                                                                 minWidth: '120px'
                                                             }}>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        kickMember(member.id);
-                                                                        setShowMemberDropdown(null);
-                                                                    }}
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        padding: spacing.sm,
-                                                                        border: 'none',
-                                                                        backgroundColor: 'transparent',
-                                                                        textAlign: 'left',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '0.8rem',
-                                                                        color: colors.gray[700]
-                                                                    }}
-                                                                    onMouseEnter={(e) => {
-                                                                        e.target.style.backgroundColor = colors.gray[50];
-                                                                    }}
-                                                                    onMouseLeave={(e) => {
-                                                                        e.target.style.backgroundColor = 'transparent';
-                                                                    }}
-                                                                >
-                                                                    👢 Kick Member
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        banMember(member.id);
-                                                                        setShowMemberDropdown(null);
-                                                                    }}
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        padding: spacing.sm,
-                                                                        border: 'none',
-                                                                        backgroundColor: 'transparent',
-                                                                        textAlign: 'left',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '0.8rem',
-                                                                        color: colors.error || '#ef4444'
-                                                                    }}
-                                                                    onMouseEnter={(e) => {
-                                                                        e.target.style.backgroundColor = colors.gray[50];
-                                                                    }}
-                                                                    onMouseLeave={(e) => {
-                                                                        e.target.style.backgroundColor = 'transparent';
-                                                                    }}
-                                                                >
-                                                                    🚫 Ban Member
-                                                                </button>
+                                                                {/* Role Assignment - Only for creators */}
+                                                                {isCreator && member.role !== 'creator' && (
+                                                                    <>
+                                                                        <div style={{
+                                                                            padding: '8px 12px',
+                                                                            borderBottom: `1px solid ${colors.gray[200]}`,
+                                                                            fontSize: '0.75rem',
+                                                                            color: colors.gray[600],
+                                                                            fontWeight: '600'
+                                                                        }}>
+                                                                            Assign Role:
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                assignRole(member.id, 'moderator');
+                                                                                setShowMemberDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.warning || '#f59e0b'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            🛡️ Make Moderator
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                assignRole(member.id, 'helper');
+                                                                                setShowMemberDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.info || '#0ea5e9'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            🤝 Make Helper
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                assignRole(member.id, 'member');
+                                                                                setShowMemberDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.gray[600]
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            👤 Make Member
+                                                                        </button>
+                                                                        <div style={{
+                                                                            height: '1px',
+                                                                            backgroundColor: colors.gray[200],
+                                                                            margin: '4px 0'
+                                                                        }}></div>
+                                                                    </>
+                                                                )}
+                                                                
+                                                                {hasPermission('kick') && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            kickMember(member.id);
+                                                                            setShowMemberDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.gray[700]
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        👢 Kick Member
+                                                                    </button>
+                                                                )}
+                                                                {isCreator && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            banMember(member.id);
+                                                                            setShowMemberDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.error || '#ef4444'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        🚫 Ban Member
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
                                                 )}
+                                                
+                                                <span style={{
+                                                    backgroundColor: member.role === 'creator' ? colors.primary : 
+                                                                  member.role === 'moderator' ? colors.warning : 
+                                                                  member.role === 'helper' ? colors.info : colors.gray[400],
+                                                    color: colors.white,
+                                                    padding: "4px 12px",
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: "0.8rem",
+                                                    fontWeight: "600"
+                                                }}>
+                                                    {member.role === 'creator' ? 'Creator' : 
+                                                     member.role === 'moderator' ? 'Moderator' : 
+                                                     member.role === 'helper' ? 'Helper' : 'Member'}
+                                                </span>
                                             </div>
                                         </div>
                                     </Card>
@@ -2185,8 +2406,8 @@ const ForumDetail = () => {
                                                 }}>
                                                     <span>{new Date(message.created_at).toLocaleTimeString()}</span>
                                                     
-                                                    {/* Message Actions Dropdown - Only for forum creator */}
-                                                    {currentUser?.id === forum?.creator_id && (
+                                                {/* Message Actions Dropdown - Based on permissions */}
+                                                {hasPermission('pin') && (
                                                         <div 
                                                             data-message-dropdown 
                                                             style={{ 
@@ -2246,54 +2467,58 @@ const ForumDetail = () => {
                                                                     zIndex: 1000,
                                                                     minWidth: '120px'
                                                                 }}>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            pinMessage(message.id);
-                                                                            setShowMessageDropdown(null);
-                                                                        }}
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            padding: spacing.sm,
-                                                                            border: 'none',
-                                                                            backgroundColor: 'transparent',
-                                                                            textAlign: 'left',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.8rem',
-                                                                            color: colors.gray[700]
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.backgroundColor = colors.gray[50];
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.backgroundColor = 'transparent';
-                                                                        }}
-                                                                    >
-                                                                        📍 Pin Message
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            deleteMessage(message.id);
-                                                                            setShowMessageDropdown(null);
-                                                                        }}
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            padding: spacing.sm,
-                                                                            border: 'none',
-                                                                            backgroundColor: 'transparent',
-                                                                            textAlign: 'left',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.8rem',
-                                                                            color: colors.error || '#ef4444'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.backgroundColor = colors.gray[50];
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.backgroundColor = 'transparent';
-                                                                        }}
-                                                                    >
-                                                                        🗑️ Delete Message
-                                                                    </button>
+                                                                    {hasPermission('pin') && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                pinMessage(message.id);
+                                                                                setShowMessageDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.gray[700]
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            📍 Pin Message
+                                                                        </button>
+                                                                    )}
+                                                                    {hasPermission('moderate') && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                deleteMessage(message.id);
+                                                                                setShowMessageDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.error || '#ef4444'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            🗑️ Delete Message
+                                                                        </button>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>

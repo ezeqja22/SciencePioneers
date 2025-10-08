@@ -906,7 +906,7 @@ function Homepage() {
                                             e.target.style.color = pinnedForums.includes(forum.id) ? "#1a4d3a" : "#9ca3af";
                                         }}
                                     >
-                                        {pinnedForums.includes(forum.id) ? "📍" : "Pin"}
+                                        {pinnedForums.includes(forum.id) ? "📌" : "Pin"}
                                     </button>
                                 </button>
                             );

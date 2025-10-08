@@ -13,6 +13,27 @@ from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMe
 from notification_service import NotificationService
 from typing import List
 from datetime import datetime, timedelta
+
+def check_forum_permission(db: Session, forum_id: int, user_id: int, required_permission: str):
+    """Check if user has required permission in forum"""
+    membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == user_id,
+        ForumMembership.is_active == True
+    ).first()
+    
+    if not membership:
+        return False
+    
+    # Permission hierarchy: creator > moderator > helper > member
+    if membership.role == 'creator':
+        return True
+    elif membership.role == 'moderator':
+        return required_permission in ['moderate', 'pin', 'kick']
+    elif membership.role == 'helper':
+        return required_permission in ['pin']
+    else:  # member
+        return False
 from fastapi import UploadFile, File, Form
 import os
 import uuid
@@ -3728,8 +3749,9 @@ async def pin_message(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Only forum creator can pin messages")
+        # Check if user has permission to pin messages
+        if not check_forum_permission(db, forum_id, current_user.id, 'pin'):
+            raise HTTPException(status_code=403, detail="You don't have permission to pin messages")
         
         # Get the message
         message = db.query(ForumMessage).filter(
@@ -3771,8 +3793,9 @@ async def unpin_message(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Only forum creator can unpin messages")
+        # Check if user has permission to unpin messages
+        if not check_forum_permission(db, forum_id, current_user.id, 'pin'):
+            raise HTTPException(status_code=403, detail="You don't have permission to unpin messages")
         
         # Unpin the currently pinned message
         result = db.query(ForumMessage).filter(
@@ -3807,8 +3830,9 @@ async def delete_message(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Only forum creator can delete messages")
+        # Check if user has permission to delete messages
+        if not check_forum_permission(db, forum_id, current_user.id, 'moderate'):
+            raise HTTPException(status_code=403, detail="You don't have permission to delete messages")
         
         # Get the message
         message = db.query(ForumMessage).filter(
@@ -3845,8 +3869,9 @@ async def kick_member(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Only forum creator can kick members")
+        # Check if user has permission to kick members
+        if not check_forum_permission(db, forum_id, current_user.id, 'kick'):
+            raise HTTPException(status_code=403, detail="You don't have permission to kick members")
         
         # Get the membership
         membership = db.query(ForumMembership).filter(
@@ -3977,6 +4002,55 @@ async def unban_member(
         db.commit()
         
         return {"message": "Member unbanned successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/forums/{forum_id}/members/{member_id}/assign-role")
+async def assign_member_role(
+    forum_id: int,
+    member_id: int,
+    role_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Assign a role to a forum member (creator only)"""
+    try:
+        # Get forum
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        # Check if user is the creator
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the forum creator can assign roles")
+        
+        # Get membership
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.id == member_id,
+            ForumMembership.forum_id == forum_id
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=404, detail="Membership not found")
+        
+        # Can't change creator's role
+        if membership.user_id == forum.creator_id:
+            raise HTTPException(status_code=403, detail="Cannot change creator's role")
+        
+        # Validate role
+        valid_roles = ['member', 'moderator', 'helper']
+        new_role = role_data.get('role')
+        if new_role not in valid_roles:
+            raise HTTPException(status_code=400, detail="Invalid role")
+        
+        # Update role
+        membership.role = new_role
+        db.commit()
+        
+        return {"message": f"Role updated to {new_role}"}
     except HTTPException:
         raise
     except Exception as e:
