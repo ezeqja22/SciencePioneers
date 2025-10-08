@@ -2296,6 +2296,16 @@ def get_forum(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
+    
     # Check if user can access this forum
     if forum.is_private:
         membership = db.query(ForumMembership).filter(
@@ -2328,6 +2338,16 @@ def join_forum(
     
     if forum.is_private:
         raise HTTPException(status_code=403, detail="Cannot join private forum directly")
+    
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
     
     # Check if user is already a member
     existing_membership = db.query(ForumMembership).filter(
@@ -2396,6 +2416,16 @@ def get_forum_members(
     db: Session = Depends(get_db)
 ):
     """Get members of a forum"""
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
+    
     # Check if user is a member
     membership = db.query(ForumMembership).filter(
         ForumMembership.forum_id == forum_id,
@@ -2486,6 +2516,16 @@ def get_forum_problems(
     db: Session = Depends(get_db)
 ):
     """Get problems from a forum"""
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
+    
     # Check if user is a member
     membership = db.query(ForumMembership).filter(
         ForumMembership.forum_id == forum_id,
@@ -2577,6 +2617,16 @@ def get_messages(
     db: Session = Depends(get_db)
 ):
     """Get messages from a forum"""
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
+    
     # Check if user is a member
     membership = db.query(ForumMembership).filter(
         ForumMembership.forum_id == forum_id,
@@ -2846,6 +2896,16 @@ def request_to_join_forum(
     
     if not forum.is_private:
         raise HTTPException(status_code=400, detail="Forum is public, use join endpoint")
+    
+    # Check if user is banned from this forum
+    banned_membership = db.query(ForumMembership).filter(
+        ForumMembership.forum_id == forum_id,
+        ForumMembership.user_id == current_user.id,
+        ForumMembership.is_banned == True
+    ).first()
+    
+    if banned_membership:
+        raise HTTPException(status_code=403, detail="You are banned from this forum")
     
     # Check if user is already a member
     existing_membership = db.query(ForumMembership).filter(
@@ -3764,6 +3824,194 @@ async def delete_message(
         db.commit()
         
         return {"message": "Message deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/forums/{forum_id}/members/{member_id}")
+async def kick_member(
+    forum_id: int,
+    member_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Kick a member from the forum (only forum creator can kick)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can kick members")
+        
+        # Get the membership
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.id == member_id,
+            ForumMembership.forum_id == forum_id
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Can't kick the creator
+        if membership.user_id == forum.creator_id:
+            raise HTTPException(status_code=403, detail="Cannot kick the forum creator")
+        
+        # Remove the membership
+        db.delete(membership)
+        db.commit()
+        
+        return {"message": "Member kicked successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/forums/{forum_id}/members/{member_id}/ban")
+async def ban_member(
+    forum_id: int,
+    member_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Ban a member from the forum (only forum creator can ban)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can ban members")
+        
+        # Get the membership
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.id == member_id,
+            ForumMembership.forum_id == forum_id
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=404, detail="Member not found")
+        
+        # Can't ban the creator
+        if membership.user_id == forum.creator_id:
+            raise HTTPException(status_code=403, detail="Cannot ban the forum creator")
+        
+        # Mark as banned
+        membership.is_banned = True
+        membership.is_active = False
+        db.commit()
+        
+        return {"message": "Member banned successfully"}
+    except HTTPException:
+        raise
+
+@router.get("/forums/{forum_id}/banned-members")
+async def get_banned_members(
+    forum_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all banned members of a forum (creator only)"""
+    try:
+        # Get forum
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        # Check if user is the creator
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the forum creator can view banned members")
+        
+        # Get banned members with user details
+        banned_memberships = db.query(ForumMembership).options(
+            selectinload(ForumMembership.user)
+        ).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.is_banned == True
+        ).all()
+        
+        return banned_memberships
+    except HTTPException:
+        raise
+
+@router.post("/forums/{forum_id}/members/{member_id}/unban")
+async def unban_member(
+    forum_id: int,
+    member_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Unban a member from a forum (creator only)"""
+    try:
+        # Get forum
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        # Check if user is the creator
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the forum creator can unban members")
+        
+        # Get membership
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.id == member_id,
+            ForumMembership.forum_id == forum_id
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=404, detail="Membership not found")
+        
+        if not membership.is_banned:
+            raise HTTPException(status_code=400, detail="Member is not banned")
+        
+        # Unban the member
+        membership.is_banned = False
+        membership.is_active = True
+        db.commit()
+        
+        return {"message": "Member unbanned successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/forums/{forum_id}")
+async def update_forum(
+    forum_id: int,
+    forum_data: ForumUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update forum settings (only forum creator can update)"""
+    try:
+        # Check if user is the forum creator
+        forum = db.query(Forum).filter(Forum.id == forum_id).first()
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+        
+        if forum.creator_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only forum creator can update forum")
+        
+        # Update forum fields
+        if forum_data.name is not None:
+            forum.name = forum_data.name
+        if forum_data.description is not None:
+            forum.description = forum_data.description
+        if forum_data.is_private is not None:
+            forum.is_private = forum_data.is_private
+        
+        db.commit()
+        
+        return {"message": "Forum updated successfully"}
     except HTTPException:
         raise
     except Exception as e:

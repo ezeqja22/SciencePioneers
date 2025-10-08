@@ -84,12 +84,13 @@ const ForumDetail = () => {
     const [forum, setForum] = useState(null);
     const [problems, setProblems] = useState([]);
     const [members, setMembers] = useState([]);
+    const [bannedMembers, setBannedMembers] = useState([]);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('members'); // 'members', 'problems'
+    const [activeTab, setActiveTab] = useState('members'); // 'members', 'problems', 'banned'
     const [showChat, setShowChat] = useState(() => {
         const saved = localStorage.getItem(`forum-${forumId}-chat-open`);
         return saved === 'true';
@@ -118,6 +119,13 @@ const ForumDetail = () => {
     const [newMessageCount, setNewMessageCount] = useState(0);
     const [pinnedMessage, setPinnedMessage] = useState(null);
     const [showMessageDropdown, setShowMessageDropdown] = useState(null);
+    const [showMemberDropdown, setShowMemberDropdown] = useState(null);
+    const [showEditForumModal, setShowEditForumModal] = useState(false);
+    const [editForumData, setEditForumData] = useState({
+        name: '',
+        description: '',
+        is_private: false
+    });
     
     // Auto-scroll to bottom of messages
     const scrollToBottom = () => {
@@ -190,6 +198,101 @@ const ForumDetail = () => {
             fetchMessages();
         } catch (error) {
             console.error("Error deleting message:", error);
+        }
+    };
+
+    // Kick a member from the forum
+    const kickMember = async (memberId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Refresh members list
+            fetchMembers();
+        } catch (error) {
+            console.error("Error kicking member:", error);
+        }
+    };
+
+    // Ban a member from the forum
+    const banMember = async (memberId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/ban`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Refresh members list
+            fetchMembers();
+        } catch (error) {
+            console.error("Error banning member:", error);
+        }
+    };
+
+    // Open edit forum modal
+    const openEditForumModal = () => {
+        setEditForumData({
+            name: forum?.name || '',
+            description: forum?.description || '',
+            is_private: forum?.is_private || false
+        });
+        setShowEditForumModal(true);
+    };
+
+    // Update forum
+    const updateForum = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.put(`http://127.0.0.1:8000/auth/forums/${forumId}`, editForumData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Refresh forum data
+            fetchForum();
+            setShowEditForumModal(false);
+        } catch (error) {
+            console.error("Error updating forum:", error);
+        }
+    };
+
+    // Fetch banned members
+    const fetchBannedMembers = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/banned-members`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setBannedMembers(response.data);
+        } catch (error) {
+            console.error("Error fetching banned members:", error);
+        }
+    };
+
+    // Unban a member
+    const unbanMember = async (memberId) => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+
+            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/unban`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Refresh both banned and regular members lists
+            fetchBannedMembers();
+            fetchMembers();
+        } catch (error) {
+            console.error("Error unbanning member:", error);
         }
     };
 
@@ -272,11 +375,14 @@ const ForumDetail = () => {
             if (showMessageDropdown && !event.target.closest('[data-message-dropdown]')) {
                 setShowMessageDropdown(null);
             }
+            if (showMemberDropdown && !event.target.closest('[data-member-dropdown]')) {
+                setShowMemberDropdown(null);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showMessageDropdown]);
+    }, [showMessageDropdown, showMemberDropdown]);
 
     // Only scroll to bottom when chat is first opened, not on every message change
     useEffect(() => {
@@ -1066,22 +1172,41 @@ const ForumDetail = () => {
                                 </Button>
                                 
                                 {isCreator && (
-                                    <Button
-                                        onClick={handleInviteUsers}
-                                        style={{
-                                            backgroundColor: colors.secondary,
-                                            color: colors.white,
-                                            border: 'none',
-                                            padding: '12px 24px',
-                                            borderRadius: borderRadius.md,
-                                            cursor: 'pointer',
-                                            fontSize: typography.fontSize.base,
-                                            fontWeight: '600',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        Invite Users
-                                    </Button>
+                                    <>
+                                        <Button
+                                            onClick={handleInviteUsers}
+                                            style={{
+                                                backgroundColor: colors.secondary,
+                                                color: colors.white,
+                                                border: 'none',
+                                                padding: '12px 24px',
+                                                borderRadius: borderRadius.md,
+                                                cursor: 'pointer',
+                                                fontSize: typography.fontSize.base,
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            Invite Users
+                                        </Button>
+                                        
+                                        <Button
+                                            onClick={openEditForumModal}
+                                            style={{
+                                                backgroundColor: colors.primary,
+                                                color: colors.white,
+                                                border: 'none',
+                                                padding: '12px 24px',
+                                                borderRadius: borderRadius.md,
+                                                cursor: 'pointer',
+                                                fontSize: typography.fontSize.base,
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
+                                            Edit Forum
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                             
@@ -1194,13 +1319,49 @@ const ForumDetail = () => {
                             >
                                 Problems ({problems.length})
                             </button>
+                            {isCreator && (
+                                <button
+                                    onClick={() => {
+                                        setActiveTab('banned');
+                                        fetchBannedMembers();
+                                    }}
+                                    style={{
+                                        padding: '12px 24px',
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        color: activeTab === 'banned' ? colors.primary : colors.gray[600],
+                                        borderBottom: activeTab === 'banned' ? `2px solid ${colors.primary}` : '2px solid transparent',
+                                        cursor: 'pointer',
+                                        fontSize: typography.fontSize.base,
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    Banned ({bannedMembers.length})
+                                </button>
+                            )}
                         </div>
 
                         {/* Tab Content */}
                         {activeTab === 'members' && (
                             <div>
                                 {members.map((member) => (
-                                    <Card key={member.id} style={{ marginBottom: spacing.md }}>
+                                    <Card 
+                                        key={member.id} 
+                                        style={{ marginBottom: spacing.md }}
+                                        onMouseEnter={(e) => {
+                                            const dropdown = e.currentTarget.querySelector('[data-member-dropdown]');
+                                            if (dropdown && currentUser?.id === forum?.creator_id && member.role !== 'creator') {
+                                                dropdown.style.opacity = '1';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            const dropdown = e.currentTarget.querySelector('[data-member-dropdown]');
+                                            if (dropdown && showMemberDropdown !== member.id) {
+                                                dropdown.style.opacity = '0';
+                                            }
+                                        }}
+                                    >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
                                             <div style={{
                                                 width: '40px',
@@ -1229,18 +1390,128 @@ const ForumDetail = () => {
                                                     Joined {new Date(member.joined_at).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            <span style={{
-                                                backgroundColor: member.role === 'creator' ? colors.primary : 
-                                                              member.role === 'moderator' ? colors.warning : colors.gray[400],
-                                                color: colors.white,
-                                                padding: "4px 12px",
-                                                borderRadius: borderRadius.sm,
-                                                fontSize: "0.8rem",
-                                                fontWeight: "600"
-                                            }}>
-                                                {member.role === 'creator' ? 'Creator' : 
-                                                 member.role === 'moderator' ? 'Moderator' : 'Member'}
-                                            </span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                                                <span style={{
+                                                    backgroundColor: member.role === 'creator' ? colors.primary : 
+                                                                  member.role === 'moderator' ? colors.warning : colors.gray[400],
+                                                    color: colors.white,
+                                                    padding: "4px 12px",
+                                                    borderRadius: borderRadius.sm,
+                                                    fontSize: "0.8rem",
+                                                    fontWeight: "600"
+                                                }}>
+                                                    {member.role === 'creator' ? 'Creator' : 
+                                                     member.role === 'moderator' ? 'Moderator' : 'Member'}
+                                                </span>
+                                                
+                                                {/* Member Actions Dropdown - Only for forum creator and not for creator */}
+                                                {currentUser?.id === forum?.creator_id && member.role !== 'creator' && (
+                                                    <div 
+                                                        data-member-dropdown 
+                                                        style={{ 
+                                                            position: 'relative',
+                                                            opacity: 0,
+                                                            transition: 'opacity 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setShowMemberDropdown(showMemberDropdown === member.id ? null : member.id);
+                                                            }}
+                                                            style={{
+                                                                backgroundColor: 'rgba(0,0,0,0.1)',
+                                                                border: 'none',
+                                                                color: colors.gray[600],
+                                                                cursor: 'pointer',
+                                                                padding: '6px 8px',
+                                                                borderRadius: '50%',
+                                                                fontSize: '14px',
+                                                                width: '28px',
+                                                                height: '28px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s ease'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.15)';
+                                                                e.target.style.transform = 'scale(1.1)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.target.style.backgroundColor = 'rgba(0,0,0,0.1)';
+                                                                e.target.style.transform = 'scale(1)';
+                                                            }}
+                                                        >
+                                                            ⋯
+                                                        </button>
+                                                        
+                                                        {/* Dropdown Menu */}
+                                                        {showMemberDropdown === member.id && (
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                right: 0,
+                                                                top: '100%',
+                                                                backgroundColor: colors.white,
+                                                                border: `1px solid ${colors.gray[200]}`,
+                                                                borderRadius: borderRadius.md,
+                                                                boxShadow: shadows.lg,
+                                                                zIndex: 1000,
+                                                                minWidth: '120px'
+                                                            }}>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        kickMember(member.id);
+                                                                        setShowMemberDropdown(null);
+                                                                    }}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: spacing.sm,
+                                                                        border: 'none',
+                                                                        backgroundColor: 'transparent',
+                                                                        textAlign: 'left',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.8rem',
+                                                                        color: colors.gray[700]
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.target.style.backgroundColor = colors.gray[50];
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.target.style.backgroundColor = 'transparent';
+                                                                    }}
+                                                                >
+                                                                    👢 Kick Member
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        banMember(member.id);
+                                                                        setShowMemberDropdown(null);
+                                                                    }}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        padding: spacing.sm,
+                                                                        border: 'none',
+                                                                        backgroundColor: 'transparent',
+                                                                        textAlign: 'left',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.8rem',
+                                                                        color: colors.error || '#ef4444'
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.target.style.backgroundColor = colors.gray[50];
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.target.style.backgroundColor = 'transparent';
+                                                                    }}
+                                                                >
+                                                                    🚫 Ban Member
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </Card>
                                 ))}
@@ -1574,6 +1845,87 @@ const ForumDetail = () => {
                                                 pointerEvents: "none"
                                             }}>
                                                 Posted by {getDisplayName(problem.author?.username || 'Unknown')} • {new Date(problem.created_at).toLocaleDateString()}
+                                            </div>
+                                        </Card>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'banned' && (
+                            <div>
+                                {bannedMembers.length === 0 ? (
+                                    <p style={{ color: colors.gray[500], textAlign: 'center', padding: spacing.xl }}>
+                                        No banned members
+                                    </p>
+                                ) : (
+                                    bannedMembers.map((member) => (
+                                        <Card key={member.id} style={{ marginBottom: spacing.md }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
+                                                <div style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: colors.gray[400],
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: colors.white,
+                                                    fontSize: '18px',
+                                                    backgroundImage: member.user?.profile_picture ? `url(${member.user.profile_picture})` : 'none',
+                                                    backgroundSize: 'cover',
+                                                    backgroundPosition: 'center'
+                                                }}>
+                                                    {!member.user?.profile_picture && getUserInitial(member.user?.username || '?')}
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <h4 style={{ margin: "0 0 4px 0", color: colors.gray[800] }}>
+                                                        {getDisplayName(member.user?.username || 'Unknown')}
+                                                    </h4>
+                                                    <span style={{ 
+                                                        color: colors.gray[500], 
+                                                        fontSize: "0.9rem" 
+                                                    }}>
+                                                        Banned on {new Date(member.joined_at).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                                                    <span style={{
+                                                        backgroundColor: colors.error || '#ef4444',
+                                                        color: colors.white,
+                                                        padding: "4px 12px",
+                                                        borderRadius: borderRadius.sm,
+                                                        fontSize: "0.8rem",
+                                                        fontWeight: "600"
+                                                    }}>
+                                                        Banned
+                                                    </span>
+                                                    
+                                                    <Button
+                                                        onClick={() => unbanMember(member.id)}
+                                                        style={{
+                                                            backgroundColor: colors.primary,
+                                                            color: colors.white,
+                                                            border: 'none',
+                                                            padding: '8px 16px',
+                                                            borderRadius: borderRadius.sm,
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: '500',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.target.style.backgroundColor = colors.primary;
+                                                            e.target.style.opacity = '0.9';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.target.style.backgroundColor = colors.primary;
+                                                            e.target.style.opacity = '1';
+                                                        }}
+                                                    >
+                                                        Unban
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </Card>
                                     ))
@@ -1916,7 +2268,7 @@ const ForumDetail = () => {
                                                                             e.target.style.backgroundColor = 'transparent';
                                                                         }}
                                                                     >
-                                                                        📌 Pin Message
+                                                                        📍 Pin Message
                                                                     </button>
                                                                     <button
                                                                         onClick={() => {
@@ -2782,6 +3134,157 @@ const ForumDetail = () => {
                     </div>
                 </div>
             </div>
+            )}
+
+            {/* Edit Forum Modal */}
+            {showEditForumModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        backgroundColor: colors.white,
+                        borderRadius: borderRadius.lg,
+                        padding: spacing.xl,
+                        width: '500px',
+                        maxWidth: '90vw',
+                        boxShadow: shadows.xl
+                    }}>
+                        <h2 style={{
+                            fontSize: '24px',
+                            fontWeight: '600',
+                            marginBottom: spacing.lg,
+                            color: colors.gray[800]
+                        }}>
+                            Edit Forum
+                        </h2>
+                        
+                        <div style={{ marginBottom: spacing.md }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                marginBottom: spacing.sm,
+                                color: colors.gray[700]
+                            }}>
+                                Forum Name
+                            </label>
+                            <input
+                                type="text"
+                                value={editForumData.name}
+                                onChange={(e) => setEditForumData({...editForumData, name: e.target.value})}
+                                style={{
+                                    width: '100%',
+                                    padding: spacing.md,
+                                    border: `1px solid ${colors.gray[300]}`,
+                                    borderRadius: borderRadius.md,
+                                    fontSize: '16px',
+                                    outline: 'none'
+                                }}
+                                placeholder="Enter forum name"
+                            />
+                        </div>
+                        
+                        <div style={{ marginBottom: spacing.md }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                marginBottom: spacing.sm,
+                                color: colors.gray[700]
+                            }}>
+                                Description
+                            </label>
+                            <textarea
+                                value={editForumData.description}
+                                onChange={(e) => setEditForumData({...editForumData, description: e.target.value})}
+                                style={{
+                                    width: '100%',
+                                    padding: spacing.md,
+                                    border: `1px solid ${colors.gray[300]}`,
+                                    borderRadius: borderRadius.md,
+                                    fontSize: '16px',
+                                    outline: 'none',
+                                    minHeight: '100px',
+                                    resize: 'vertical'
+                                }}
+                                placeholder="Enter forum description"
+                            />
+                        </div>
+                        
+                        <div style={{ marginBottom: spacing.lg }}>
+                            <label style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: spacing.sm,
+                                cursor: 'pointer'
+                            }}>
+                                <input
+                                    type="checkbox"
+                                    checked={editForumData.is_private}
+                                    onChange={(e) => setEditForumData({...editForumData, is_private: e.target.checked})}
+                                    style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        cursor: 'pointer'
+                                    }}
+                                />
+                                <span style={{
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    color: colors.gray[700]
+                                }}>
+                                    Private Forum (requires approval to join)
+                                </span>
+                            </label>
+                        </div>
+                        
+                        <div style={{
+                            display: 'flex',
+                            gap: spacing.md,
+                            justifyContent: 'flex-end'
+                        }}>
+                            <Button
+                                onClick={() => setShowEditForumModal(false)}
+                                style={{
+                                    backgroundColor: colors.gray[400],
+                                    color: colors.white,
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: borderRadius.md,
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={updateForum}
+                                style={{
+                                    backgroundColor: colors.primary,
+                                    color: colors.white,
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: borderRadius.md,
+                                    cursor: 'pointer',
+                                    fontSize: '16px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Save Changes
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             <style jsx>{`

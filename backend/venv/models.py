@@ -173,6 +173,7 @@ class ForumMembership(Base):
     role = Column(String, default="member")  # 'creator', 'moderator', 'member'
     joined_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    is_banned = Column(Boolean, default=False)  # Temporarily commented out until migration is applied
     
     # Relationships
     forum = relationship("Forum", back_populates="members")
