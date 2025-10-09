@@ -195,7 +195,7 @@ const AdminForums = () => {
                         className="admin-btn secondary"
                         onClick={() => {
                           // Navigate to forum detail or open in new tab
-                          window.open(`/forums/${forum.id}`, '_blank');
+                          window.open(`/forum/${forum.id}`, '_blank');
                         }}
                       >
                         View

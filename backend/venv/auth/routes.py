@@ -16,6 +16,12 @@ from datetime import datetime, timedelta
 
 def check_forum_permission(db: Session, forum_id: int, user_id: int, required_permission: str):
     """Check if user has required permission in forum"""
+    # First check if user is a site admin/moderator
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.role in ['admin', 'moderator']:
+        return True  # Site admins/moderators have full access to all forums
+    
+    # Then check forum membership
     membership = db.query(ForumMembership).filter(
         ForumMembership.forum_id == forum_id,
         ForumMembership.user_id == user_id,
@@ -424,23 +430,27 @@ def get_problem(problem_id: int, current_user: User = Depends(get_current_user),
         raise HTTPException(status_code=404, detail="Problem not found")
     problem, comment_count = result
     
-    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    # SECURITY CHECK: If problem is from a forum, check if user is a member (or admin/moderator)
     if problem.forum_id:
-        # Check if user is the problem author (they should always have access to their own problems)
-        is_author = problem.author_id == current_user.id
-        
-        # Check if user is a member (active or creator)
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == problem.forum_id,
-            ForumMembership.user_id == current_user.id
-        ).first()
-        
-        # Also check if user is the forum creator
-        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
-        is_creator = forum and forum.creator_id == current_user.id
-        
-        if not is_author and not membership and not is_creator:
-            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
+        # Check if user is admin/moderator (they have access to all forum problems)
+        if current_user.role in ['admin', 'moderator']:
+            pass  # Admin/moderator has access
+        else:
+            # Check if user is the problem author (they should always have access to their own problems)
+            is_author = problem.author_id == current_user.id
+            
+            # Check if user is a member (active or creator)
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == problem.forum_id,
+                ForumMembership.user_id == current_user.id
+            ).first()
+            
+            # Also check if user is the forum creator
+            forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+            is_creator = forum and forum.creator_id == current_user.id
+            
+            if not is_author and not membership and not is_creator:
+                raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     
     # Fetch the author
@@ -615,23 +625,27 @@ def get_comments(problem_id: int, current_user: User = Depends(get_current_user)
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     
-    # SECURITY CHECK: If problem is from a forum, check if user is a member
+    # SECURITY CHECK: If problem is from a forum, check if user is a member (or admin/moderator)
     if problem.forum_id:
-        # Check if user is the problem author (they should always have access to their own problems)
-        is_author = problem.author_id == current_user.id
-        
-        # Check if user is a member (active or creator)
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == problem.forum_id,
-            ForumMembership.user_id == current_user.id
-        ).first()
-        
-        # Also check if user is the forum creator
-        forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
-        is_creator = forum and forum.creator_id == current_user.id
-        
-        if not is_author and not membership and not is_creator:
-            raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
+        # Check if user is admin/moderator (they have access to all forum problems)
+        if current_user.role in ['admin', 'moderator']:
+            pass  # Admin/moderator has access
+        else:
+            # Check if user is the problem author (they should always have access to their own problems)
+            is_author = problem.author_id == current_user.id
+            
+            # Check if user is a member (active or creator)
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == problem.forum_id,
+                ForumMembership.user_id == current_user.id
+            ).first()
+            
+            # Also check if user is the forum creator
+            forum = db.query(Forum).filter(Forum.id == problem.forum_id).first()
+            is_creator = forum and forum.creator_id == current_user.id
+            
+            if not is_author and not membership and not is_creator:
+                raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
     # Get top-level comments (no parent) first, then manually load author info
     top_level_comments = db.query(Comment).filter(
@@ -2242,8 +2256,8 @@ def update_forum(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    # Check if user is the creator
-    if forum.creator_id != current_user.id:
+    # Check if user is the creator or admin/moderator
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can update the forum")
     
     # Validate tags if provided
@@ -2343,13 +2357,17 @@ def get_forum(
     
     # Check if user can access this forum
     if forum.is_private:
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == forum_id,
-            ForumMembership.user_id == current_user.id,
-            ForumMembership.is_active == True
-        ).first()
-        if not membership:
-            raise HTTPException(status_code=403, detail="Access denied to private forum")
+        # Site admins/moderators have access to all forums
+        if current_user.role in ['admin', 'moderator']:
+            pass  # Allow access
+        else:
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == forum_id,
+                ForumMembership.user_id == current_user.id,
+                ForumMembership.is_active == True
+            ).first()
+            if not membership:
+                raise HTTPException(status_code=403, detail="Access denied to private forum")
     
     # Add member count
     member_count = db.query(ForumMembership).filter(
@@ -2461,15 +2479,16 @@ def get_forum_members(
     if banned_membership:
         raise HTTPException(status_code=403, detail="You are banned from this forum")
     
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     members = db.query(ForumMembership).options(
         selectinload(ForumMembership.user)
@@ -2489,15 +2508,16 @@ def create_forum_problem(
     db: Session = Depends(get_db)
 ):
     """Create a problem in a forum"""
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to post problems")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to post problems")
     
     # Create problem with forum_id
     problem_data = problem.dict()
@@ -2561,15 +2581,16 @@ def get_forum_problems(
     if banned_membership:
         raise HTTPException(status_code=403, detail="You are banned from this forum")
     
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to view problems")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to view problems")
     
     problems = db.query(Problem).filter(
         Problem.forum_id == forum_id
@@ -2615,15 +2636,16 @@ def send_message(
 ):
     """Send a message to a forum"""
     
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to send messages")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to send messages")
     
     db_message = ForumMessage(
         forum_id=forum_id,
@@ -2662,15 +2684,16 @@ def get_messages(
     if banned_membership:
         raise HTTPException(status_code=403, detail="You are banned from this forum")
     
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to view messages")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to view messages")
     
     messages = db.query(ForumMessage).options(
         selectinload(ForumMessage.author)
@@ -2690,15 +2713,16 @@ def edit_message(
     db: Session = Depends(get_db)
 ):
     """Edit a message"""
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
-    
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to edit messages")
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to edit messages")
     
     message = db.query(ForumMessage).filter(
         ForumMessage.id == message_id,
@@ -2724,21 +2748,29 @@ def delete_message(
     db: Session = Depends(get_db)
 ):
     """Delete a message"""
-    # Check if user is a member
-    membership = db.query(ForumMembership).filter(
-        ForumMembership.forum_id == forum_id,
-        ForumMembership.user_id == current_user.id,
-        ForumMembership.is_active == True
-    ).first()
+    # Check if user is a member (or admin/moderator)
+    if current_user.role not in ['admin', 'moderator']:
+        membership = db.query(ForumMembership).filter(
+            ForumMembership.forum_id == forum_id,
+            ForumMembership.user_id == current_user.id,
+            ForumMembership.is_active == True
+        ).first()
+        
+        if not membership:
+            raise HTTPException(status_code=403, detail="Must be a member to delete messages")
     
-    if not membership:
-        raise HTTPException(status_code=403, detail="Must be a member to delete messages")
-    
-    message = db.query(ForumMessage).filter(
-        ForumMessage.id == message_id,
-        ForumMessage.forum_id == forum_id,
-        ForumMessage.author_id == current_user.id
-    ).first()
+    # Find the message - admins can delete any message, others can only delete their own
+    if current_user.role in ['admin', 'moderator']:
+        message = db.query(ForumMessage).filter(
+            ForumMessage.id == message_id,
+            ForumMessage.forum_id == forum_id
+        ).first()
+    else:
+        message = db.query(ForumMessage).filter(
+            ForumMessage.id == message_id,
+            ForumMessage.forum_id == forum_id,
+            ForumMessage.author_id == current_user.id
+        ).first()
     
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
@@ -2762,8 +2794,8 @@ def invite_user_to_forum(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    # Check if current user is the creator
-    if forum.creator_id != current_user.id:
+    # Check if current user is the creator or admin/moderator
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can send invitations")
     
     # Check if invitee exists
@@ -3033,8 +3065,8 @@ def get_forum_join_requests(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    # Check if current user is the creator
-    if forum.creator_id != current_user.id:
+    # Check if current user is the creator or admin/moderator
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can view join requests")
     
     requests = db.query(ForumJoinRequest).options(
@@ -3056,7 +3088,7 @@ def accept_join_request(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    if forum.creator_id != current_user.id:
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can accept requests")
     
     # Check if request exists
@@ -3114,7 +3146,7 @@ def decline_join_request(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    if forum.creator_id != current_user.id:
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can decline requests")
     
     # Check if request exists
@@ -3156,7 +3188,7 @@ def get_users_for_invitation(
     if not forum:
         raise HTTPException(status_code=404, detail="Forum not found")
     
-    if forum.creator_id != current_user.id:
+    if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
         raise HTTPException(status_code=403, detail="Only the forum creator can invite users")
     
     # Get existing members to exclude them
@@ -3926,7 +3958,7 @@ async def ban_member(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
+        if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
             raise HTTPException(status_code=403, detail="Only forum creator can ban members")
         
         # Get the membership
@@ -3994,8 +4026,8 @@ async def unban_member(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        # Check if user is the creator
-        if forum.creator_id != current_user.id:
+        # Check if user is the creator or admin/moderator
+        if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
             raise HTTPException(status_code=403, detail="Only the forum creator can unban members")
         
         # Get membership
@@ -4037,8 +4069,8 @@ async def assign_member_role(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        # Check if user is the creator
-        if forum.creator_id != current_user.id:
+        # Check if user is the creator or admin/moderator
+        if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
             raise HTTPException(status_code=403, detail="Only the forum creator can assign roles")
         
         # Get membership
@@ -4081,15 +4113,16 @@ async def get_message_replies(
 ):
     """Get all replies to a specific message"""
     try:
-        # Check if user has access to forum
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == forum_id,
-            ForumMembership.user_id == current_user.id,
-            ForumMembership.is_active == True
-        ).first()
-        
-        if not membership:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Check if user has access to forum (or is admin/moderator)
+        if current_user.role not in ['admin', 'moderator']:
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == forum_id,
+                ForumMembership.user_id == current_user.id,
+                ForumMembership.is_active == True
+            ).first()
+            
+            if not membership:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         # Get replies
         replies = db.query(ForumReply).options(
@@ -4116,15 +4149,16 @@ async def create_message_reply(
 ):
     """Create a reply to a message"""
     try:
-        # Check if user has access to forum
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == forum_id,
-            ForumMembership.user_id == current_user.id,
-            ForumMembership.is_active == True
-        ).first()
-        
-        if not membership:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Check if user has access to forum (or is admin/moderator)
+        if current_user.role not in ['admin', 'moderator']:
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == forum_id,
+                ForumMembership.user_id == current_user.id,
+                ForumMembership.is_active == True
+            ).first()
+            
+            if not membership:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         # Verify parent message exists
         parent_message = db.query(ForumMessage).filter(
@@ -4167,15 +4201,16 @@ async def delete_reply(
 ):
     """Delete a reply (author or moderator/creator only)"""
     try:
-        # Check if user has access to forum
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == forum_id,
-            ForumMembership.user_id == current_user.id,
-            ForumMembership.is_active == True
-        ).first()
-        
-        if not membership:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Check if user has access to forum (or is admin/moderator)
+        if current_user.role not in ['admin', 'moderator']:
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == forum_id,
+                ForumMembership.user_id == current_user.id,
+                ForumMembership.is_active == True
+            ).first()
+            
+            if not membership:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         # Get reply
         reply = db.query(ForumReply).filter(
@@ -4217,15 +4252,16 @@ async def get_reply_count(
 ):
     """Get reply count for a message"""
     try:
-        # Check if user has access to forum
-        membership = db.query(ForumMembership).filter(
-            ForumMembership.forum_id == forum_id,
-            ForumMembership.user_id == current_user.id,
-            ForumMembership.is_active == True
-        ).first()
-        
-        if not membership:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Check if user has access to forum (or is admin/moderator)
+        if current_user.role not in ['admin', 'moderator']:
+            membership = db.query(ForumMembership).filter(
+                ForumMembership.forum_id == forum_id,
+                ForumMembership.user_id == current_user.id,
+                ForumMembership.is_active == True
+            ).first()
+            
+            if not membership:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         # Get reply count
         count = db.query(ForumReply).filter(
@@ -4255,7 +4291,7 @@ async def update_forum(
         if not forum:
             raise HTTPException(status_code=404, detail="Forum not found")
         
-        if forum.creator_id != current_user.id:
+        if forum.creator_id != current_user.id and current_user.role not in ['admin', 'moderator']:
             raise HTTPException(status_code=403, detail="Only forum creator can update forum")
         
         # Update forum fields

@@ -1207,17 +1207,24 @@ const ForumDetail = () => {
         );
     }
 
-    const isMember = members.some(member => member.user_id === currentUser?.id && member.is_active);
-    const isCreator = members.some(member => member.user_id === currentUser?.id && member.role === 'creator');
+    const isMember = members.some(member => member.user_id === currentUser?.id && member.is_active) || 
+                     (currentUser?.role === 'admin' || currentUser?.role === 'moderator');
+    const isCreator = members.some(member => member.user_id === currentUser?.id && member.role === 'creator') ||
+                      currentUser?.role === 'admin';
     
     // Check user permissions
     const getUserRole = () => {
+        // Site admins have full permissions
+        if (currentUser?.role === 'admin') return 'admin';
+        if (currentUser?.role === 'moderator') return 'moderator';
+        
         const userMembership = members.find(member => member.user_id === currentUser?.id);
         return userMembership?.role || 'member';
     };
     
     const hasPermission = (permission) => {
         const userRole = getUserRole();
+        if (userRole === 'admin') return true; // Site admins have all permissions
         if (userRole === 'creator') return true;
         if (userRole === 'moderator') return ['pin', 'moderate', 'kick'].includes(permission);
         if (userRole === 'helper') return ['pin'].includes(permission);
@@ -1227,6 +1234,9 @@ const ForumDetail = () => {
     const canManageMember = (targetMember) => {
         const userRole = getUserRole();
         const targetRole = targetMember.role;
+        
+        // Site admins can manage everyone
+        if (userRole === 'admin') return true;
         
         // Creator can manage everyone except themselves
         if (userRole === 'creator') return targetRole !== 'creator';
