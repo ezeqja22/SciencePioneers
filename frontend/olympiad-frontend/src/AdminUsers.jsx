@@ -97,6 +97,18 @@ const AdminUsers = () => {
         await axios.delete(`http://127.0.0.1:8000/admin/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+      } else if (action === 'unban') {
+        await axios.post(`http://127.0.0.1:8000/admin/users/${userId}/unban`, {
+          reason: 'Unbanned from admin panel'
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } else if (action === 'activate') {
+        await axios.post(`http://127.0.0.1:8000/admin/users/${userId}/activate`, {
+          reason: 'Activated from admin panel'
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
       
       // Refresh the users list
@@ -237,10 +249,7 @@ const AdminUsers = () => {
                         onClick={() => {
                           if (user.is_banned) {
                             // Unban user
-                            handleUserAction(user.id, 'update', { 
-                              is_banned: false,
-                              ban_reason: null
-                            });
+                            handleUserAction(user.id, 'unban');
                           } else {
                             // Ban user - ask for reason
                             const reason = prompt('Enter ban reason (optional):');
@@ -257,7 +266,11 @@ const AdminUsers = () => {
                       <button
                         className={`admin-btn ${user.is_active ? 'warning' : 'success'}`}
                         onClick={() => {
-                          handleUserAction(user.id, 'update', { is_active: !user.is_active });
+                          if (user.is_active) {
+                            handleUserAction(user.id, 'update', { is_active: false });
+                          } else {
+                            handleUserAction(user.id, 'activate');
+                          }
                         }}
                       >
                         {user.is_active ? 'Deactivate' : 'Activate'}

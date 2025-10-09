@@ -459,6 +459,23 @@ function Header({ showHomeButton = false }) {
                                     ⚙️ Settings
                                     </div>
                                 </Link>
+                                {(currentUser.role === 'admin' || currentUser.role === 'moderator') && (
+                                    <Link to="/admin" style={{ textDecoration: "none" }}>
+                                        <div style={{
+                                            padding: `${spacing.md} ${spacing.md}`,
+                                            color: colors.primary,
+                                            cursor: "pointer",
+                                            transition: "background-color 0.2s",
+                                            borderBottom: `1px solid ${colors.gray[200]}`,
+                                            fontWeight: typography.fontWeight.medium
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                                        >
+                                        🛠️ Admin Panel
+                                        </div>
+                                    </Link>
+                                )}
                                 <button
                                     onClick={handleLogout}
                                     style={{

@@ -13,6 +13,7 @@ import { getUserInitial, getDisplayName } from './utils';
 import ForumProblemModal from './ForumProblemModal';
 import ForumProblemCard from './ForumProblemCard';
 import ForumInviteModal from './ForumInviteModal';
+import ReportModal from './ReportModal';
 
 // CSS for typing animation and new message indicator
 const typingAnimation = `
@@ -121,6 +122,8 @@ const ForumDetail = () => {
     const [showMessageDropdown, setShowMessageDropdown] = useState(null);
     const [showMemberDropdown, setShowMemberDropdown] = useState(null);
     const [showEditForumModal, setShowEditForumModal] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportTarget, setReportTarget] = useState(null);
     const [editForumData, setEditForumData] = useState({
         name: '',
         description: '',
@@ -2649,6 +2652,36 @@ const ForumDetail = () => {
                                                                             🗑️ Delete Message
                                                                         </button>
                                                                     )}
+                                                                    {/* Report Option - Available to all users */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setReportTarget({
+                                                                                type: 'message',
+                                                                                id: message.id,
+                                                                                user: message.author
+                                                                            });
+                                                                            setShowReportModal(true);
+                                                                            setShowMessageDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.error || '#ef4444'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        🚨 Report Message
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -3709,6 +3742,20 @@ const ForumDetail = () => {
                     }
                 }
             `}</style>
+
+            {/* Report Modal */}
+            {showReportModal && reportTarget && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setReportTarget(null);
+                    }}
+                    reportType={reportTarget.type}
+                    targetId={reportTarget.id}
+                    targetUser={reportTarget.user}
+                />
+            )}
         </div>
     );
 };

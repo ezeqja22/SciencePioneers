@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from database import get_db
-from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft, UserOnlineStatus, ForumReply
+from models import User, Problem, Comment, Vote, Bookmark, Follow, ProblemImage, Notification, NotificationPreferences, Forum, ForumMembership, ForumMessage, ForumInvitation, ForumJoinRequest, Draft, UserOnlineStatus, ForumReply, SiteReport
 from auth.utils import hash_password, verify_password, create_jwt
 from auth.dependencies import get_current_user, get_verified_user
 from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, UserUpdate, PasswordVerifyRequest, PasswordChangeRequest, ForgotPasswordRequest, ResetPasswordRequest
@@ -4309,4 +4309,154 @@ async def update_forum(
         raise
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Report Endpoints
+@router.post("/reports/comment")
+async def report_comment(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Report a comment"""
+    try:
+        body = await request.json()
+        comment_id = body.get("comment_id")
+        category = body.get("category")
+        description = body.get("description")
+        
+        if not comment_id:
+            raise HTTPException(status_code=400, detail="Comment ID is required")
+        
+        # Check if comment exists
+        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        
+        # Create report
+        report = SiteReport(
+            reporter_id=current_user.id,
+            report_type="comment",
+            target_id=comment_id,
+            reason=category,
+            description=description,
+            status="pending"
+        )
+        
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        
+        return {"message": "Report submitted successfully", "report_id": report.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reports/message")
+async def report_message(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Report a forum message"""
+    try:
+        body = await request.json()
+        message_id = body.get("message_id")
+        category = body.get("category")
+        description = body.get("description")
+        
+        if not message_id:
+            raise HTTPException(status_code=400, detail="Message ID is required")
+        
+        # Check if message exists
+        message = db.query(ForumMessage).filter(ForumMessage.id == message_id).first()
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        # Create report
+        report = SiteReport(
+            reporter_id=current_user.id,
+            report_type="message",
+            target_id=message_id,
+            reason=category,
+            description=description,
+            status="pending"
+        )
+        
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        
+        return {"message": "Report submitted successfully", "report_id": report.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reports/user")
+async def report_user(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Report a user"""
+    try:
+        body = await request.json()
+        user_id = body.get("user_id")
+        category = body.get("category")
+        description = body.get("description")
+        
+        if not user_id:
+            raise HTTPException(status_code=400, detail="User ID is required")
+        
+        # Check if user exists
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Prevent self-reporting
+        if user_id == current_user.id:
+            raise HTTPException(status_code=400, detail="Cannot report yourself")
+        
+        # Create report
+        report = SiteReport(
+            reporter_id=current_user.id,
+            report_type="user",
+            target_id=user_id,
+            reason=category,
+            description=description,
+            status="pending"
+        )
+        
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        
+        return {"message": "Report submitted successfully", "report_id": report.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/reports/my-reports")
+async def get_my_reports(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's submitted reports"""
+    try:
+        reports = db.query(SiteReport).filter(
+            SiteReport.reporter_id == current_user.id
+        ).order_by(SiteReport.created_at.desc()).all()
+        
+        return {"reports": reports}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

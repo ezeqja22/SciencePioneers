@@ -326,15 +326,38 @@ class SiteReport(Base):
     target_id = Column(Integer, nullable=False)  # ID of reported content
     reason = Column(String, nullable=False)  # 'spam', 'inappropriate', 'harassment', etc.
     description = Column(Text, nullable=True)
-    status = Column(String, default="pending")  # 'pending', 'reviewed', 'resolved', 'dismissed'
+    status = Column(String, default="pending")  # 'pending', 'under_review', 'resolved', 'dismissed'
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)  # Who is handling the report
+    investigation_notes = Column(Text, nullable=True)  # Notes from investigation
     reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     resolution = Column(Text, nullable=True)
+    email_sent = Column(Boolean, default=False)  # Whether email was sent to reporter
+    email_content = Column(Text, nullable=True)  # Content of email sent
+    email_sent_at = Column(DateTime, nullable=True)  # When email was sent
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     reporter = relationship("User", foreign_keys=[reporter_id])
     reviewer = relationship("User", foreign_keys=[reviewed_by])
+    assignee = relationship("User", foreign_keys=[assigned_to])
+
+class UserModerationHistory(Base):
+    __tablename__ = "user_moderation_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # User who was moderated
+    moderator_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Admin/mod who took action
+    action_type = Column(String, nullable=False)  # 'warn', 'ban', 'unban', 'deactivate', 'activate', 'time_ban'
+    reason = Column(Text, nullable=False)  # Reason for the action
+    duration = Column(Integer, nullable=True)  # Duration in days for time-limited bans
+    report_id = Column(Integer, ForeignKey("site_reports.id"), nullable=True)  # Related report if any
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    moderator = relationship("User", foreign_keys=[moderator_id])
+    report = relationship("SiteReport")
 
 class SystemSettings(Base):
     __tablename__ = "system_settings"

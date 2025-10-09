@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ReportDetailsModal from './ReportDetailsModal';
 import './AdminLayout.css';
 
 const AdminReports = () => {
@@ -11,10 +12,26 @@ const AdminReports = () => {
     status: '',
     page: 1
   });
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     fetchReports();
+    fetchCurrentUser();
   }, [filters]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://127.0.0.1:8000/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCurrentUser(response.data);
+    } catch (err) {
+      console.error('Failed to fetch current user:', err);
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -62,10 +79,37 @@ const AdminReports = () => {
       
       // Refresh the reports list
       fetchReports();
+      alert('Report resolved successfully');
     } catch (err) {
       console.error('Resolve report error:', err);
-      alert('Failed to resolve report');
+      alert(`Failed to resolve report: ${err.response?.data?.detail || err.message}`);
     }
+  };
+
+  const handleDismissReport = async (reportId, reason) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, 
+        { reason }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Refresh the reports list
+      fetchReports();
+      alert('Report dismissed successfully');
+    } catch (err) {
+      console.error('Dismiss report error:', err);
+      alert(`Failed to dismiss report: ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleViewReport = (reportId) => {
+    setSelectedReportId(reportId);
+    setShowReportModal(true);
+  };
+
+  const handleReportUpdate = () => {
+    fetchReports();
   };
 
   const getStatusBadge = (status) => {
@@ -138,7 +182,7 @@ const AdminReports = () => {
             >
               <option value="">All Reports</option>
               <option value="pending">Pending</option>
-              <option value="reviewed">Reviewed</option>
+              <option value="under_review">Under Review</option>
               <option value="resolved">Resolved</option>
               <option value="dismissed">Dismissed</option>
             </select>
@@ -215,41 +259,27 @@ const AdminReports = () => {
                   <td>{getStatusBadge(report.status)}</td>
                   <td>{formatDate(report.created_at)}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {report.status === 'pending' && (
-                        <>
-                          <button
-                            className="admin-btn success"
-                            onClick={() => {
-                              const resolution = prompt('Enter resolution details:');
-                              if (resolution) {
-                                handleResolveReport(report.id, resolution);
-                              }
-                            }}
-                          >
-                            Resolve
-                          </button>
-                          
-                          <button
-                            className="admin-btn warning"
-                            onClick={() => {
-                              const resolution = prompt('Enter dismissal reason:');
-                              if (resolution) {
-                                handleResolveReport(report.id, `Dismissed: ${resolution}`);
-                              }
-                            }}
-                          >
-                            Dismiss
-                          </button>
-                        </>
-                      )}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button
+                        className="admin-btn primary"
+                        onClick={() => handleViewReport(report.id)}
+                        style={{
+                          backgroundColor: '#007bff',
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem'
+                        }}
+                      >
+                        View Details
+                      </button>
                       
-                      {report.status === 'resolved' && report.reviewer && (
-                        <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
-                          Resolved by {report.reviewer}
-                          <br />
-                          {formatDate(report.reviewed_at)}
-                        </div>
+                      {report.assigned_to && (
+                        <span style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+                          Assigned to {report.assigned_to}
+                        </span>
                       )}
                     </div>
                   </td>
@@ -300,6 +330,20 @@ const AdminReports = () => {
               Next
             </button>
           </div>
+        )}
+
+        {/* Report Details Modal */}
+        {showReportModal && (
+          <ReportDetailsModal
+            isOpen={showReportModal}
+            onClose={() => {
+              setShowReportModal(false);
+              setSelectedReportId(null);
+            }}
+            reportId={selectedReportId}
+            currentUser={currentUser}
+            onReportUpdate={handleReportUpdate}
+          />
         )}
       </div>
     </div>

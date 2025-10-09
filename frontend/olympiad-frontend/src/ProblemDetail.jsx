@@ -13,6 +13,7 @@ import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { getUserInitial, getDisplayName } from "./utils";
+import ReportModal from "./ReportModal";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -47,6 +48,7 @@ const CommentThread = ({
     replyText,
     setReplyText,
     onSubmitReply,
+    onReportComment,
     depth = 0 
 }) => {
     const maxDepth = 3; // Limit nesting depth
@@ -152,6 +154,31 @@ const CommentThread = ({
                                 }}
                             >
                                 💬 Reply
+                            </button>
+                            
+                            {/* Report Comment Button */}
+                            <button
+                                onClick={() => onReportComment(comment)}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#dc3545",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    padding: "4px 0",
+                                    borderRadius: "6px",
+                                    transition: "all 0.2s ease"
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = "#f6f8fa";
+                                    e.target.style.color = "#b02a37";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "transparent";
+                                    e.target.style.color = "#dc3545";
+                                }}
+                            >
+                                🚨 Report
                             </button>
                             
                             {currentUser && currentUser.id === comment.author_id && (
@@ -353,6 +380,7 @@ const CommentThread = ({
                                 replyText={replyText}
                                 setReplyText={setReplyText}
                                 onSubmitReply={onSubmitReply}
+                                onReportComment={onReportComment}
                                 depth={depth + 1}
                             />
                         </div>
@@ -445,6 +473,8 @@ function ProblemDetail() {
     });
     const [editTags, setEditTags] = useState([""]);
     const [problemImages, setProblemImages] = useState([]);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportTarget, setReportTarget] = useState(null);
 
     const openMathEditor = (target) => {
         setMathEditorTarget(target);
@@ -737,6 +767,15 @@ function ProblemDetail() {
         } catch (error) {
             console.error("Error deleting comment:", error);
         }
+    }
+
+    const handleReportComment = (comment) => {
+        setReportTarget({
+            type: 'comment',
+            id: comment.id,
+            user: comment.author
+        });
+        setShowReportModal(true);
     }
 
     const handleMarkAsSolution = async (commentId) => {
@@ -1830,6 +1869,7 @@ function ProblemDetail() {
                         replyText={replyText}
                         setReplyText={setReplyText}
                         onSubmitReply={handleSubmitReply}
+                        onReportComment={handleReportComment}
                     />
     ))}
             </div>
@@ -1981,6 +2021,20 @@ function ProblemDetail() {
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
+            )}
+
+            {/* Report Modal */}
+            {showReportModal && reportTarget && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    onClose={() => {
+                        setShowReportModal(false);
+                        setReportTarget(null);
+                    }}
+                    reportType={reportTarget.type}
+                    targetId={reportTarget.id}
+                    targetUser={reportTarget.user}
+                />
             )}
         </Layout>
     );

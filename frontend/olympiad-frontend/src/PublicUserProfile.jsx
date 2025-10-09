@@ -7,6 +7,7 @@ import Button from './components/Button';
 import BackButton from './components/BackButton';
 import AnimatedLoader from './components/AnimatedLoader';
 import FollowButton from './components/FollowButton';
+import ReportModal from './ReportModal';
 import { colors, spacing, typography, borderRadius } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -40,6 +41,7 @@ const PublicUserProfile = () => {
     const [following, setFollowing] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [voteData, setVoteData] = useState({});
+    const [showReportModal, setShowReportModal] = useState(false);
 
     useEffect(() => {
         fetchUserProfile();
@@ -286,14 +288,31 @@ const PublicUserProfile = () => {
                         <span><strong>{userProfile.problems.length}</strong> problems</span>
                     </div>
                 </div>
-                <FollowButton
-                    isFollowing={following}
-                    onFollow={handleFollow}
-                    onUnfollow={handleFollow}
-                    loading={followLoading}
-                    size="lg"
-                    isDeletedUser={userProfile.user.username.startsWith('__deleted_user_')}
-                />
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <FollowButton
+                        isFollowing={following}
+                        onFollow={handleFollow}
+                        onUnfollow={handleFollow}
+                        loading={followLoading}
+                        size="lg"
+                        isDeletedUser={userProfile.user.username.startsWith('__deleted_user_')}
+                    />
+                    <Button
+                        onClick={() => setShowReportModal(true)}
+                        style={{
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500'
+                        }}
+                    >
+                        🚨 Report User
+                    </Button>
+                </div>
             </div>
 
             {/* Problems */}
@@ -448,6 +467,17 @@ const PublicUserProfile = () => {
                     </div>
                 )}
             </div>
+
+            {/* Report Modal */}
+            {showReportModal && userProfile && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    onClose={() => setShowReportModal(false)}
+                    reportType="user"
+                    targetId={userProfile.user.id}
+                    targetUser={userProfile.user}
+                />
+            )}
         </Layout>
     );
 };

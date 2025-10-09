@@ -82,6 +82,12 @@ const AdminLayout = () => {
       adminOnly: false
     },
     {
+      path: '/admin/user-history',
+      label: 'User History',
+      icon: '📋',
+      adminOnly: false
+    },
+    {
       path: '/admin/email',
       label: 'Email',
       icon: '📧',

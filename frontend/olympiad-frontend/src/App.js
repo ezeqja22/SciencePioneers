@@ -25,6 +25,7 @@ import AdminDashboard from "./AdminDashboard";
 import AdminUsers from "./AdminUsers";
 import AdminForums from "./AdminForums";
 import AdminReports from "./AdminReports";
+import AdminUserHistory from "./AdminUserHistory";
 import AdminEmail from "./AdminEmail";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminSettings from "./AdminSettings";
@@ -149,6 +150,7 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="forums" element={<AdminForums />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="user-history" element={<AdminUserHistory />} />
             <Route path="email" element={<AdminEmail />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="settings" element={<AdminSettings />} />

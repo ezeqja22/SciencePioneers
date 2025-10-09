@@ -9,6 +9,11 @@ import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from models import User
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
