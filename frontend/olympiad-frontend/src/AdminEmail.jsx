@@ -7,6 +7,8 @@ const AdminEmail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [newCampaign, setNewCampaign] = useState({
     subject: '',
     content: '',
@@ -58,15 +60,51 @@ const AdminEmail = () => {
   };
 
   const getStatusBadge = (status) => {
-    const statusColors = {
-      draft: 'pending',
-      sent: 'resolved',
-      scheduled: 'active',
-      failed: 'banned'
+    const getStatusStyle = (status) => {
+      switch (status) {
+        case 'draft':
+          return {
+            background: '#fff3cd',
+            color: '#856404',
+            border: '1px solid #ffeaa7'
+          };
+        case 'sent':
+          return {
+            background: '#d1ecf1',
+            color: '#0c5460',
+            border: '1px solid #bee5eb'
+          };
+        case 'scheduled':
+          return {
+            background: '#d4edda',
+            color: '#155724',
+            border: '1px solid #c3e6cb'
+          };
+        case 'failed':
+          return {
+            background: '#f8d7da',
+            color: '#721c24',
+            border: '1px solid #f5c6cb'
+          };
+        default:
+          return {
+            background: '#e2e3e5',
+            color: '#383d41',
+            border: '1px solid #d6d8db'
+          };
+      }
     };
     
+    const style = getStatusStyle(status);
+    
     return (
-      <span className={`status-badge ${statusColors[status] || 'inactive'}`}>
+      <span style={{
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '0.8rem',
+        fontWeight: '500',
+        ...style
+      }}>
         {status}
       </span>
     );
@@ -81,6 +119,60 @@ const AdminEmail = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleSendCampaign = async (campaignId) => {
+    if (!window.confirm('Are you sure you want to send this email campaign? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}/send`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert(`Campaign sent successfully! ${response.data.message}`);
+      fetchCampaigns(); // Refresh the campaigns list
+    } catch (err) {
+      console.error('Send campaign error:', err);
+      alert(`Failed to send campaign: ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleViewCampaign = async (campaignId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setSelectedCampaign(response.data);
+      setShowViewModal(true);
+      
+    } catch (err) {
+      console.error('View campaign error:', err);
+      alert(`Failed to load campaign details: ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId) => {
+    if (!window.confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert('Campaign deleted successfully');
+      fetchCampaigns(); // Refresh the campaigns list
+    } catch (err) {
+      console.error('Delete campaign error:', err);
+      alert(`Failed to delete campaign: ${err.response?.data?.detail || err.message}`);
+    }
   };
 
   if (loading) {
@@ -152,6 +244,7 @@ const AdminEmail = () => {
                 onChange={(e) => setNewCampaign(prev => ({ ...prev, target_audience: e.target.value }))}
               >
                 <option value="all">All Users</option>
+                <option value="marketing_opt_in">Marketing Opt-in Users</option>
                 <option value="admins">Admins Only</option>
                 <option value="moderators">Moderators Only</option>
                 <option value="users">Regular Users Only</option>
@@ -203,6 +296,7 @@ const AdminEmail = () => {
                 <th>Created By</th>
                 <th>Created</th>
                 <th>Sent</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -238,6 +332,50 @@ const AdminEmail = () => {
                   <td>{campaign.created_by}</td>
                   <td>{formatDate(campaign.created_at)}</td>
                   <td>{formatDate(campaign.sent_at)}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {campaign.status === 'draft' && (
+                        <button
+                          className="admin-btn"
+                          onClick={() => handleSendCampaign(campaign.id)}
+                          style={{ 
+                            background: 'linear-gradient(135deg, #10b981, #059669)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            fontWeight: '500'
+                          }}
+                        >
+                          📧 Send
+                        </button>
+                      )}
+                      <button
+                        className="admin-btn secondary"
+                        onClick={() => handleViewCampaign(campaign.id)}
+                        style={{ 
+                          padding: '6px 12px',
+                          fontSize: '0.8rem'
+                        }}
+                      >
+                        👁️ View
+                      </button>
+                      {campaign.status === 'draft' && (
+                        <button
+                          className="admin-btn danger"
+                          onClick={() => handleDeleteCampaign(campaign.id)}
+                          style={{ 
+                            padding: '6px 12px',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          🗑️ Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -258,6 +396,181 @@ const AdminEmail = () => {
           </div>
         )}
       </div>
+
+      {/* Campaign View Modal */}
+      {showViewModal && selectedCampaign && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            width: '90vw'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{
+                margin: 0,
+                color: '#1f2937',
+                fontSize: '1.25rem',
+                fontWeight: '600'
+              }}>
+                Campaign Details
+              </h3>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedCampaign(null);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                Subject:
+              </strong>
+              <p style={{ 
+                margin: '4px 0', 
+                color: '#1f2937',
+                fontSize: '1rem',
+                fontWeight: '500'
+              }}>
+                {selectedCampaign.subject}
+              </p>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                Target Audience:
+              </strong>
+              <span style={{
+                background: '#e9ecef',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                marginLeft: '8px',
+                fontWeight: '500'
+              }}>
+                {selectedCampaign.target_audience}
+              </span>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                Status:
+              </strong>
+              <span style={{
+                background: selectedCampaign.status === 'sent' ? '#d1ecf1' : 
+                           selectedCampaign.status === 'draft' ? '#fff3cd' : 
+                           selectedCampaign.status === 'scheduled' ? '#d4edda' : '#f8d7da',
+                color: selectedCampaign.status === 'sent' ? '#0c5460' : 
+                       selectedCampaign.status === 'draft' ? '#856404' : 
+                       selectedCampaign.status === 'scheduled' ? '#155724' : '#721c24',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                marginLeft: '8px',
+                fontWeight: '500'
+              }}>
+                {selectedCampaign.status}
+              </span>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <strong style={{ color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                Recipients:
+              </strong>
+              <span style={{
+                background: '#d1ecf1',
+                color: '#0c5460',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                marginLeft: '8px',
+                fontWeight: '500'
+              }}>
+                {selectedCampaign.recipient_count} users
+              </span>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <strong style={{ color: '#374151', fontSize: '0.9rem', fontWeight: '600' }}>
+                Content:
+              </strong>
+              <div style={{
+                background: '#f8f9fa',
+                border: '1px solid #e9ecef',
+                borderRadius: '8px',
+                padding: '16px',
+                marginTop: '8px',
+                whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace',
+                fontSize: '0.9rem',
+                lineHeight: '1.5',
+                maxHeight: '200px',
+                overflowY: 'auto'
+              }}>
+                {selectedCampaign.content}
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setSelectedCampaign(null);
+                }}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#6b7280'}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
