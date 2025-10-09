@@ -3,7 +3,8 @@ import axios from 'axios';
 import './AdminLayout.css';
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]); // Store all users for filtering
+  const [users, setUsers] = useState([]); // Displayed users
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({});
@@ -16,7 +17,7 @@ const AdminUsers = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [filters]);
+  }, [filters.role, filters.status, filters.page]);
 
   const fetchUsers = async () => {
     try {
@@ -34,6 +35,7 @@ const AdminUsers = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      setAllUsers(response.data.users);
       setUsers(response.data.users);
       setPagination(response.data.pagination);
     } catch (err) {
@@ -50,6 +52,33 @@ const AdminUsers = () => {
       [key]: value,
       page: 1 // Reset to first page when filters change
     }));
+  };
+
+  // Client-side filtering function
+  const filterUsers = (searchQuery) => {
+    if (!searchQuery.trim()) {
+      setUsers(allUsers);
+      return;
+    }
+
+    const filtered = allUsers.filter(user => {
+      const searchTerm = searchQuery.toLowerCase();
+      return (
+        user.username.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+      );
+    });
+
+    setUsers(filtered);
+  };
+
+  const handleSearchChange = (value) => {
+    setFilters(prev => ({
+      ...prev,
+      search: value,
+      page: 1
+    }));
+    filterUsers(value);
   };
 
   const handlePageChange = (newPage) => {
@@ -122,7 +151,7 @@ const AdminUsers = () => {
               type="text"
               placeholder="Username or email..."
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
           <div>
