@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import models
 from database import engine
 from auth.routes import router as auth_router
+from admin_routes import router as admin_router
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from datetime import datetime, timedelta
@@ -22,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(admin_router, tags=["admin"])
 
 # Auto-cleanup function
 async def cleanup_expired_users():

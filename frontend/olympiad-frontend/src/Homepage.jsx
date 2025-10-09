@@ -419,6 +419,28 @@ function Homepage() {
                                             ⚙️ Settings
                                         </button>
                                     </Link>
+                                    {/* Admin Panel Link - Only show for admins and moderators */}
+                                    {currentUser && ['admin', 'moderator'].includes(currentUser.role) && (
+                                        <Link to="/admin" style={{ textDecoration: "none" }}>
+                                            <button style={{
+                                                width: "100%",
+                                                padding: "12px 16px",
+                                                border: "none",
+                                                backgroundColor: "transparent",
+                                                color: "#667eea",
+                                                textAlign: "left",
+                                                cursor: "pointer",
+                                                fontSize: "14px",
+                                                fontWeight: "500",
+                                                transition: "background-color 0.2s"
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                                            >
+                                                🛠️ Admin Panel
+                                            </button>
+                                        </Link>
+                                    )}
                                     <button
                                         onClick={handleLogout}
                                         style={{

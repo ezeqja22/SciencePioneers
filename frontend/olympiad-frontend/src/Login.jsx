@@ -41,6 +41,14 @@ function Login() {
             fromLogin: true 
           } 
         });
+      } 
+      // Check if it's a banned user error
+      else if (err.response?.status === 403 && errorMessage.includes("Account has been banned")) {
+        alert("🚫 " + errorMessage);
+      } 
+      // Check if it's a deactivated user error
+      else if (err.response?.status === 403 && errorMessage.includes("Account has been deactivated")) {
+        alert("⚠️ " + errorMessage);
       } else {
         alert("Login failed: " + errorMessage);
       }

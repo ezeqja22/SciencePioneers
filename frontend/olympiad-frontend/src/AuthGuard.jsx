@@ -60,6 +60,24 @@ function AuthGuard({ children }) {
         }
         setIsValidating(false);
       } catch (error) {
+        // Check if user is banned
+        if (error.response?.status === 403 && error.response?.data?.detail?.includes("Account has been banned")) {
+          // Show ban message and redirect to login
+          alert("🚫 " + error.response.data.detail);
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+        
+        // Check if user is deactivated
+        if (error.response?.status === 403 && error.response?.data?.detail?.includes("Account has been deactivated")) {
+          // Show deactivation message and redirect to login
+          alert("⚠️ " + error.response.data.detail);
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
+        
         // Token is invalid or expired
         localStorage.removeItem("token");
         if (isProtectedRoute(location.pathname)) {

@@ -218,6 +218,20 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             detail="Email not verified. Please check your email for verification code."
         )
     
+    # Check if user is active
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="Account has been deactivated"
+        )
+    
+    # Check if user is banned
+    if user.is_banned:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Account has been banned. Reason: {user.ban_reason or 'No reason provided'}"
+        )
+    
     token = create_jwt(user.id)
     return {"token": token}
 

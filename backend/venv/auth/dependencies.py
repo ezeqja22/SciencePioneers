@@ -20,7 +20,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         if not user.is_active:
-            raise HTTPException(status_code=401, detail="Account has been deleted")
+            raise HTTPException(status_code=403, detail="Account has been deactivated")
+        if user.is_banned:
+            raise HTTPException(status_code=403, detail=f"Account has been banned. Reason: {user.ban_reason or 'No reason provided'}")
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")

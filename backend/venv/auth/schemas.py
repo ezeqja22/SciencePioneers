@@ -22,6 +22,7 @@ class UserOut(BaseModel):
     email: EmailStr
     profile_picture: Optional[str] = None
     created_at: Optional[datetime] = None
+    role: Optional[str] = "user"
 
     class Config:
         from_attributes = True

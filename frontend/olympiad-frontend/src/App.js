@@ -20,6 +20,14 @@ import Settings from "./Settings";
 import ResetPassword from "./ResetPassword";
 import FollowersFollowing from "./components/FollowersFollowing";
 import AuthGuard from "./AuthGuard";
+import AdminLayout from "./AdminLayout";
+import AdminDashboard from "./AdminDashboard";
+import AdminUsers from "./AdminUsers";
+import AdminForums from "./AdminForums";
+import AdminReports from "./AdminReports";
+import AdminEmail from "./AdminEmail";
+import AdminAnalytics from "./AdminAnalytics";
+import AdminSettings from "./AdminSettings";
 
 function App() {
   return (
@@ -134,6 +142,17 @@ function App() {
           <FollowersFollowing type="following" />
           </ProtectedRoute>
           } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="forums" element={<AdminForums />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="email" element={<AdminEmail />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
         </Routes>
       </AuthGuard>
     </Router>

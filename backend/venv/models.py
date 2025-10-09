@@ -12,6 +12,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+    role = Column(String, default="user")  # 'admin', 'moderator', 'user'
     bio = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     profile_picture = Column(String, nullable=True)
@@ -20,6 +21,9 @@ class User(Base):
     verification_expires = Column(DateTime, nullable=True)
     marketing_emails = Column(Boolean, default=False)
     reset_token = Column(String, nullable=True)
+    is_banned = Column(Boolean, default=False)
+    banned_at = Column(DateTime, nullable=True)
+    ban_reason = Column(String, nullable=True)
     problems = relationship("Problem", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     votes = relationship("Vote", back_populates="user")
@@ -279,3 +283,68 @@ class ForumReply(Base):
     author = relationship("User")
     forum = relationship("Forum")
     parent_message = relationship("ForumMessage")
+
+# Admin Models
+class AdminAction(Base):
+    __tablename__ = "admin_actions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    action_type = Column(String, nullable=False)  # 'suspend_user', 'delete_forum', 'send_email', etc.
+    target_id = Column(Integer, nullable=True)  # ID of affected resource
+    target_type = Column(String, nullable=True)  # 'user', 'forum', 'problem', etc.
+    details = Column(Text, nullable=True)  # Additional details about the action
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    admin = relationship("User")
+
+class EmailCampaign(Base):
+    __tablename__ = "email_campaigns"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    subject = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    target_audience = Column(String, nullable=False)  # 'all', 'admins', 'moderators', 'users', 'specific'
+    target_user_ids = Column(JSON, nullable=True)  # For specific users
+    status = Column(String, default="draft")  # 'draft', 'sent', 'scheduled', 'failed'
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+    scheduled_at = Column(DateTime, nullable=True)
+    recipient_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    creator = relationship("User")
+
+class SiteReport(Base):
+    __tablename__ = "site_reports"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    report_type = Column(String, nullable=False)  # 'user', 'forum', 'problem', 'comment', 'message'
+    target_id = Column(Integer, nullable=False)  # ID of reported content
+    reason = Column(String, nullable=False)  # 'spam', 'inappropriate', 'harassment', etc.
+    description = Column(Text, nullable=True)
+    status = Column(String, default="pending")  # 'pending', 'reviewed', 'resolved', 'dismissed'
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    resolution = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    reporter = relationship("User", foreign_keys=[reporter_id])
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
+
+class SystemSettings(Base):
+    __tablename__ = "system_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, nullable=False)
+    value = Column(Text, nullable=True)
+    description = Column(String, nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    updater = relationship("User")
