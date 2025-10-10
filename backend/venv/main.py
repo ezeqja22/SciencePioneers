@@ -258,14 +258,14 @@ async def get_all_settings():
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
                     'updated_by': setting.updater.username if setting.updater else None
                 }
-            elif key.startswith('max_') and ('problem' in key or 'comment' in key or 'forum' in key):
-                settings_by_category['content'][key] = {
+            elif key.startswith('forum_') or key.startswith('max_forum_') or key.startswith('max_members_'):
+                settings_by_category['forum'][key] = {
                     'value': value,
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
                     'updated_by': setting.updater.username if setting.updater else None
                 }
-            elif key.startswith('forum_') or key.startswith('max_forum_'):
-                settings_by_category['forum'][key] = {
+            elif key.startswith('max_') and ('problem' in key or 'comment' in key):
+                settings_by_category['content'][key] = {
                     'value': value,
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
                     'updated_by': setting.updater.username if setting.updater else None

@@ -2288,6 +2288,32 @@ def create_forum(
     db: Session = Depends(get_db)
 ):
     """Create a new forum"""
+    # Get forum settings from database
+    from models import SystemSettings
+    forum_settings = db.query(SystemSettings).filter(
+        SystemSettings.key.in_(['max_members_per_forum', 'forum_creation_requires_approval', 'default_forum_visibility'])
+    ).all()
+    
+    settings_dict = {setting.key: setting.value for setting in forum_settings}
+    
+    # Apply default forum visibility if not specified
+    default_visibility = settings_dict.get('default_forum_visibility', 'public')
+    if default_visibility == 'private':
+        forum.is_private = True
+    elif default_visibility == 'invite_only':
+        forum.is_private = True  # Invite-only forums are also private
+    
+    # Check if forum creation requires approval
+    requires_approval = settings_dict.get('forum_creation_requires_approval', 'false') == 'true'
+    
+    # Apply max members limit from settings
+    max_members_limit = int(settings_dict.get('max_members_per_forum', '100'))
+    if forum.max_members and forum.max_members > max_members_limit:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Maximum members per forum is {max_members_limit}"
+        )
+    
     # Validate tags (max 5 tags)
     tags_list = []
     if forum.tags:
@@ -2295,15 +2321,17 @@ def create_forum(
         if len(tags_list) > 5:
             raise HTTPException(status_code=400, detail="Maximum 5 tags allowed")
     
+    # Create forum with approval status
     db_forum = Forum(
         title=forum.title,
         description=forum.description,
         creator_id=current_user.id,
         is_private=forum.is_private,
-        max_members=forum.max_members,
+        max_members=forum.max_members or max_members_limit,
         subject=forum.subject,
         level=forum.level,
-        tags=forum.tags
+        tags=forum.tags,
+        is_approved=not requires_approval  # Auto-approve if approval not required
     )
     db.add(db_forum)
     db.commit()
@@ -2318,7 +2346,14 @@ def create_forum(
     db.add(membership)
     db.commit()
     
-    return db_forum
+    # Return appropriate message based on approval status
+    if requires_approval:
+        return {
+            **db_forum.__dict__,
+            "message": "Forum created and is pending approval"
+        }
+    else:
+        return db_forum
 
 @router.put("/forums/{forum_id}", response_model=ForumSchema)
 def update_forum(
@@ -2361,8 +2396,8 @@ def get_forums(
     db: Session = Depends(get_db)
 ):
     """Get list of forums (all public forums and all private forums for discovery)"""
-    # Get all forums - public forums for everyone, private forums for discovery
-    forums = db.query(Forum).offset(skip).limit(limit).all()
+    # Get all approved forums - public forums for everyone, private forums for discovery
+    forums = db.query(Forum).filter(Forum.is_approved == True).offset(skip).limit(limit).all()
     
     # Add member count and membership status to each forum
     for forum in forums:

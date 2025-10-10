@@ -59,7 +59,6 @@ const AdminSettings = () => {
       require_approval_for_problems: { type: 'boolean', label: 'Require Approval for Problems' }
     },
     forum: {
-      max_forums_per_user: { type: 'number', label: 'Max Forums per User', min: 1, max: 50 },
       max_members_per_forum: { type: 'number', label: 'Max Members per Forum', min: 10, max: 1000 },
       forum_creation_requires_approval: { type: 'boolean', label: 'Forum Creation Requires Approval' },
       default_forum_visibility: { type: 'select', label: 'Default Forum Visibility', options: ['public', 'private', 'invite_only'] }
@@ -119,13 +118,32 @@ const AdminSettings = () => {
 
   const fetchSettings = async () => {
     try {
+      console.log('Fetching settings from backend...');
       const response = await axios.get('http://127.0.0.1:8000/get-settings');
+      console.log('Raw response from backend:', response.data);
       
-      // Settings loaded successfully
-      setSettings(response.data);
+      // Parse the nested settings structure
+      const parsedSettings = {};
+      Object.keys(response.data).forEach(category => {
+        if (response.data[category]) {
+          parsedSettings[category] = {};
+          Object.keys(response.data[category]).forEach(key => {
+            const settingData = response.data[category][key];
+            parsedSettings[category][key] = {
+              value: settingData.value || '',
+              updated_at: settingData.updated_at,
+              updated_by: settingData.updated_by
+            };
+          });
+        }
+      });
+      
+      console.log('Parsed settings:', parsedSettings);
+      console.log('Forum settings specifically:', parsedSettings.forum);
+      setSettings(parsedSettings);
     } catch (err) {
       console.error('Error fetching settings:', err);
-      alert('Failed to load settings');
+      alert('Failed to load settings: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -160,10 +178,14 @@ const AdminSettings = () => {
           });
         }
       });
+      
+      console.log('Settings to save:', settingsToSave);
+      console.log('Max members per forum value:', settingsToSave.max_members_per_forum);
 
-      await axios.post('http://127.0.0.1:8000/save-settings', {
+      const saveResponse = await axios.post('http://127.0.0.1:8000/save-settings', {
         settings: settingsToSave
       });
+      console.log('Save response:', saveResponse.data);
 
       alert('Settings saved successfully!');
     } catch (err) {
@@ -293,29 +315,60 @@ All settings are working correctly! 🎉
 
     switch (config.type) {
       case 'boolean':
+        // Check if this is a non-implemented feature
+        const nonImplementedFeatures = [
+          'auto_moderate_content', 
+          'require_approval_for_problems',
+          'forum_creation_requires_approval'
+        ];
+        const isDisabled = nonImplementedFeatures.includes(key);
+        
         return (
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            opacity: isDisabled ? 0.5 : 1,
+            cursor: isDisabled ? 'not-allowed' : 'default'
+          }}>
             <input
               type="checkbox"
               checked={value === 'true'}
-              onChange={(e) => handleSettingChange(category, key, e.target.checked.toString())}
-              style={{ transform: 'scale(1.2)' }}
+              onChange={(e) => !isDisabled && handleSettingChange(category, key, e.target.checked.toString())}
+              disabled={isDisabled}
+              style={{ 
+                transform: 'scale(1.2)',
+                cursor: isDisabled ? 'not-allowed' : 'default'
+              }}
             />
-            <span>{config.label}</span>
+            <span style={{ 
+              color: isDisabled ? '#999' : 'inherit',
+              fontStyle: isDisabled ? 'italic' : 'normal'
+            }}>
+              {config.label}
+              {isDisabled && <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>(Not implemented yet)</span>}
+            </span>
           </label>
         );
 
       case 'select':
+        // Check if this is a non-implemented feature
+        const nonImplementedSelectFeatures = [];
+        const isSelectDisabled = nonImplementedSelectFeatures.includes(key);
+        
         return (
           <select
             value={value}
-            onChange={(e) => handleSettingChange(category, key, e.target.value)}
+            onChange={(e) => !isSelectDisabled && handleSettingChange(category, key, e.target.value)}
+            disabled={isSelectDisabled}
             style={{
               width: '100%',
               padding: '8px 12px',
               border: '1px solid #d1d5db',
               borderRadius: '6px',
-              fontSize: '14px'
+              fontSize: '14px',
+              opacity: isSelectDisabled ? 0.5 : 1,
+              cursor: isSelectDisabled ? 'not-allowed' : 'default'
             }}
           >
             {config.options.map(option => (
@@ -377,18 +430,25 @@ All settings are working correctly! 🎉
         );
 
       default:
+        // Check if this is a non-implemented feature
+        const nonImplementedNumberFeatures = [];
+        const isNumberDisabled = nonImplementedNumberFeatures.includes(key);
+        
         return (
           <input
             type={config.type}
             value={value || ''}
-            onChange={(e) => handleSettingChange(category, key, e.target.value)}
+            onChange={(e) => !isNumberDisabled && handleSettingChange(category, key, e.target.value)}
             placeholder={config.placeholder}
+            disabled={isNumberDisabled}
             style={{
               width: '100%',
               padding: '8px 12px',
               border: '1px solid #d1d5db',
               borderRadius: '6px',
-              fontSize: '14px'
+              fontSize: '14px',
+              opacity: isNumberDisabled ? 0.5 : 1,
+              cursor: isNumberDisabled ? 'not-allowed' : 'default'
             }}
           />
         );

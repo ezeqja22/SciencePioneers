@@ -162,6 +162,7 @@ class Forum(Base):
     subject = Column(String, nullable=True)  # Primary subject badge
     level = Column(String, nullable=True)    # Level badge
     tags = Column(String, nullable=True)    # Up to 5 tags as comma-separated string
+    is_approved = Column(Boolean, default=True)  # Forum approval status
     created_at = Column(DateTime, default=datetime.utcnow)
     last_activity = Column(DateTime, default=datetime.utcnow)
     
