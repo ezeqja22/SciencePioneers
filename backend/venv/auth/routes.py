@@ -244,6 +244,40 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
+    # Check maintenance mode first
+    from main import get_settings_service
+    settings_service = get_settings_service(db)
+    
+    if settings_service.is_maintenance_mode():
+        # During maintenance, only allow admin/moderator login
+        user = db.query(User).filter(User.email == req.email).first()
+        
+        if not user or not verify_password(req.password, user.password_hash):
+            # Don't reveal if user exists during maintenance
+            raise HTTPException(
+                status_code=503, 
+                detail="Site is currently under maintenance. Please try again later."
+            )
+        
+        # Check if user is admin or moderator
+        if user.role not in ['admin', 'moderator']:
+            raise HTTPException(
+                status_code=503, 
+                detail="Site is currently under maintenance. Please try again later."
+            )
+        
+        # Admin/moderator can login during maintenance
+        # Reset login attempts on successful login
+        user.login_attempts = 0
+        user.locked_until = None
+        user.last_login = datetime.utcnow()
+        db.commit()
+        
+        # Create JWT token
+        token = create_jwt(user.id)
+        return {"token": token}
+    
+    # Normal login flow when not in maintenance mode
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")

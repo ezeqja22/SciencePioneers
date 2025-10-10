@@ -3,17 +3,36 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import LoginPopup from "./LoginPopup";
 import AnimatedLoader from "./components/AnimatedLoader";
+import { useSiteSettings } from "./hooks/useSiteSettings";
 
 function AuthGuard({ children }) {
   const [isValidating, setIsValidating] = useState(true);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Get site settings for maintenance mode check
+  const { siteSettings } = useSiteSettings();
 
   useEffect(() => {
     validateSession();
-  }, [location.pathname]);
+  }, [location.pathname, siteSettings]);
+
+  // Check maintenance mode
+  useEffect(() => {
+    if (siteSettings.maintenance_mode) {
+      // Allow admin access to admin routes
+      const isAdminRoute = location.pathname.startsWith('/admin');
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      
+      if (!isAdminRoute && !isAdmin) {
+        // Show maintenance message
+        return;
+      }
+    }
+  }, [siteSettings.maintenance_mode, location.pathname, currentUser]);
 
   const validateSession = async () => {
     const token = localStorage.getItem("token");
@@ -24,6 +43,14 @@ function AuthGuard({ children }) {
         location.pathname === "/login" || 
         location.pathname === "/signup" ||
         location.pathname === "/verify-email") {
+      setIsAuthenticated(false);
+      setIsValidating(false);
+      return;
+    }
+    
+    // During maintenance mode, allow login/signup pages even if not authenticated
+    if (siteSettings.maintenance_mode && 
+        (location.pathname === "/login" || location.pathname === "/signup")) {
       setIsAuthenticated(false);
       setIsValidating(false);
       return;
@@ -48,6 +75,7 @@ function AuthGuard({ children }) {
         
         if (response.data) {
           // Token is valid
+          setCurrentUser(response.data);
           setIsAuthenticated(true);
           setShowLoginPopup(false);
         } else {
@@ -119,6 +147,7 @@ function AuthGuard({ children }) {
       navigate("/homepage");
     }
   };
+
 
   // Don't show children if popup is open and user is not authenticated
   if (showLoginPopup && !isAuthenticated) {

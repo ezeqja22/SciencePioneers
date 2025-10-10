@@ -20,9 +20,7 @@ export const useSiteSettings = () => {
 
   const fetchSiteSettings = async () => {
     try {
-      console.log('Fetching site settings from:', 'http://127.0.0.1:8000/site-info');
       const response = await axios.get('http://127.0.0.1:8000/site-info');
-      console.log('Site settings response:', response.data);
       setSiteSettings(response.data);
     } catch (err) {
       console.error('Error fetching site settings:', err);

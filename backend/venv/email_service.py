@@ -261,13 +261,11 @@ class EmailService:
     def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
         try:
-            print(f"DEBUG: Attempting to send email to {to_email}")
             # Refresh settings before sending
             self.refresh_settings()
-            
+
             # Check if we have valid settings
             if not self.sender_email or not self.sender_password:
-                print(f"DEBUG: Missing email settings - sender: {self.sender_email}, password: {'***' if self.sender_password else 'None'}")
                 return False
             
             # Create message

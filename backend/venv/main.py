@@ -49,17 +49,6 @@ async def settings_middleware(request: Request, call_next):
         db = next(get_db())
         settings_service = get_settings_service(db)
         
-        # Check maintenance mode
-        if settings_service.is_maintenance_mode():
-            # Allow admin access to admin routes
-            if not request.url.path.startswith("/admin"):
-                return JSONResponse(
-                    status_code=503,
-                    content={
-                        "message": settings_service.get_setting('maintenance_message', 'Site under maintenance'),
-                        "maintenance": True
-                    }
-                )
         
         # Check feature toggles
         if request.url.path.startswith("/forums") and not settings_service.is_feature_enabled("forums"):
@@ -78,7 +67,6 @@ async def settings_middleware(request: Request, call_next):
         return response
         
     except Exception as e:
-        print(f"Settings middleware error: {e}")
         response = await call_next(request)
         return response
 
@@ -108,10 +96,8 @@ async def get_site_info():
             "maintenance_message": site_settings.get('maintenance_message', 'Site under maintenance')
         }
         
-        print("Returning site info:", result)
         return result
     except Exception as e:
-        print("Error fetching site info:", str(e))
         # Return defaults if settings service fails
         return {
             "site_name": "Science Pioneers",
@@ -140,11 +126,9 @@ async def cleanup_expired_users():
             db.delete(user)
         
         db.commit()
-        if count > 0:
-            print(f"Auto-cleanup: Deleted {count} expired unverified users")
         
     except Exception as e:
-        print(f"Auto-cleanup error: {e}")
+        pass
     finally:
         db.close()
 
@@ -366,6 +350,10 @@ async def save_settings_simple(settings_data: dict):
             updated_count += 1
         
         db.commit()
+        
+        # Refresh the settings cache
+        from settings_service import refresh_settings_cache
+        refresh_settings_cache(db)
         
         return {
             "message": f"Settings saved successfully! Updated {updated_count} settings.",

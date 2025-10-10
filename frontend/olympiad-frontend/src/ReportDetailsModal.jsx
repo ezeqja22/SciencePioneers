@@ -89,15 +89,9 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
             setInvestigationNotes(response.data.investigation_notes || '');
             setResolution(response.data.resolution || '');
             
-            console.log('Report response:', response.data);
-            console.log('Target user from response:', response.data.target_user);
-            
             // Set target user from the report data
             if (response.data.target_user) {
                 setTargetUser(response.data.target_user);
-                console.log('Set target user:', response.data.target_user);
-            } else {
-                console.log('No target_user in response, target_id is:', response.data.target_id);
             }
         } catch (err) {
             setError('Failed to load report details');
@@ -350,16 +344,6 @@ ${currentUser?.username || 'Admin'}`;
     const canResolve = isAssignedToMe && report && report.status === 'under_review';
     const canSendEmail = isAssignedToMe && report && report.status === 'resolved' && !report.email_sent;
 
-    // Debug logging
-    console.log('Report assignment debug:', {
-        reportAssignedTo: report?.assigned_to,
-        currentUserId: currentUser?.id,
-        currentUserRole: currentUser?.role,
-        isAssignedToMe,
-        reportStatus: report?.status,
-        canModerate,
-        canResolve
-    });
 
     if (loading) {
         return (

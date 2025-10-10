@@ -179,11 +179,9 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            console.log("Attempting to unpin message for forum:", forumId);
             const response = await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/unpin`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("Unpin response:", response.data);
             setPinnedMessage(null);
         } catch (error) {
             console.error("Error unpinning message:", error);

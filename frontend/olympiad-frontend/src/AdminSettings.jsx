@@ -118,9 +118,7 @@ const AdminSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      console.log('Fetching settings from backend...');
       const response = await axios.get('http://127.0.0.1:8000/get-settings');
-      console.log('Raw response from backend:', response.data);
       
       // Parse the nested settings structure
       const parsedSettings = {};
@@ -138,8 +136,6 @@ const AdminSettings = () => {
         }
       });
       
-      console.log('Parsed settings:', parsedSettings);
-      console.log('Forum settings specifically:', parsedSettings.forum);
       setSettings(parsedSettings);
     } catch (err) {
       console.error('Error fetching settings:', err);

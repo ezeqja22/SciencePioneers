@@ -23,12 +23,6 @@ function Homepage() {
     // Site settings
     const { siteSettings, loading: settingsLoading, error: settingsError } = useSiteSettings();
     
-    // Debug site settings
-    useEffect(() => {
-        console.log('Homepage - Site settings:', siteSettings);
-        console.log('Homepage - Settings loading:', settingsLoading);
-        console.log('Homepage - Settings error:', settingsError);
-    }, [siteSettings, settingsLoading, settingsError]);
     
     // Update document title, favicon, and theme when site settings change
     useEffect(() => {

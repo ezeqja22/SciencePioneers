@@ -28,12 +28,17 @@ function Login() {
 
       alert("Login successful!");
       // Replace history entry to prevent back navigation to login
-      navigate(redirectTo, { replace: true });
+      // If maintenance mode is enabled, redirect to homepage (maintenance screen will show)
+      navigate("/homepage", { replace: true });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message;
       
+      // Check if it's a maintenance mode error
+      if (err.response?.status === 503) {
+        alert("🔧 Site is currently under maintenance. Please try again later.");
+      }
       // Check if it's an email verification error
-      if (err.response?.status === 403 && errorMessage.includes("Email not verified")) {
+      else if (err.response?.status === 403 && errorMessage.includes("Email not verified")) {
         // Redirect to verification page
         navigate("/verify-email", { 
           state: { 
@@ -49,7 +54,12 @@ function Login() {
       // Check if it's a deactivated user error
       else if (err.response?.status === 403 && errorMessage.includes("Account has been deactivated")) {
         alert("⚠️ " + errorMessage);
-      } else {
+      } 
+      // Check if it's a network error
+      else if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+        alert("🌐 Unable to connect to the server. Please check your internet connection and try again.");
+      }
+      else {
         alert("Login failed: " + errorMessage);
       }
     }

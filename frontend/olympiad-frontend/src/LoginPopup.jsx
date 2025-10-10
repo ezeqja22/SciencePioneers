@@ -26,19 +26,24 @@ function LoginPopup({ isOpen, onClose, redirectTo }) {
             // Close popup
             onClose();
 
-            // Redirect to the page they originally wanted
-            if (redirectTo) {
-                navigate(redirectTo);
-            } else {
-                navigate("/homepage");
-            }
+            // Redirect to homepage (maintenance screen will show if maintenance mode is enabled)
+            navigate("/homepage");
         } catch (err) {
             const errorMessage = err.response?.data?.detail || err.message;
             
+            // Check if it's a maintenance mode error
+            if (err.response?.status === 503) {
+                setError("Site is currently under maintenance. Please try again later.");
+            }
             // Check if it's an email verification error
-            if (err.response?.status === 403 && errorMessage.includes("Email not verified")) {
+            else if (err.response?.status === 403 && errorMessage.includes("Email not verified")) {
                 setError("Please verify your email before logging in. Check your email for verification code.");
-            } else {
+            } 
+            // Check if it's a network error
+            else if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+                setError("Unable to connect to the server. Please check your internet connection and try again.");
+            }
+            else {
                 setError(errorMessage);
             }
         } finally {
