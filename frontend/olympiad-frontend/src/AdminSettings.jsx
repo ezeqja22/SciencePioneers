@@ -63,11 +63,11 @@ const AdminSettings = () => {
       forum_creation_requires_approval: { type: 'boolean', label: 'Forum Creation Requires Approval' },
       default_forum_visibility: { type: 'select', label: 'Default Forum Visibility', options: ['public', 'private', 'invite_only'] }
     },
-    notification: {
-      email_notifications_enabled: { type: 'boolean', label: 'Email Notifications' },
-      push_notifications_enabled: { type: 'boolean', label: 'Push Notifications' },
-      notification_retention_days: { type: 'number', label: 'Notification Retention (days)', min: 7, max: 365 }
-    },
+        notification: {
+          email_notifications_enabled: { type: 'boolean', label: 'Email Notifications' },
+          in_app_notifications_enabled: { type: 'boolean', label: 'In-App Notifications' },
+          notification_retention_days: { type: 'number', label: 'Notification Retention (days)', min: 7, max: 365 }
+        },
     analytics: {
       analytics_enabled: { type: 'boolean', label: 'Analytics Enabled' },
       track_user_activity: { type: 'boolean', label: 'Track User Activity' },
@@ -173,19 +173,24 @@ const AdminSettings = () => {
         if (settings[category]) {
           Object.keys(settings[category]).forEach(key => {
             if (settings[category][key]?.value !== undefined) {
-              settingsToSave[key] = settings[category][key].value;
+              // For password fields, only save if user has entered a new password
+              if (key === 'smtp_password') {
+                const passwordValue = settings[category][key].value;
+                // Only save if it's not "ENCRYPTED" and not empty
+                if (passwordValue !== 'ENCRYPTED' && passwordValue.trim() !== '') {
+                  settingsToSave[key] = passwordValue;
+                }
+              } else {
+                settingsToSave[key] = settings[category][key].value;
+              }
             }
           });
         }
       });
       
-      console.log('Settings to save:', settingsToSave);
-      console.log('Max members per forum value:', settingsToSave.max_members_per_forum);
-
       const saveResponse = await axios.post('http://127.0.0.1:8000/save-settings', {
         settings: settingsToSave
       });
-      console.log('Save response:', saveResponse.data);
 
       alert('Settings saved successfully!');
     } catch (err) {
@@ -414,19 +419,26 @@ All settings are working correctly! 🎉
 
       case 'password':
         return (
-          <input
-            type="password"
-            value={value || ''}
-            onChange={(e) => handleSettingChange(category, key, e.target.value)}
-            placeholder={value ? '••••••••' : 'Enter password'}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px'
-            }}
-          />
+          <div>
+            <input
+              type="password"
+              value={value && value !== 'ENCRYPTED' ? value : ''}
+              onChange={(e) => handleSettingChange(category, key, e.target.value)}
+              placeholder={value && value !== 'ENCRYPTED' ? '••••••••' : 'Enter password'}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px'
+              }}
+            />
+            {value === 'ENCRYPTED' && (
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                Password is encrypted. Enter a new password to change it.
+              </div>
+            )}
+          </div>
         );
 
       default:

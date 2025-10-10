@@ -414,6 +414,8 @@ function Header({ showHomeButton = false }) {
                         {/* Notification Bell */}
                         <NotificationBell />
                         
+                        {/* Removed WebSocket Status Indicator */}
+                        
                         {/* User Dropdown */}
                         <div style={{ position: "relative" }}>
                         <button

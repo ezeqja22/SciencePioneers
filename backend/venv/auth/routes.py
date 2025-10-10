@@ -660,7 +660,7 @@ def delete_problem(
 
 # Comment endpoints
 @router.post("/problems/{problem_id}/comments", response_model=CommentResponse)
-def create_comment(
+async def create_comment(
     problem_id: int,
     comment: CommentCreate,
     db: Session = Depends(get_db),
@@ -685,7 +685,7 @@ def create_comment(
     # Send notification if not the author commenting on their own problem
     if problem.author_id != current_user.id:
         notification_service = NotificationService(db)
-        notification_service.send_comment_notification(
+        await notification_service.send_comment_notification(
             user_id=problem.author_id,
             commenter_username=current_user.username,
             problem_title=problem.title
@@ -941,7 +941,7 @@ def get_vote_status(
     }
 
 @router.post("/problems/{problem_id}/vote", response_model=VoteStatusResponse)
-def vote_problem(
+async def vote_problem(
     problem_id: int,
     vote_data: dict,  # Will receive {"vote_type": "like"} or {"vote_type": "dislike"}
     db: Session = Depends(get_db),
@@ -980,7 +980,7 @@ def vote_problem(
         # Send notification if it's a like and not the author liking their own problem
         if vote_type == "like" and problem.author_id != current_user.id:
             notification_service = NotificationService(db)
-            notification_service.send_like_notification(
+            await notification_service.send_like_notification(
                 user_id=problem.author_id,
                 liker_username=current_user.username,
                 problem_title=problem.title
@@ -1328,7 +1328,7 @@ def serve_image(filename: str):
     return {"error": "File not found", "path": f"Tried: {profile_path}, {forum_path}, {problem_path}"}
 
 @router.post("/follow/{user_id}")
-def follow_user(
+async def follow_user(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -1359,7 +1359,7 @@ def follow_user(
     
     # Send notification to the user being followed
     notification_service = NotificationService(db)
-    notification_service.send_follow_notification(
+    await notification_service.send_follow_notification(
         user_id=user_id,
         follower_username=current_user.username
     )
@@ -2188,13 +2188,29 @@ def get_notification_preferences(
             email_comments=True,
             email_follows=True,
             email_marketing=current_user.marketing_emails,
+            email_forum_invitations=True,
+            email_forum_join_requests=True,
+            email_forum_deleted=True,
             in_app_likes=True,
             in_app_comments=True,
-            in_app_follows=True
+            in_app_follows=True,
+            in_app_forum_deleted=True
         )
         db.add(preferences)
         db.commit()
         db.refresh(preferences)
+    else:
+        # Ensure email forum fields exist and are not NULL
+        if preferences.email_forum_invitations is None:
+            preferences.email_forum_invitations = True
+        if preferences.email_forum_join_requests is None:
+            preferences.email_forum_join_requests = True
+        if preferences.email_forum_deleted is None:
+            preferences.email_forum_deleted = True
+        if preferences.in_app_forum_deleted is None:
+            preferences.in_app_forum_deleted = True
+            
+        db.commit()
     
     return preferences
 
@@ -2894,7 +2910,7 @@ def delete_message(
 
 # Forum Invitation Endpoints
 @router.post("/forums/{forum_id}/invite", response_model=ForumInvitationSchema)
-def invite_user_to_forum(
+async def invite_user_to_forum(
     forum_id: int,
     invitation: ForumInvitationCreate,
     current_user: User = Depends(get_current_user),
@@ -2948,7 +2964,7 @@ def invite_user_to_forum(
     
     # Send notification to invitee
     notification_service = NotificationService(db)
-    notification_service.send_forum_invitation_notification(
+    await notification_service.send_forum_invitation_notification(
         user_id=invitation.invitee_id,
         inviter_username=current_user.username,
         forum_title=forum.title,
@@ -2981,7 +2997,7 @@ def get_forum_invitations(
     return invitations
 
 @router.post("/forums/{forum_id}/invitations/{invitation_id}/accept")
-def accept_forum_invitation(
+async def accept_forum_invitation(
     forum_id: int,
     invitation_id: int,
     current_user: User = Depends(get_current_user),
@@ -3025,7 +3041,7 @@ def accept_forum_invitation(
     
     # Send notification to inviter
     notification_service = NotificationService(db)
-    notification_service.send_forum_invitation_accepted_notification(
+    await notification_service.send_forum_invitation_accepted_notification(
         user_id=invitation.inviter_id,
         invitee_username=current_user.username,
         forum_title=forum.title
@@ -3062,7 +3078,7 @@ def decline_forum_invitation(
 
 # Forum Join Request Endpoints
 @router.post("/forums/{forum_id}/request-join", response_model=ForumJoinRequestSchema)
-def request_to_join_forum(
+async def request_to_join_forum(
     forum_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -3118,7 +3134,7 @@ def request_to_join_forum(
     
     # Send notification to forum creator
     notification_service = NotificationService(db)
-    notification_service.send_forum_join_request_notification(
+    await notification_service.send_forum_join_request_notification(
         user_id=forum.creator_id,
         requester_username=current_user.username,
         forum_title=forum.title,
@@ -3188,7 +3204,7 @@ def get_forum_join_requests(
     return requests
 
 @router.post("/forums/{forum_id}/join-requests/{request_id}/accept")
-def accept_join_request(
+async def accept_join_request(
     forum_id: int,
     request_id: int,
     current_user: User = Depends(get_current_user),
@@ -3238,7 +3254,7 @@ def accept_join_request(
     
     # Send notification to requester
     notification_service = NotificationService(db)
-    notification_service.send_forum_join_request_accepted_notification(
+    await notification_service.send_forum_join_request_accepted_notification(
         user_id=request.user_id,
         forum_title=forum.title
     )
@@ -3246,7 +3262,7 @@ def accept_join_request(
     return {"message": "Join request accepted"}
 
 @router.post("/forums/{forum_id}/join-requests/{request_id}/decline")
-def decline_join_request(
+async def decline_join_request(
     forum_id: int,
     request_id: int,
     current_user: User = Depends(get_current_user),
@@ -3279,7 +3295,7 @@ def decline_join_request(
     
     # Send notification to requester
     notification_service = NotificationService(db)
-    notification_service.send_forum_join_request_declined_notification(
+    await notification_service.send_forum_join_request_declined_notification(
         user_id=request.user_id,
         forum_title=forum.title
     )
@@ -3365,7 +3381,7 @@ def get_users_for_invitation(
     return {"users": results}
 
 @router.delete("/forums/{forum_id}")
-def delete_forum(
+async def delete_forum(
     forum_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -3419,7 +3435,7 @@ def delete_forum(
     notification_service = NotificationService(db)
     for member in members:
         if member.user_id != current_user.id:  # Don't notify the creator
-            notification = notification_service.send_forum_deleted_notification(
+            notification = await notification_service.send_forum_deleted_notification(
                 user_id=member.user_id,
                 forum_title=forum.title,
                 creator_username=current_user.username

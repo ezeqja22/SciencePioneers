@@ -1,10 +1,14 @@
-from fastapi import FastAPI, Request, HTTPException
+import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi import FastAPI, Request, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import models
 from database import engine, get_db
 from auth.routes import router as auth_router
 from admin_routes import router as admin_router
+# Removed notification admin routes
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from datetime import datetime, timedelta
@@ -13,6 +17,9 @@ from models import User
 from dotenv import load_dotenv
 import os
 from settings_service import get_settings_service
+# Removed push notification service
+import jwt
+from auth.dependencies import SECRET_KEY
 
 # Load environment variables
 load_dotenv()
@@ -77,6 +84,7 @@ async def settings_middleware(request: Request, call_next):
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router, tags=["admin"])
+# Removed notification admin router
 
 # Public site info endpoint (no auth required)
 @app.get("/site-info")
@@ -238,7 +246,7 @@ async def get_all_settings():
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
                     'updated_by': setting.updater.username if setting.updater else None
                 }
-            elif key.startswith('smtp_') or key.startswith('email_'):
+            elif key.startswith('smtp_') or (key.startswith('email_') and not key.startswith('email_notifications_')):
                 # Don't return password in API response
                 if key == 'smtp_password':
                     settings_by_category['email'][key] = {
@@ -270,7 +278,7 @@ async def get_all_settings():
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
                     'updated_by': setting.updater.username if setting.updater else None
                 }
-            elif key.startswith('notification_') or key.startswith('email_notifications_') or key.startswith('push_notifications_'):
+            elif key.startswith('notification_') or key.startswith('email_notifications_') or key.startswith('in_app_notifications_') or key.startswith('push_notifications_'):
                 settings_by_category['notification'][key] = {
                     'value': value,
                     'updated_at': setting.updated_at.isoformat() if setting.updated_at else None,
@@ -328,14 +336,18 @@ async def save_settings_simple(settings_data: dict):
         from models import SystemSettings
         
         db = next(get_db())
-        settings = settings_data.get('settings', {})
+        # Handle both direct settings and nested settings
+        if 'settings' in settings_data:
+            settings = settings_data.get('settings', {})
+        else:
+            settings = settings_data
         
         # Saving settings
         
         updated_count = 0
         for key, value in settings.items():
-            # Encrypt password fields
-            if key == 'smtp_password' and value:
+            # Encrypt password fields (only if not already encrypted and not empty)
+            if key == 'smtp_password' and value and value != 'ENCRYPTED' and value.strip() != '':
                 import base64
                 value = base64.b64encode(str(value).encode('utf-8')).decode('utf-8')
             
@@ -364,3 +376,5 @@ async def save_settings_simple(settings_data: dict):
             "message": f"Failed to save settings: {str(e)}",
             "error": str(e)
         }
+
+# Removed WebSocket endpoint for push notifications

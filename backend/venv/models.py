@@ -132,6 +132,7 @@ class NotificationPreferences(Base):
     in_app_follows = Column(Boolean, default=True)
     # Forum in-app notifications (invitations and join requests are always on)
     in_app_forum_deleted = Column(Boolean, default=True)
+    # Removed push notification preferences
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="notification_preferences")

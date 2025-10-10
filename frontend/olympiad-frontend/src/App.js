@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./theme.css";
+// Removed WebSocket import
 import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Login from "./Login";
@@ -32,6 +33,8 @@ import AdminEmail from "./AdminEmail";
 import AdminAnalytics from "./AdminAnalytics";
 
 function App() {
+  // Removed WebSocket functionality
+
   return (
     <Router>
       <AuthGuard>

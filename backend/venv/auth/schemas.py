@@ -137,6 +137,7 @@ class NotificationPreferencesCreate(BaseModel):
     in_app_comments: bool = True
     in_app_follows: bool = True
     in_app_forum_deleted: bool = True
+    # Removed push notification fields
 
 class NotificationPreferencesResponse(BaseModel):
     id: int
@@ -152,6 +153,7 @@ class NotificationPreferencesResponse(BaseModel):
     in_app_comments: bool
     in_app_follows: bool
     in_app_forum_deleted: bool
+    # Removed push notification fields
     created_at: datetime
     updated_at: datetime
 

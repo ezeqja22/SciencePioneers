@@ -782,6 +782,8 @@ function Settings() {
                                         </label>
                                     </div>
                                 </div>
+
+                                {/* Removed Push Notifications */}
                             </div>
                         ) : (
                             <div style={{
