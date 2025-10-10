@@ -2307,7 +2307,7 @@ def create_forum(
     # Get forum settings from database
     from models import SystemSettings
     forum_settings = db.query(SystemSettings).filter(
-        SystemSettings.key.in_(['max_members_per_forum', 'forum_creation_requires_approval', 'default_forum_visibility'])
+        SystemSettings.key.in_(['max_members_per_forum', 'default_forum_visibility'])
     ).all()
     
     settings_dict = {setting.key: setting.value for setting in forum_settings}
@@ -2319,8 +2319,6 @@ def create_forum(
     elif default_visibility == 'invite_only':
         forum.is_private = True  # Invite-only forums are also private
     
-    # Check if forum creation requires approval
-    requires_approval = settings_dict.get('forum_creation_requires_approval', 'false') == 'true'
     
     # Apply max members limit from settings
     max_members_limit = int(settings_dict.get('max_members_per_forum', '100'))
@@ -2347,7 +2345,7 @@ def create_forum(
         subject=forum.subject,
         level=forum.level,
         tags=forum.tags,
-        is_approved=not requires_approval  # Auto-approve if approval not required
+        is_approved=True  # All forums are auto-approved
     )
     db.add(db_forum)
     db.commit()
@@ -2412,8 +2410,8 @@ def get_forums(
     db: Session = Depends(get_db)
 ):
     """Get list of forums (all public forums and all private forums for discovery)"""
-    # Get all approved forums - public forums for everyone, private forums for discovery
-    forums = db.query(Forum).filter(Forum.is_approved == True).offset(skip).limit(limit).all()
+    # Get all forums - public forums for everyone, private forums for discovery
+    forums = db.query(Forum).offset(skip).limit(limit).all()
     
     # Add member count and membership status to each forum
     for forum in forums:
