@@ -119,14 +119,9 @@ const AdminSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/admin/settings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get('http://127.0.0.1:8000/get-settings');
       
-      console.log('Raw settings response:', response.data);
-      console.log('Settings keys:', Object.keys(response.data));
-      console.log('Site settings:', response.data.site);
+      // Settings loaded successfully
       setSettings(response.data);
     } catch (err) {
       console.error('Error fetching settings:', err);
@@ -166,10 +161,8 @@ const AdminSettings = () => {
         }
       });
 
-      await axios.post('http://127.0.0.1:8000/admin/settings', {
+      await axios.post('http://127.0.0.1:8000/save-settings', {
         settings: settingsToSave
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
 
       alert('Settings saved successfully!');
@@ -236,40 +229,67 @@ const AdminSettings = () => {
     }
   };
 
-  const testSettings = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/admin/settings/test', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      const results = response.data.results;
-      const message = `
+        const testSettings = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                // Testing settings
+                
+                const response = await axios.get('http://127.0.0.1:8000/test-settings');
+                
+                // Test completed
+                
+                // Check if response has the expected structure
+                if (!response.data || !response.data.results) {
+                    throw new Error('Invalid response structure from server');
+                }
+                
+                const results = response.data.results;
+                const message = `
 🧪 Settings Test Results:
 
 ✅ Settings Loaded: ${results.settings_loaded ? 'Yes' : 'No'}
-📝 Site Name: ${results.site_name}
+📝 Site Name: ${results.site_name || 'Not Set'}
 🔧 Maintenance Mode: ${results.maintenance_mode ? 'ON' : 'OFF'}
 💬 Forums Enabled: ${results.forums_enabled ? 'Yes' : 'No'}
 📊 Problems Enabled: ${results.problems_enabled ? 'Yes' : 'No'}
 👥 Registration Enabled: ${results.registration_enabled ? 'Yes' : 'No'}
-📈 Total Settings: ${results.total_settings}
+
+📧 EMAIL SETTINGS:
+🌐 SMTP Server: ${results.smtp_server || 'Not Set'}
+🔌 SMTP Port: ${results.smtp_port || 'Not Set'}
+👤 SMTP Username: ${results.smtp_username || 'Not Set'}
+🔒 SMTP Password: ${results.smtp_password || 'Not Set'}
+🔐 Use TLS: ${results.smtp_use_tls ? 'Yes' : 'No'}
+📨 From Name: ${results.email_from_name || 'Not Set'}
+📧 From Address: ${results.email_from_address || 'Not Set'}
+
+📈 Total Settings: ${results.total_settings || 0}
 
 All settings are working correctly! 🎉
-      `;
-      
-      alert(message);
-    } catch (err) {
-      console.error('Error testing settings:', err);
-      alert('Failed to test settings');
-    }
-  };
+              `;
+                
+                alert(message);
+            } catch (err) {
+                console.error('Error testing settings:', err);
+                console.error('Error details:', err.response?.data);
+                console.error('Full response:', err.response);
+                
+                let errorMessage = 'Failed to test settings';
+                if (err.response?.data?.detail) {
+                    errorMessage += `: ${err.response.data.detail}`;
+                } else if (err.message) {
+                    errorMessage += `: ${err.message}`;
+                }
+                
+                alert(errorMessage);
+            }
+        };
 
   const renderSettingField = (category, key, config) => {
     const setting = settings[category]?.[key];
     const value = setting?.value || '';
     
-    console.log(`Rendering field ${key} in ${category}:`, { setting, value });
+    // Rendering field
 
     switch (config.type) {
       case 'boolean':
@@ -343,9 +363,9 @@ All settings are working correctly! 🎉
         return (
           <input
             type="password"
-            value={value}
+            value={value || ''}
             onChange={(e) => handleSettingChange(category, key, e.target.value)}
-            placeholder="••••••••"
+            placeholder={value ? '••••••••' : 'Enter password'}
             style={{
               width: '100%',
               padding: '8px 12px',
@@ -360,7 +380,7 @@ All settings are working correctly! 🎉
         return (
           <input
             type={config.type}
-            value={value}
+            value={value || ''}
             onChange={(e) => handleSettingChange(category, key, e.target.value)}
             placeholder={config.placeholder}
             style={{

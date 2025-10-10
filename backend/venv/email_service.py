@@ -1,19 +1,68 @@
 import smtplib
 import os
+import base64
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 import random
 import string
 from typing import Optional
+from database import get_db
+from models import SystemSettings
 
 class EmailService:
     def __init__(self):
-        # Email configuration - using Gmail SMTP
-        self.smtp_server = "smtp.gmail.com"
-        self.smtp_port = 587
-        self.sender_email = os.getenv("SMTP_EMAIL", "your-email@gmail.com")
-        self.sender_password = os.getenv("SMTP_PASSWORD", "your-app-password")
+        # Email configuration will be loaded from database
+        self.smtp_server = None
+        self.smtp_port = None
+        self.sender_email = None
+        self.sender_password = None
+        self.smtp_use_tls = True
+        self.email_from_name = None
+        self._load_settings()
+    
+    def _load_settings(self):
+        """Load email settings from database"""
+        try:
+            db = next(get_db())
+            settings = db.query(SystemSettings).filter(
+                SystemSettings.key.in_([
+                    'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password', 
+                    'smtp_use_tls', 'email_from_name', 'email_from_address'
+                ])
+            ).all()
+            
+            settings_dict = {setting.key: setting.value for setting in settings}
+            
+            # Set SMTP configuration from database
+            self.smtp_server = settings_dict.get('smtp_server', 'smtp.gmail.com')
+            self.smtp_port = int(settings_dict.get('smtp_port', '587'))
+            self.sender_email = settings_dict.get('smtp_username', '')
+            
+            # Decrypt password if it's encrypted
+            encrypted_password = settings_dict.get('smtp_password', '')
+            if encrypted_password:
+                try:
+                    self.sender_password = base64.b64decode(encrypted_password).decode('utf-8')
+                except:
+                    # If decryption fails, use as plain text (for backward compatibility)
+                    self.sender_password = encrypted_password
+            else:
+                self.sender_password = ''
+                
+            self.smtp_use_tls = settings_dict.get('smtp_use_tls', 'true') == 'true'
+            self.email_from_name = settings_dict.get('email_from_name', 'Science Pioneers')
+            
+            # Settings loaded successfully
+            
+        except Exception as e:
+            # Fallback to .env values
+            self.smtp_server = "smtp.gmail.com"
+            self.smtp_port = 587
+            self.sender_email = os.getenv("SMTP_EMAIL", "your-email@gmail.com")
+            self.sender_password = os.getenv("SMTP_PASSWORD", "your-app-password")
+            self.smtp_use_tls = True
+            self.email_from_name = "Science Pioneers"
         
         
     def generate_verification_code(self) -> str:
@@ -167,15 +216,14 @@ class EmailService:
             
             # Connect to SMTP server and send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()  # Enable TLS encryption
+                if self.smtp_use_tls:
+                    server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
-            print(f"Verification email sent to {to_email}")
             return True
             
         except Exception as e:
-            print(f"Error sending email to {to_email}: {str(e)}")
             return False
     
     async def send_account_deletion_email(self, to_email: str, username: str, verification_code: str) -> bool:
@@ -196,24 +244,34 @@ class EmailService:
             
             # Connect to SMTP server and send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()  # Enable TLS encryption
+                if self.smtp_use_tls:
+                    server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
-            print(f"Account deletion verification email sent to {to_email}")
             return True
             
         except Exception as e:
-            print(f"Error sending account deletion email to {to_email}: {str(e)}")
             return False
+    
+    def refresh_settings(self):
+        """Refresh email settings from database"""
+        self._load_settings()
     
     def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
         try:
+            # Refresh settings before sending
+            self.refresh_settings()
+            
+            # Check if we have valid settings
+            if not self.sender_email or not self.sender_password:
+                return False
+            
             # Create message
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = self.sender_email
+            msg['From'] = f"{self.email_from_name} <{self.sender_email}>" if self.email_from_name else self.sender_email
             msg['To'] = to_email
             
             # Create HTML content
@@ -241,15 +299,14 @@ class EmailService:
             
             # Connect to SMTP server and send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.starttls()  # Enable TLS encryption
+                if self.smtp_use_tls:
+                    server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
-            print(f"Notification email sent to {to_email}")
             return True
             
         except Exception as e:
-            print(f"Error sending notification email to {to_email}: {str(e)}")
             return False
 
 # Create global email service instance
