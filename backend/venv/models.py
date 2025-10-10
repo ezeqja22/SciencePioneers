@@ -24,6 +24,10 @@ class User(Base):
     is_banned = Column(Boolean, default=False)
     banned_at = Column(DateTime, nullable=True)
     ban_reason = Column(String, nullable=True)
+    # Session tracking fields
+    last_login = Column(DateTime, nullable=True)
+    login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
     problems = relationship("Problem", back_populates="author")
     comments = relationship("Comment", back_populates="author")
     votes = relationship("Vote", back_populates="user")

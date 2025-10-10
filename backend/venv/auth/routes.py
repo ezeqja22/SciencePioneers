@@ -129,6 +129,39 @@ async def get_trending_problems(
 
 @router.post("/register")
 async def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    # Validate password requirements from settings
+    from models import SystemSettings
+    
+    # Get password requirements from settings
+    password_settings = db.query(SystemSettings).filter(
+        SystemSettings.key.in_(['password_min_length', 'password_require_special'])
+    ).all()
+    
+    password_min_length = 8  # default
+    password_require_special = False  # default
+    
+    for setting in password_settings:
+        if setting.key == 'password_min_length':
+            password_min_length = int(setting.value) if setting.value else 8
+        elif setting.key == 'password_require_special':
+            password_require_special = setting.value == 'true'
+    
+    # Validate password length
+    if len(req.password) < password_min_length:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Password must be at least {password_min_length} characters long"
+        )
+    
+    # Validate special characters requirement
+    if password_require_special:
+        import re
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', req.password):
+            raise HTTPException(
+                status_code=400,
+                detail="Password must contain at least one special character"
+            )
+    
     # Check if email is already registered (verified or not)
     existing_user = db.query(User).filter(User.email == req.email).first()
     if existing_user:
@@ -214,8 +247,52 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Check if account is locked
+    if user.locked_until and user.locked_until > datetime.utcnow():
+        remaining_time = user.locked_until - datetime.utcnow()
+        minutes = int(remaining_time.total_seconds() / 60)
+        raise HTTPException(
+            status_code=423, 
+            detail=f"Account locked due to too many failed login attempts. Try again in {minutes} minutes."
+        )
+    
+    # Get security settings
+    from models import SystemSettings
+    security_settings = db.query(SystemSettings).filter(
+        SystemSettings.key.in_(['max_login_attempts', 'lockout_duration_minutes'])
+    ).all()
+    
+    max_attempts = 5  # default
+    lockout_duration = 30  # default minutes
+    
+    for setting in security_settings:
+        if setting.key == 'max_login_attempts':
+            max_attempts = int(setting.value) if setting.value else 5
+        elif setting.key == 'lockout_duration_minutes':
+            lockout_duration = int(setting.value) if setting.value else 30
+    
+    # Check password
     if not verify_password(req.password, user.password_hash):
+        # Increment failed login attempts (handle None values)
+        if user.login_attempts is None:
+            user.login_attempts = 1
+        else:
+            user.login_attempts += 1
+        
+        # Check if max attempts reached
+        if user.login_attempts >= max_attempts:
+            user.locked_until = datetime.utcnow() + timedelta(minutes=lockout_duration)
+            user.login_attempts = 0  # Reset attempts after lockout
+        
+        db.commit()
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Reset login attempts on successful login
+    user.login_attempts = 0
+    user.locked_until = None
+    user.last_login = datetime.utcnow()
+    db.commit()
     
     # Check if email is verified
     if not user.is_verified:
