@@ -4,6 +4,7 @@ import axios from "axios";
 import { colors, spacing, typography, shadows, borderRadius } from "../designSystem";
 import { getUserInitial } from "../utils";
 import NotificationBell from "./NotificationBell";
+import { useSiteSettings } from "../hooks/useSiteSettings";
 
 function Header({ showHomeButton = false }) {
     const [currentUser, setCurrentUser] = useState(null);
@@ -15,6 +16,31 @@ function Header({ showHomeButton = false }) {
     const [isMobile, setIsMobile] = useState(false);
     const [pinnedForums, setPinnedForums] = useState([]);
     const navigate = useNavigate();
+    
+    // Site settings
+    const { siteSettings, loading: settingsLoading } = useSiteSettings();
+    
+    // Update document title, favicon, and theme when site settings change
+    useEffect(() => {
+        if (siteSettings.site_name) {
+            document.title = siteSettings.site_name;
+        }
+        
+        if (siteSettings.site_favicon) {
+            // Update favicon
+            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = siteSettings.site_favicon;
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        
+        // Apply theme
+        if (siteSettings.site_theme) {
+            document.documentElement.setAttribute('data-theme', siteSettings.site_theme);
+            document.body.className = `theme-${siteSettings.site_theme}`;
+        }
+    }, [siteSettings.site_name, siteSettings.site_favicon, siteSettings.site_theme]);
 
     // Subjects list
     const subjects = [
@@ -208,14 +234,35 @@ function Header({ showHomeButton = false }) {
                     </div>
                 </Link>
                 <Link to="/homepage" style={{ textDecoration: "none", color: "inherit" }}>
-                    <h1 style={{
-                        margin: 0,
-                        fontSize: typography.fontSize["2xl"],
-                        fontWeight: typography.fontWeight.bold,
-                        cursor: "pointer"
-                    }}>
-                        SciencePioneers
-                    </h1>
+                    <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
+                        {/* Site Logo */}
+                        {siteSettings.site_logo && (
+                            <img 
+                                src={siteSettings.site_logo} 
+                                alt={siteSettings.site_name}
+                                style={{
+                                    height: "32px",
+                                    width: "auto",
+                                    maxWidth: "200px",
+                                    objectFit: "contain"
+                                }}
+                                onError={(e) => {
+                                    console.error('Failed to load site logo:', siteSettings.site_logo);
+                                    e.target.style.display = 'none';
+                                }}
+                            />
+                        )}
+                        
+                        {/* Site Name */}
+                        <h1 style={{
+                            margin: 0,
+                            fontSize: typography.fontSize["2xl"],
+                            fontWeight: typography.fontWeight.bold,
+                            cursor: "pointer"
+                        }}>
+                            {siteSettings.site_name || 'SciencePioneers'}
+                        </h1>
+                    </div>
                 </Link>
             </div>
 

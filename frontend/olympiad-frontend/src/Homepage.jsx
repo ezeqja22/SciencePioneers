@@ -4,6 +4,7 @@ import axios from "axios";
 import { colors } from "./designSystem";
 import { getUserInitial } from "./utils";
 import NotificationBell from "./components/NotificationBell";
+import { useSiteSettings } from "./hooks/useSiteSettings";
 
 function Homepage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -18,6 +19,38 @@ function Homepage() {
         return saved ? JSON.parse(saved) : [];
     });
     const navigate = useNavigate();
+    
+    // Site settings
+    const { siteSettings, loading: settingsLoading, error: settingsError } = useSiteSettings();
+    
+    // Debug site settings
+    useEffect(() => {
+        console.log('Homepage - Site settings:', siteSettings);
+        console.log('Homepage - Settings loading:', settingsLoading);
+        console.log('Homepage - Settings error:', settingsError);
+    }, [siteSettings, settingsLoading, settingsError]);
+    
+    // Update document title, favicon, and theme when site settings change
+    useEffect(() => {
+        if (siteSettings.site_name) {
+            document.title = siteSettings.site_name;
+        }
+        
+        if (siteSettings.site_favicon) {
+            // Update favicon
+            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = siteSettings.site_favicon;
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        
+        // Apply theme
+        if (siteSettings.site_theme) {
+            document.documentElement.setAttribute('data-theme', siteSettings.site_theme);
+            document.body.className = `theme-${siteSettings.site_theme}`;
+        }
+    }, [siteSettings.site_name, siteSettings.site_favicon, siteSettings.site_theme]);
 
     // Actual subjects from the system
     const subjects = [
@@ -193,9 +226,30 @@ function Homepage() {
                     }}>
                         SP
                     </div>
-                    <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                        SciencePioneers
-                    </h1>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        {/* Site Logo */}
+                        {siteSettings.site_logo && (
+                            <img 
+                                src={siteSettings.site_logo} 
+                                alt={siteSettings.site_name}
+                                style={{
+                                    height: "28px",
+                                    width: "auto",
+                                    maxWidth: "150px",
+                                    objectFit: "contain"
+                                }}
+                                onError={(e) => {
+                                    console.error('Failed to load site logo:', siteSettings.site_logo);
+                                    e.target.style.display = 'none';
+                                }}
+                            />
+                        )}
+                        
+                        {/* Site Name */}
+                        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
+                            {siteSettings.site_name || 'SciencePioneers'}
+                        </h1>
+                    </div>
                 </div>
 
                 {/* Navigation */}
@@ -484,7 +538,7 @@ function Homepage() {
                             marginBottom: "1.5rem",
                             lineHeight: "1.2"
                         }}>
-                            Welcome to SciencePioneers
+                            Welcome to {siteSettings.site_name || 'SciencePioneers'}
                         </h1>
                         <p style={{ 
                             fontSize: "1.25rem", 
@@ -492,8 +546,7 @@ function Homepage() {
                             opacity: "0.9",
                             lineHeight: "1.6"
                         }}>
-                            Master the art of problem-solving through challenging olympiad problems. 
-                            Join a community of passionate learners and sharpen your analytical skills.
+                            {siteSettings.site_description || "Master the art of problem-solving through challenging olympiad problems. Join a community of passionate learners and sharpen your analytical skills."}
                         </p>
                         <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
                             <Link to="/feed">
@@ -565,7 +618,7 @@ function Homepage() {
                         marginBottom: "3rem",
                         color: "#1a4d3a"
                     }}>
-                        Why Choose SciencePioneers?
+                        Why Choose {siteSettings.site_name || 'SciencePioneers'}?
                     </h2>
                     <div style={{ 
                         display: "grid", 

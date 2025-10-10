@@ -1,0 +1,82 @@
+/* Theme CSS Variables */
+:root {
+  /* Light theme (default) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --text-muted: #adb5bd;
+  --border-color: #dee2e6;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --accent-color: #28a745;
+  --accent-hover: #218838;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #404040;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-muted: #808080;
+  --border-color: #404040;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --accent-color: #28a745;
+  --accent-hover: #218838;
+}
+
+/* Apply theme to body */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme-specific styles */
+.theme-light {
+  background-color: #ffffff;
+  color: #212529;
+}
+
+.theme-dark {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+/* Header theme support - Keep original look for light mode */
+.theme-dark header {
+  background: linear-gradient(135deg, #2d2d2d, #404040);
+  color: #ffffff;
+}
+
+.theme-light header {
+  /* Keep original header styling - same dark green as homepage */
+  background: #1a4d3a;
+  color: #ffffff;
+}
+
+/* Card theme support - Only apply to dark mode */
+.theme-dark .admin-card,
+.theme-dark .card {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Button theme support - Only apply to dark mode */
+.theme-dark button {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* Input theme support - Only apply to dark mode */
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}

@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import "./theme.css";
 import LandingPage from "./LandingPage";
 import Signup from "./Signup";
 import Login from "./Login";
@@ -26,9 +27,9 @@ import AdminUsers from "./AdminUsers";
 import AdminForums from "./AdminForums";
 import AdminReports from "./AdminReports";
 import AdminUserHistory from "./AdminUserHistory";
+import AdminSettings from "./AdminSettings";
 import AdminEmail from "./AdminEmail";
 import AdminAnalytics from "./AdminAnalytics";
-import AdminSettings from "./AdminSettings";
 
 function App() {
   return (
@@ -150,10 +151,10 @@ function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="forums" element={<AdminForums />} />
             <Route path="reports" element={<AdminReports />} />
-            <Route path="user-history" element={<AdminUserHistory />} />
-            <Route path="email" element={<AdminEmail />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="settings" element={<AdminSettings />} />
+          <Route path="user-history" element={<AdminUserHistory />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="email" element={<AdminEmail />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
           </Route>
         </Routes>
       </AuthGuard>

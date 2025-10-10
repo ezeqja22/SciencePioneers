@@ -81,12 +81,18 @@ const AdminLayout = () => {
       icon: '🚨',
       adminOnly: false
     },
-    {
-      path: '/admin/user-history',
-      label: 'User History',
-      icon: '📋',
-      adminOnly: false
-    },
+        {
+          path: '/admin/user-history',
+          label: 'User History',
+          icon: '📋',
+          adminOnly: false
+        },
+        {
+          path: '/admin/settings',
+          label: 'Settings',
+          icon: '⚙️',
+          adminOnly: true
+        },
     {
       path: '/admin/email',
       label: 'Email',
@@ -98,12 +104,6 @@ const AdminLayout = () => {
       label: 'Analytics',
       icon: '📈',
       adminOnly: false
-    },
-    {
-      path: '/admin/settings',
-      label: 'Settings',
-      icon: '⚙️',
-      adminOnly: true
     }
   ];
 

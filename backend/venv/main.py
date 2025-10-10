@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import models
-from database import engine
+from database import engine, get_db
 from auth.routes import router as auth_router
 from admin_routes import router as admin_router
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from models import User
 from dotenv import load_dotenv
 import os
+from settings_service import get_settings_service
 
 # Load environment variables
 load_dotenv()
@@ -27,8 +29,91 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Settings middleware
+@app.middleware("http")
+async def settings_middleware(request: Request, call_next):
+    """Apply settings-based restrictions"""
+    try:
+        # Skip middleware for site-info endpoint to avoid auth issues
+        if request.url.path == "/admin/settings/site-info":
+            response = await call_next(request)
+            return response
+            
+        db = next(get_db())
+        settings_service = get_settings_service(db)
+        
+        # Check maintenance mode
+        if settings_service.is_maintenance_mode():
+            # Allow admin access to admin routes
+            if not request.url.path.startswith("/admin"):
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "message": settings_service.get_setting('maintenance_message', 'Site under maintenance'),
+                        "maintenance": True
+                    }
+                )
+        
+        # Check feature toggles
+        if request.url.path.startswith("/forums") and not settings_service.is_feature_enabled("forums"):
+            return JSONResponse(
+                status_code=404,
+                content={"message": "Forums are currently disabled"}
+            )
+        
+        if request.url.path.startswith("/problems") and not settings_service.is_feature_enabled("problems"):
+            return JSONResponse(
+                status_code=404,
+                content={"message": "Problems are currently disabled"}
+            )
+        
+        response = await call_next(request)
+        return response
+        
+    except Exception as e:
+        print(f"Settings middleware error: {e}")
+        response = await call_next(request)
+        return response
+
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router, tags=["admin"])
+
+# Public site info endpoint (no auth required)
+@app.get("/site-info")
+async def get_site_info():
+    """Get public site information (no auth required)"""
+    try:
+        from settings_service import get_settings_service
+        db = next(get_db())
+        settings_service = get_settings_service(db)
+        site_settings = settings_service.get_site_settings()
+        
+        print("Site settings from service:", site_settings)
+        
+        result = {
+            "site_name": site_settings.get('name', 'Science Pioneers'),
+            "site_description": site_settings.get('description', 'A platform for science enthusiasts'),
+            "site_logo": site_settings.get('logo', ''),
+            "site_favicon": site_settings.get('favicon', ''),
+            "site_theme": site_settings.get('theme', 'light'),
+            "maintenance_mode": site_settings.get('maintenance_mode', False),
+            "maintenance_message": site_settings.get('maintenance_message', 'Site under maintenance')
+        }
+        
+        print("Returning site info:", result)
+        return result
+    except Exception as e:
+        print("Error fetching site info:", str(e))
+        # Return defaults if settings service fails
+        return {
+            "site_name": "Science Pioneers",
+            "site_description": "A platform for science enthusiasts",
+            "site_logo": "",
+            "site_favicon": "",
+            "site_theme": "light",
+            "maintenance_mode": False,
+            "maintenance_message": "Site under maintenance"
+        }
 
 # Auto-cleanup function
 async def cleanup_expired_users():
