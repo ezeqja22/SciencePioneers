@@ -5,6 +5,7 @@ import { colors, spacing, typography, shadows, borderRadius } from "../designSys
 import { getUserInitial } from "../utils";
 import NotificationBell from "./NotificationBell";
 import { useSiteSettings } from "../hooks/useSiteSettings";
+import { useFeatureSettings } from "../hooks/useFeatureSettings";
 
 function Header({ showHomeButton = false }) {
     const [currentUser, setCurrentUser] = useState(null);
@@ -19,6 +20,9 @@ function Header({ showHomeButton = false }) {
     
     // Site settings
     const { siteSettings, loading: settingsLoading } = useSiteSettings();
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
     
     // Update document title, favicon, and theme when site settings change
     useEffect(() => {
@@ -129,6 +133,11 @@ function Header({ showHomeButton = false }) {
     };
 
     const handleForumClick = (forumId) => {
+        // Check if forums are enabled
+        if (!checkFeatureEnabled('forums_enabled')) {
+            showFeatureDisabledAlert('Forums');
+            return;
+        }
         navigate(`/forum/${forumId}`);
         setShowHamburgerMenu(false);
     };
@@ -363,19 +372,28 @@ function Header({ showHomeButton = false }) {
                 </div>
 
                 {/* Forums Link */}
-                <Link to="/forums" style={{ 
-                    color: colors.white, 
-                    textDecoration: "none", 
-                    fontWeight: typography.fontWeight.medium,
-                    padding: `${spacing.sm} ${spacing.md}`,
-                    borderRadius: "6px",
-                    transition: "background-color 0.2s"
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
-                onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                <span 
+                    onClick={() => {
+                        if (checkFeatureEnabled('forums_enabled')) {
+                            navigate('/forums');
+                        } else {
+                            showFeatureDisabledAlert('Forums');
+                        }
+                    }}
+                    style={{ 
+                        color: colors.white, 
+                        textDecoration: "none", 
+                        fontWeight: typography.fontWeight.medium,
+                        padding: `${spacing.sm} ${spacing.md}`,
+                        borderRadius: "6px",
+                        transition: "background-color 0.2s",
+                        cursor: "pointer"
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                 >
                     Forums
-                </Link>
+                </span>
 
                 {/* Authentication Section */}
                 {!currentUser ? (
@@ -393,20 +411,29 @@ function Header({ showHomeButton = false }) {
                         >
                             Login
                         </Link>
-                        <Link to="/signup" style={{ 
-                            backgroundColor: colors.accent,
-                            color: colors.white, 
-                            textDecoration: "none", 
-                            fontWeight: typography.fontWeight.medium,
-                            padding: `${spacing.sm} ${spacing.md}`,
-                            borderRadius: "6px",
-                            transition: "background-color 0.2s"
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
+                        <span 
+                            onClick={() => {
+                                if (checkFeatureEnabled('registration_enabled')) {
+                                    navigate('/signup');
+                                } else {
+                                    showFeatureDisabledAlert('Registration');
+                                }
+                            }}
+                            style={{ 
+                                backgroundColor: colors.accent,
+                                color: colors.white, 
+                                textDecoration: "none", 
+                                fontWeight: typography.fontWeight.medium,
+                                padding: `${spacing.sm} ${spacing.md}`,
+                                borderRadius: "6px",
+                                transition: "background-color 0.2s",
+                                cursor: "pointer"
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = colors.accent}
                         >
                             Signup
-                        </Link>
+                        </span>
                     </div>
                 ) : (
                     /* Authenticated User Section */
@@ -579,68 +606,133 @@ function Header({ showHomeButton = false }) {
                 overflowY: "auto",
                 padding: spacing.lg
             }}>
-                <div style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: spacing.lg,
-                    paddingBottom: spacing.md,
-                    borderBottom: `1px solid ${colors.gray[200]}`,
-                    backgroundColor: colors.primary,
-                    margin: `-${spacing.lg} -${spacing.lg} ${spacing.lg} -${spacing.lg}`,
-                    padding: spacing.lg,
-                    borderRadius: `${borderRadius.lg} ${borderRadius.lg} 0 0`,
-                    position: "relative"
-                }}>
-                    <button
-                        onClick={handleMenuClose}
-                        style={{
-                            backgroundColor: "transparent",
-                            border: "none",
-                            color: colors.white,
-                            cursor: "pointer",
-                            padding: spacing.sm,
-                            borderRadius: borderRadius.sm,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "3px",
-                            transition: "background-color 0.2s",
-                            position: "absolute",
-                            left: spacing.lg
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
-                    >
-                        <div style={{
-                            width: "16px",
-                            height: "2px",
-                            backgroundColor: colors.white,
-                            transition: "all 0.3s ease"
-                        }} />
-                        <div style={{
-                            width: "16px",
-                            height: "2px",
-                            backgroundColor: colors.white,
-                            transition: "all 0.3s ease"
-                        }} />
-                        <div style={{
-                            width: "16px",
-                            height: "2px",
-                            backgroundColor: colors.white,
-                            transition: "all 0.3s ease"
-                        }} />
-                    </button>
-                    <h3 style={{
-                        margin: 0,
-                        fontSize: typography.fontSize.lg,
-                        fontWeight: typography.fontWeight.bold,
-                        color: colors.white
+                {checkFeatureEnabled('forums_enabled') ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: spacing.lg,
+                        paddingBottom: spacing.md,
+                        borderBottom: `1px solid ${colors.gray[200]}`,
+                        backgroundColor: colors.primary,
+                        margin: `-${spacing.lg} -${spacing.lg} ${spacing.lg} -${spacing.lg}`,
+                        padding: spacing.lg,
+                        borderRadius: `${borderRadius.lg} ${borderRadius.lg} 0 0`,
+                        position: "relative"
                     }}>
-                        My Forums
-                    </h3>
-                </div>
+                        <button
+                            onClick={handleMenuClose}
+                            style={{
+                                backgroundColor: "transparent",
+                                border: "none",
+                                color: colors.white,
+                                cursor: "pointer",
+                                padding: spacing.sm,
+                                borderRadius: borderRadius.sm,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "3px",
+                                transition: "background-color 0.2s",
+                                position: "absolute",
+                                left: spacing.lg
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                        >
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                        </button>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: typography.fontSize.lg,
+                            fontWeight: typography.fontWeight.bold,
+                            color: colors.white
+                        }}>
+                            My Forums
+                        </h3>
+                    </div>
+                ) : (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: spacing.lg,
+                        paddingBottom: spacing.md,
+                        borderBottom: `1px solid ${colors.gray[200]}`,
+                        backgroundColor: colors.primary,
+                        margin: `-${spacing.lg} -${spacing.lg} ${spacing.lg} -${spacing.lg}`,
+                        padding: spacing.lg,
+                        borderRadius: `${borderRadius.lg} ${borderRadius.lg} 0 0`,
+                        position: "relative"
+                    }}>
+                        <button
+                            onClick={handleMenuClose}
+                            style={{
+                                backgroundColor: "transparent",
+                                border: "none",
+                                color: colors.white,
+                                cursor: "pointer",
+                                padding: spacing.sm,
+                                borderRadius: borderRadius.sm,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "3px",
+                                transition: "background-color 0.2s",
+                                position: "absolute",
+                                left: spacing.lg
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                        >
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: colors.white,
+                                transition: "all 0.3s ease"
+                            }} />
+                        </button>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: typography.fontSize.lg,
+                            fontWeight: typography.fontWeight.bold,
+                            color: colors.white
+                        }}>
+                            Forums Disabled
+                        </h3>
+                    </div>
+                )}
                 
-                {loadingForums ? (
+                {checkFeatureEnabled('forums_enabled') && (
+                    <>
+                        {loadingForums ? (
                     <div style={{
                         display: "flex",
                         justifyContent: "center",
@@ -849,6 +941,8 @@ function Header({ showHomeButton = false }) {
                             );
                         })}
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </header>

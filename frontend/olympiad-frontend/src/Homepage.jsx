@@ -5,6 +5,7 @@ import { colors } from "./designSystem";
 import { getUserInitial } from "./utils";
 import NotificationBell from "./components/NotificationBell";
 import { useSiteSettings } from "./hooks/useSiteSettings";
+import { useFeatureSettings } from "./hooks/useFeatureSettings";
 
 function Homepage() {
     const [currentUser, setCurrentUser] = useState(null);
@@ -22,6 +23,9 @@ function Homepage() {
     
     // Site settings
     const { siteSettings, loading: settingsLoading, error: settingsError } = useSiteSettings();
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
     
     
     // Update document title, favicon, and theme when site settings change
@@ -45,6 +49,20 @@ function Homepage() {
             document.body.className = `theme-${siteSettings.site_theme}`;
         }
     }, [siteSettings.site_name, siteSettings.site_favicon, siteSettings.site_theme]);
+
+    // Show notifications disabled alert only once after login
+    useEffect(() => {
+        if (currentUser && !settingsLoading) {
+            // Check if we've already shown the notification alert for this session
+            const notificationAlertShown = sessionStorage.getItem('notificationAlertShown');
+            if (!notificationAlertShown && !checkFeatureEnabled('notifications_enabled')) {
+                setTimeout(() => {
+                    alert('Notifications are temporarily disabled');
+                    sessionStorage.setItem('notificationAlertShown', 'true');
+                }, 1000);
+            }
+        }
+    }, [currentUser, settingsLoading, checkFeatureEnabled]);
 
     // Actual subjects from the system
     const subjects = [
@@ -142,6 +160,11 @@ function Homepage() {
     };
 
     const handleForumClick = (forumId) => {
+        // Check if forums are enabled
+        if (!checkFeatureEnabled('forums_enabled')) {
+            showFeatureDisabledAlert('Forums');
+            return;
+        }
         navigate(`/forum/${forumId}`);
         setShowHamburgerMenu(false);
     };
@@ -354,20 +377,29 @@ function Homepage() {
                             >
                                 Login
                             </Link>
-                            <Link to="/signup" style={{ 
-                                backgroundColor: "#28a745",
-                                color: "white", 
-                                textDecoration: "none", 
-                                fontWeight: "500",
-                                padding: "8px 16px",
-                                borderRadius: "6px",
-                                transition: "background-color 0.2s"
-                            }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = "#28a745"}
+                            <span 
+                                onClick={() => {
+                                    if (checkFeatureEnabled('registration_enabled')) {
+                                        navigate('/signup');
+                                    } else {
+                                        showFeatureDisabledAlert('Registration');
+                                    }
+                                }}
+                                style={{ 
+                                    backgroundColor: "#28a745",
+                                    color: "white", 
+                                    textDecoration: "none", 
+                                    fontWeight: "500",
+                                    padding: "8px 16px",
+                                    borderRadius: "6px",
+                                    transition: "background-color 0.2s",
+                                    cursor: "pointer"
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = "#218838"}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = "#28a745"}
                             >
                                 Signup
-                            </Link>
+                            </span>
                         </div>
                     ) : (
                         /* Authenticated User Section */
@@ -757,19 +789,20 @@ function Homepage() {
                 overflowY: "auto",
                 padding: "1.5rem"
             }}>
-                <div style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: "1.5rem",
-                    paddingBottom: "0.75rem",
-                    borderBottom: "1px solid #e5e7eb",
-                    backgroundColor: "#1a4d3a",
-                    margin: "-1.5rem -1.5rem 1.5rem -1.5rem",
-                    padding: "1.5rem",
-                    borderRadius: "12px 12px 0 0",
-                    position: "relative"
-                }}>
+                {checkFeatureEnabled('forums_enabled') ? (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: "1.5rem",
+                        paddingBottom: "0.75rem",
+                        borderBottom: "1px solid #e5e7eb",
+                        backgroundColor: "#1a4d3a",
+                        margin: "-1.5rem -1.5rem 1.5rem -1.5rem",
+                        padding: "1.5rem",
+                        borderRadius: "12px 12px 0 0",
+                        position: "relative"
+                    }}>
                     <button
                         onClick={handleMenuClose}
                         style={{
@@ -817,8 +850,72 @@ function Homepage() {
                         My Forums
                     </h3>
                 </div>
+                ) : (
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginBottom: "1.5rem",
+                        paddingBottom: "0.75rem",
+                        borderBottom: "1px solid #e5e7eb",
+                        backgroundColor: "#1a4d3a",
+                        margin: "-1.5rem -1.5rem 1.5rem -1.5rem",
+                        padding: "1.5rem",
+                        borderRadius: "12px 12px 0 0",
+                        position: "relative"
+                    }}>
+                        <button
+                            onClick={handleMenuClose}
+                            style={{
+                                backgroundColor: "transparent",
+                                border: "none",
+                                color: "white",
+                                cursor: "pointer",
+                                padding: "8px",
+                                borderRadius: "4px",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "3px",
+                                transition: "background-color 0.2s",
+                                position: "absolute",
+                                left: "1.5rem"
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = "rgba(255, 255, 255, 0.1)"}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
+                        >
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                            <div style={{
+                                width: "16px",
+                                height: "2px",
+                                backgroundColor: "white",
+                                transition: "all 0.3s ease"
+                            }} />
+                        </button>
+                        <h3 style={{
+                            margin: 0,
+                            fontSize: "1.125rem",
+                            fontWeight: "bold",
+                            color: "white"
+                        }}>
+                            Forums Disabled
+                        </h3>
+                    </div>
+                )}
                 
-                {loadingForums ? (
+                {checkFeatureEnabled('forums_enabled') && (
+                    <>
+                        {loadingForums ? (
                     <div style={{
                         display: "flex",
                         justifyContent: "center",
@@ -981,6 +1078,8 @@ function Homepage() {
                             );
                         })}
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </div>

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useFeatureSettings } from './hooks/useFeatureSettings';
 
 const ReportModal = ({ isOpen, onClose, reportType, targetId, targetUser }) => {
     const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
 
     const reportCategories = [
         { value: 'harassment', label: 'Harassment - Bullying, threats, personal attacks' },
@@ -19,6 +23,12 @@ const ReportModal = ({ isOpen, onClose, reportType, targetId, targetUser }) => {
         e.preventDefault();
         if (!category || !description.trim()) {
             alert('Please select a category and provide a description');
+            return;
+        }
+
+        // Check if reports are enabled
+        if (!checkFeatureEnabled('reports_enabled')) {
+            showFeatureDisabledAlert('Reports');
             return;
         }
 

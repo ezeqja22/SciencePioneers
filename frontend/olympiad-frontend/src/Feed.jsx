@@ -14,6 +14,7 @@ import AnimatedLoader from "./components/AnimatedLoader";
 import FollowButton from "./components/FollowButton";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { getUserInitial, getDisplayName } from "./utils";
+import { useFeatureSettings } from "./hooks/useFeatureSettings";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -49,6 +50,9 @@ function Feed() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProblems, setTotalProblems] = useState(0);
+  
+  // Feature settings
+  const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -261,6 +265,12 @@ function Feed() {
   };
 
   const handleBookmark = async (problemId) => {
+    // Check if bookmarks are enabled
+    if (!checkFeatureEnabled('bookmarks_enabled')) {
+      showFeatureDisabledAlert('Bookmarks');
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/bookmark`, {}, {
@@ -280,6 +290,12 @@ function Feed() {
   };
 
   const handleVote = async (problemId, voteType) => {
+    // Check if voting is enabled
+    if (!checkFeatureEnabled('voting_enabled')) {
+      showFeatureDisabledAlert('Voting');
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
@@ -306,6 +322,13 @@ function Feed() {
     if (e && e.stopPropagation) {
       e.stopPropagation();
     }
+
+    // Check if following is enabled
+    if (!checkFeatureEnabled('following_enabled')) {
+      showFeatureDisabledAlert('Following');
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -332,6 +355,12 @@ function Feed() {
   };
 
   const handleFollowUser = async (authorId) => {
+    // Check if following is enabled
+    if (!checkFeatureEnabled('following_enabled')) {
+      showFeatureDisabledAlert('Following');
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -349,6 +378,12 @@ function Feed() {
   };
 
   const handleUnfollowUser = async (authorId) => {
+    // Check if following is enabled
+    if (!checkFeatureEnabled('following_enabled')) {
+      showFeatureDisabledAlert('Following');
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -653,7 +688,7 @@ function Feed() {
               
               <h3 style={{ marginTop: 0, color: "#333", pointerEvents: "none" }}>{renderMathContent(problem.title)}</h3>
               <div style={{ color: "#666", lineHeight: "1.5", whiteSpace: "pre-wrap", pointerEvents: "none" }}>{renderMathContent(problem.description)}</div>
-              <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center", pointerEvents: "none" }}>
+              <div style={{ display: "flex", gap: "10px", marginTop: "15px", alignItems: "center" }}>
                 <span style={{
                   backgroundColor: "#e0e7ff",
                   color: "#3730a3",
@@ -663,7 +698,8 @@ function Feed() {
                   fontWeight: "600",
                   marginRight: "8px",
                   boxShadow: "0 2px 6px rgba(30, 64, 175, 0.2)",
-                  transition: "all 0.2s ease"
+                  transition: "all 0.2s ease",
+                  pointerEvents: "none"
                 }}>
                   {problem.subject}
                 </span>
@@ -677,7 +713,8 @@ function Feed() {
                     fontWeight: "600",
                     marginRight: "8px",
                     boxShadow: "0 2px 6px rgba(245, 158, 11, 0.2)",
-                    transition: "all 0.2s ease"
+                    transition: "all 0.2s ease",
+                    pointerEvents: "none"
                   }}>
                     {problem.level}
                   </span>
@@ -692,7 +729,8 @@ function Feed() {
                     fontWeight: "600",
                     marginRight: "8px",
                     boxShadow: "0 2px 6px rgba(26, 77, 58, 0.2)",
-                    transition: "all 0.2s ease"
+                    transition: "all 0.2s ease",
+                    pointerEvents: "none"
                   }}>
                     Year: {problem.year}
                   </span>
@@ -714,7 +752,8 @@ function Feed() {
                             fontWeight: "600",
                             whiteSpace: "nowrap",
                             boxShadow: "0 2px 6px rgba(124, 58, 237, 0.3)",
-                            transition: "all 0.2s ease"
+                            transition: "all 0.2s ease",
+                            pointerEvents: "none"
                           }}
                         >
                           {trimmedTag}
@@ -792,7 +831,7 @@ function Feed() {
                   >
                     👎 {voteData[problem.id]?.dislike_count || 0}
                   </button>
-                  <span style={{ fontSize: "12px", color: "#666" }}>
+                  <span style={{ fontSize: "12px", color: "#666", pointerEvents: "none" }}>
                     💬 {problem.comment_count || 0}
                   </span>
                   <button

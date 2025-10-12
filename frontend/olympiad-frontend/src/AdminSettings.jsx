@@ -82,7 +82,6 @@ const AdminSettings = () => {
     },
     feature: {
       forums_enabled: { type: 'boolean', label: 'Forums Enabled' },
-      problems_enabled: { type: 'boolean', label: 'Problems Enabled' },
       comments_enabled: { type: 'boolean', label: 'Comments Enabled' },
       voting_enabled: { type: 'boolean', label: 'Voting Enabled' },
       bookmarks_enabled: { type: 'boolean', label: 'Bookmarks Enabled' },
@@ -274,7 +273,6 @@ const AdminSettings = () => {
 📝 Site Name: ${results.site_name || 'Not Set'}
 🔧 Maintenance Mode: ${results.maintenance_mode ? 'ON' : 'OFF'}
 💬 Forums Enabled: ${results.forums_enabled ? 'Yes' : 'No'}
-📊 Problems Enabled: ${results.problems_enabled ? 'Yes' : 'No'}
 👥 Registration Enabled: ${results.registration_enabled ? 'Yes' : 'No'}
 
 📧 EMAIL SETTINGS:

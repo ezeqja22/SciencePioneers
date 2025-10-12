@@ -7,12 +7,16 @@ import Button from './components/Button';
 import AnimatedLoader from './components/AnimatedLoader';
 import ForumInviteModal from './ForumInviteModal';
 import { colors, spacing, typography, borderRadius, shadows } from './designSystem';
+import { useFeatureSettings } from './hooks/useFeatureSettings';
 
 const Forums = () => {
     const [forums, setForums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newForum, setNewForum] = useState({
         title: '',
@@ -37,6 +41,15 @@ const Forums = () => {
     const [forumOnlineCounts, setForumOnlineCounts] = useState({});
 
     const navigate = useNavigate();
+
+    // Check if forums are enabled
+    useEffect(() => {
+        if (!checkFeatureEnabled('forums_enabled')) {
+            showFeatureDisabledAlert('Forums');
+            navigate('/');
+            return;
+        }
+    }, [checkFeatureEnabled, showFeatureDisabledAlert, navigate]);
 
     // Tag management functions
     const handleTagChange = (index, value) => {

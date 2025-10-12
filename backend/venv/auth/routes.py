@@ -700,6 +700,14 @@ async def create_comment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Check if comments are enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('comments_enabled', True):
+        raise HTTPException(status_code=403, detail="Comments are temporarily disabled")
+    
     # Check if problem exists
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -981,6 +989,14 @@ async def vote_problem(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Check if voting is enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('voting_enabled', True):
+        raise HTTPException(status_code=403, detail="Voting is temporarily disabled")
+    
     # Check if problem exists
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -1050,6 +1066,14 @@ def bookmark_problem(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Check if bookmarks are enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('bookmarks_enabled', True):
+        raise HTTPException(status_code=403, detail="Bookmarks are temporarily disabled")
+    
     # Check if problem exists
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -1368,6 +1392,14 @@ async def follow_user(
     current_user: User = Depends(get_current_user)
 ):
     """Follow a user"""
+    # Check if following is enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('following_enabled', True):
+        raise HTTPException(status_code=403, detail="Following is temporarily disabled")
+    
     # Can't follow yourself
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot follow yourself")
@@ -4480,6 +4512,14 @@ async def report_comment(
     db: Session = Depends(get_db)
 ):
     """Report a comment"""
+    # Check if reports are enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('reports_enabled', True):
+        raise HTTPException(status_code=403, detail="Reports are temporarily disabled")
+    
     try:
         body = await request.json()
         comment_id = body.get("comment_id")
@@ -4523,6 +4563,14 @@ async def report_message(
     db: Session = Depends(get_db)
 ):
     """Report a forum message"""
+    # Check if reports are enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('reports_enabled', True):
+        raise HTTPException(status_code=403, detail="Reports are temporarily disabled")
+    
     try:
         body = await request.json()
         message_id = body.get("message_id")
@@ -4566,6 +4614,14 @@ async def report_user(
     db: Session = Depends(get_db)
 ):
     """Report a user"""
+    # Check if reports are enabled
+    from settings_service import get_settings_service
+    settings_service = get_settings_service(db)
+    feature_settings = settings_service.get_feature_settings()
+    
+    if not feature_settings.get('reports_enabled', True):
+        raise HTTPException(status_code=403, detail="Reports are temporarily disabled")
+    
     try:
         body = await request.json()
         user_id = body.get("user_id")

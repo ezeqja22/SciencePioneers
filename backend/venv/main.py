@@ -86,6 +86,9 @@ async def get_site_info():
         
         # Site settings loaded
         
+        # Get feature settings
+        feature_settings = settings_service.get_feature_settings()
+        
         result = {
             "site_name": site_settings.get('name', 'Science Pioneers'),
             "site_description": site_settings.get('description', 'A platform for science enthusiasts'),
@@ -93,7 +96,15 @@ async def get_site_info():
             "site_favicon": site_settings.get('favicon', ''),
             "site_theme": site_settings.get('theme', 'light'),
             "maintenance_mode": site_settings.get('maintenance_mode', False),
-            "maintenance_message": site_settings.get('maintenance_message', 'Site under maintenance')
+            "maintenance_message": site_settings.get('maintenance_message', 'Site under maintenance'),
+            # Add feature settings
+            "forums_enabled": feature_settings.get('forums_enabled', True),
+            "comments_enabled": feature_settings.get('comments_enabled', True),
+            "voting_enabled": feature_settings.get('voting_enabled', True),
+            "bookmarks_enabled": feature_settings.get('bookmarks_enabled', True),
+            "following_enabled": feature_settings.get('following_enabled', True),
+            "notifications_enabled": feature_settings.get('notifications_enabled', True),
+            "reports_enabled": feature_settings.get('reports_enabled', True)
         }
         
         return result
@@ -106,7 +117,15 @@ async def get_site_info():
             "site_favicon": "",
             "site_theme": "light",
             "maintenance_mode": False,
-            "maintenance_message": "Site under maintenance"
+            "maintenance_message": "Site under maintenance",
+            # Default feature settings
+            "forums_enabled": True,
+            "comments_enabled": True,
+            "voting_enabled": True,
+            "bookmarks_enabled": True,
+            "following_enabled": True,
+            "notifications_enabled": True,
+            "reports_enabled": True
         }
 
 # Auto-cleanup function
@@ -159,7 +178,7 @@ async def test_settings_simple():
         settings = db.query(SystemSettings).filter(
             SystemSettings.key.in_([
                 'site_name', 'site_description', 'maintenance_mode', 
-                'forums_enabled', 'problems_enabled', 'registration_enabled',
+                'forums_enabled', 'registration_enabled',
                 'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_use_tls',
                 'email_from_name', 'email_from_address'
             ])
@@ -174,7 +193,6 @@ async def test_settings_simple():
                 "site_name": settings_dict.get('site_name', 'Not Set'),
                 "maintenance_mode": settings_dict.get('maintenance_mode') == 'true',
                 "forums_enabled": settings_dict.get('forums_enabled') == 'true',
-                "problems_enabled": settings_dict.get('problems_enabled') == 'true',
                 "registration_enabled": settings_dict.get('registration_enabled') == 'true',
                 "smtp_server": settings_dict.get('smtp_server', 'Not Set'),
                 "smtp_port": settings_dict.get('smtp_port', 'Not Set'),

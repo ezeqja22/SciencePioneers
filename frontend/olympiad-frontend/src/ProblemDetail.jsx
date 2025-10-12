@@ -14,6 +14,7 @@ import AnimatedLoader from "./components/AnimatedLoader";
 import { colors, spacing, typography, borderRadius } from "./designSystem";
 import { getUserInitial, getDisplayName } from "./utils";
 import ReportModal from "./ReportModal";
+import { useFeatureSettings } from "./hooks/useFeatureSettings";
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -398,6 +399,9 @@ function ProblemDetail() {
     const navigate = useNavigate();
     const location = useLocation();
     
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
+    
     // Create smart fallback path based on URL parameters
     const getSmartFallbackPath = () => {
         const urlParams = new URLSearchParams(location.search);
@@ -651,6 +655,12 @@ function ProblemDetail() {
     }
 
     const handleVote = async (voteType) => {
+        // Check if voting is enabled
+        if (!checkFeatureEnabled('voting_enabled')) {
+            showFeatureDisabledAlert('Voting');
+            return;
+        }
+
         setVoteLoading(true);
         try {
             const token = localStorage.getItem("token");
@@ -674,6 +684,12 @@ function ProblemDetail() {
         e.preventDefault();
         if (!newComment.trim()) return;
 
+        // Check if comments are enabled
+        if (!checkFeatureEnabled('comments_enabled')) {
+            showFeatureDisabledAlert('Comments');
+            return;
+        }
+
         try {
             const token = localStorage.getItem("token");
             const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/comments`,
@@ -694,6 +710,12 @@ function ProblemDetail() {
 
     const handleSubmitReply = async (parentCommentId) => {
         if (!replyText.trim()) return;
+
+        // Check if comments are enabled
+        if (!checkFeatureEnabled('comments_enabled')) {
+            showFeatureDisabledAlert('Comments');
+            return;
+        }
 
         try {
             const token = localStorage.getItem("token");

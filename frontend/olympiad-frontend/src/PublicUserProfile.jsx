@@ -11,6 +11,7 @@ import ReportModal from './ReportModal';
 import { colors, spacing, typography, borderRadius } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+import { useFeatureSettings } from './hooks/useFeatureSettings';
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -34,6 +35,9 @@ const renderMathContent = (text) => {
 const PublicUserProfile = () => {
     const { username } = useParams();
     const navigate = useNavigate();
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
     
     const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -71,6 +75,12 @@ const PublicUserProfile = () => {
 
     const handleFollow = async () => {
         if (!userProfile) return;
+        
+        // Check if following is enabled
+        if (!checkFeatureEnabled('following_enabled')) {
+            showFeatureDisabledAlert('Following');
+            return;
+        }
         
         try {
             setFollowLoading(true);
