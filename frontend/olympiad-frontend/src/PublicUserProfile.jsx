@@ -12,6 +12,7 @@ import { colors, spacing, typography, borderRadius } from './designSystem';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import { useFeatureSettings } from './hooks/useFeatureSettings';
+import { useProfileVisibility } from './hooks/useProfileVisibility';
 
 // Helper function to render math content
 const renderMathContent = (text) => {
@@ -39,7 +40,11 @@ const PublicUserProfile = () => {
     // Feature settings
     const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
     
+    // Profile visibility settings
+    const { canViewProfile, canViewProblems, loading: visibilityLoading } = useProfileVisibility();
+    
     const [userProfile, setUserProfile] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [following, setFollowing] = useState(false);
@@ -49,7 +54,22 @@ const PublicUserProfile = () => {
 
     useEffect(() => {
         fetchUserProfile();
+        fetchCurrentUser();
     }, [username]);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const response = await axios.get('http://127.0.0.1:8000/auth/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setCurrentUser(response.data);
+            }
+        } catch (err) {
+            // User not logged in, that's fine
+        }
+    };
 
     const fetchUserProfile = async () => {
         try {
@@ -295,7 +315,7 @@ const PublicUserProfile = () => {
                         >
                             <strong>{userProfile.following_count}</strong> following
                         </span>
-                        <span><strong>{userProfile.problems.length}</strong> problems</span>
+                        <span><strong>{canViewProblems(userProfile.user, currentUser, following, userProfile.is_followed_by_profile_owner) ? userProfile.problems.length : '?'}</strong> problems</span>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -330,7 +350,24 @@ const PublicUserProfile = () => {
                 <h3 style={{ marginBottom: '20px', color: '#333' }}>
                     Problems by {userProfile.user.username}
                 </h3>
-                {userProfile.problems.length === 0 ? (
+                {!canViewProblems(userProfile.user, currentUser, following, userProfile.is_followed_by_profile_owner) ? (
+                    <div style={{ 
+                        textAlign: 'center', 
+                        color: '#666', 
+                        padding: '40px',
+                        background: '#f8f9fa',
+                        borderRadius: '12px',
+                        border: '1px solid #e9ecef'
+                    }}>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                        <div style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>
+                            This user's problems are private
+                        </div>
+                        <div style={{ fontSize: '14px' }}>
+                            You need to follow each other to see their problems
+                        </div>
+                    </div>
+                ) : userProfile.problems.length === 0 ? (
                     <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
                         This user hasn't posted any problems yet.
                     </p>

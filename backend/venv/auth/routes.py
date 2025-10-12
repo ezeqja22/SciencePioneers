@@ -1551,6 +1551,15 @@ def get_public_user_profile(
         ).first()
         is_following = follow is not None
     
+    # Check if profile owner is following the current user (for mutual following)
+    is_followed_by_profile_owner = False
+    if current_user.id != user.id:  # Don't follow yourself
+        follow_back = db.query(Follow).filter(
+            Follow.follower_id == user.id,
+            Follow.following_id == current_user.id
+        ).first()
+        is_followed_by_profile_owner = follow_back is not None
+    
     # Get user's problems with comment counts
     problems = db.query(Problem).filter(Problem.author_id == user.id).order_by(Problem.created_at.desc()).all()
     
@@ -1586,6 +1595,7 @@ def get_public_user_profile(
         "follower_count": follower_count,
         "following_count": following_count,
         "is_following": is_following,
+        "is_followed_by_profile_owner": is_followed_by_profile_owner,
         "problems": problems_data
     }
 

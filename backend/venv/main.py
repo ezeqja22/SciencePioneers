@@ -104,7 +104,9 @@ async def get_site_info():
             "bookmarks_enabled": feature_settings.get('bookmarks_enabled', True),
             "following_enabled": feature_settings.get('following_enabled', True),
             "notifications_enabled": feature_settings.get('notifications_enabled', True),
-            "reports_enabled": feature_settings.get('reports_enabled', True)
+            "reports_enabled": feature_settings.get('reports_enabled', True),
+            # Add privacy settings
+            "profile_visibility": site_settings.get('profile_visibility', 'public')
         }
         
         return result
@@ -125,7 +127,9 @@ async def get_site_info():
             "bookmarks_enabled": True,
             "following_enabled": True,
             "notifications_enabled": True,
-            "reports_enabled": True
+            "reports_enabled": True,
+            # Default privacy settings
+            "profile_visibility": "public"
         }
 
 # Auto-cleanup function

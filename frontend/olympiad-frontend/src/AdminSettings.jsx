@@ -91,9 +91,9 @@ const AdminSettings = () => {
     },
     privacy: {
       profile_visibility: { type: 'select', label: 'Profile Visibility', options: ['public', 'private', 'friends_only'] },
-      show_online_status: { type: 'boolean', label: 'Show Online Status' },
-      allow_data_export: { type: 'boolean', label: 'Allow Data Export' },
-      gdpr_compliance: { type: 'boolean', label: 'GDPR Compliance' }
+      show_online_status: { type: 'boolean', label: 'Show Online Status', disabled: true },
+      allow_data_export: { type: 'boolean', label: 'Allow Data Export', disabled: true },
+      gdpr_compliance: { type: 'boolean', label: 'GDPR Compliance', disabled: true }
     },
     integration: {
       google_analytics_id: { type: 'text', label: 'Google Analytics ID' },
@@ -314,13 +314,13 @@ All settings are working correctly! 🎉
 
     switch (config.type) {
       case 'boolean':
-        // Check if this is a non-implemented feature
+        // Check if this is a non-implemented feature or explicitly disabled
         const nonImplementedFeatures = [
           'auto_moderate_content', 
           'require_approval_for_problems',
           'forum_creation_requires_approval'
         ];
-        const isDisabled = nonImplementedFeatures.includes(key);
+        const isDisabled = nonImplementedFeatures.includes(key) || config.disabled;
         
         return (
           <label style={{ 
@@ -351,9 +351,9 @@ All settings are working correctly! 🎉
         );
 
       case 'select':
-        // Check if this is a non-implemented feature
+        // Check if this is a non-implemented feature or explicitly disabled
         const nonImplementedSelectFeatures = [];
-        const isSelectDisabled = nonImplementedSelectFeatures.includes(key);
+        const isSelectDisabled = nonImplementedSelectFeatures.includes(key) || config.disabled;
         
         return (
           <select
@@ -716,10 +716,11 @@ All settings are working correctly! 🎉
                     display: 'block', 
                     fontWeight: '600', 
                     marginBottom: '8px',
-                    color: '#374151'
+                    color: config.disabled ? '#9ca3af' : '#374151'
                   }}>
                     {config.label}
                     {config.required && <span style={{ color: '#ef4444', marginLeft: '4px' }}>*</span>}
+                    {config.disabled && <span style={{ color: '#9ca3af', fontSize: '12px', marginLeft: '8px' }}>(Coming soon)</span>}
                   </label>
                   
                   {renderSettingField(activeTab, key, config)}
