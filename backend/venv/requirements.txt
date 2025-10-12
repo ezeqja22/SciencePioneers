@@ -13,3 +13,6 @@ python-multipart
 fastapi-mail
 jinja2
 pillow
+uvicorn[standard]
+websockets
+requests
