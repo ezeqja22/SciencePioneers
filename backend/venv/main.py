@@ -96,11 +96,6 @@ if admin_router:
 async def get_site_info():
     """Get public site information (no auth required)"""
     try:
-        # Import settings service with error handling
-try:
-    from settings_service import get_settings_service
-except ImportError:
-    get_settings_service = None
         db = next(get_db())
         settings_service = get_settings_service(db) if get_settings_service else None
         site_settings = settings_service.get_site_settings() if settings_service else {}
