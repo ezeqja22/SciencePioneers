@@ -19,7 +19,7 @@ except ImportError as e:
     print(f"Warning: Could not import admin routes: {e}")
     admin_router = None
 # Removed notification admin routes
-from fastapi.staticfiles import StaticFiles
+# Removed StaticFiles import - will use Cloudinary in production
 import asyncio
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -39,7 +39,7 @@ from auth.dependencies import SECRET_KEY
 load_dotenv()
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="uploads"), name="static")
+# Removed static files mount - will use Cloudinary in production
 models.Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
