@@ -196,6 +196,9 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
         pass  # Continue to create user for testing purposes
     
     # Create user (for testing, even if email failed)
+    print(f"DEBUG: Password type: {type(req.password)}")
+    print(f"DEBUG: Password length: {len(req.password)}")
+    print(f"DEBUG: Password value: {repr(req.password)}")
     hashed = hash_password(req.password)
     user = User(
         username=req.username, 
