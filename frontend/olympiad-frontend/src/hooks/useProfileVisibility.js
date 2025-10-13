@@ -12,7 +12,7 @@ export const useProfileVisibility = () => {
 
   const fetchProfileVisibility = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/site-info');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/site-info`);
       setProfileVisibility(response.data.profile_visibility || 'public');
     } catch (err) {
       setError(err);

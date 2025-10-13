@@ -141,7 +141,7 @@ const PublicUserProfile = () => {
                 const problemId = problem.id;
                 try {
                     const response = await axios.get(
-                        `http://127.0.0.1:8000/auth/problems/${problemId}/votes`,
+                        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/votes`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`
@@ -169,7 +169,7 @@ const PublicUserProfile = () => {
     const handleVote = async (problemId, voteType) => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/vote`,
                 { vote_type: voteType },
                 {
                     headers: {
@@ -258,7 +258,7 @@ const PublicUserProfile = () => {
                     fontWeight: 'bold',
                     marginRight: '20px',
                     backgroundImage: userProfile.user.profile_picture ? 
-                        `url(http://127.0.0.1:8000/auth/serve-image/${userProfile.user.profile_picture.split('/').pop()})` : 
+                        `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${userProfile.user.profile_picture.split('/').pop()})` : 
                         'none',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'
