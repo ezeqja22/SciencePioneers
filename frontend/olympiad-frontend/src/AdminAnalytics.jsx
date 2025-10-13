@@ -454,22 +454,22 @@ const AdminAnalytics = () => {
         <h2>System Health</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
           <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>✅ System Online</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>System Online</h3>
             <p style={{ margin: 0, color: '#6c757d' }}>All services operational</p>
           </div>
           
           <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#17a2b8' }}>📊 Database</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#17a2b8' }}>Database</h3>
             <p style={{ margin: 0, color: '#6c757d' }}>Response time: {analytics?.db_response_time || 'N/A'}ms</p>
           </div>
           
           <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#ffc107' }}>💾 Storage</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ffc107' }}>Storage</h3>
             <p style={{ margin: 0, color: '#6c757d' }}>Usage: {analytics?.storage_usage || 'N/A'}</p>
           </div>
           
           <div style={{ textAlign: 'center', padding: '20px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h3 style={{ margin: '0 0 10px 0', color: '#6f42c1' }}>🔄 Uptime</h3>
+            <h3 style={{ margin: '0 0 10px 0', color: '#6f42c1' }}>Uptime</h3>
             <p style={{ margin: 0, color: '#6c757d' }}>{analytics?.uptime || '99.9%'}</p>
           </div>
         </div>
