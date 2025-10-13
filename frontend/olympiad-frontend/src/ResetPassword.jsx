@@ -80,7 +80,7 @@ function ResetPassword() {
                     padding: spacing.lg
                 }}>
                     <Card style={{ maxWidth: "500px", textAlign: "center" }}>
-                        <div style={{ fontSize: "64px", marginBottom: "20px" }}>✅</div>
+                        <div style={{ fontSize: "64px", marginBottom: "20px" }}></div>
                         <h1 style={{ 
                             color: colors.success, 
                             marginBottom: "20px",
@@ -129,7 +129,7 @@ function ResetPassword() {
             }}>
                 <Card style={{ maxWidth: "500px" }}>
                     <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "48px", marginBottom: "20px" }}>🔒</div>
+                        <div style={{ fontSize: "48px", marginBottom: "20px" }}></div>
                         <h1 style={{ 
                             color: colors.primary, 
                             marginBottom: "20px",

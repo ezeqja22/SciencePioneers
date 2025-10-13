@@ -363,7 +363,7 @@ function ThreadPage() {
                                     onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
                                     onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                 >
-                                    🗑️
+                                    
                                 </button>
                             )}
                         </div>

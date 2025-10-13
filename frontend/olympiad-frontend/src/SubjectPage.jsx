@@ -525,7 +525,7 @@ function SubjectPage() {
                                                     }
                                                 }}
                                             >
-                                                👍 {voteData[problem.id]?.like_count || 0}
+                                                 {voteData[problem.id]?.like_count || 0}
                                             </button>
                                             <button
                                                 onClick={(e) => {
@@ -560,9 +560,9 @@ function SubjectPage() {
                                                     }
                                                 }}
                                             >
-                                                👎 {voteData[problem.id]?.dislike_count || 0}
+                                                 {voteData[problem.id]?.dislike_count || 0}
                                             </button>
-                                            <span style={{ pointerEvents: "none" }}>💬 {problem.comment_count || 0}</span>
+                                            <span style={{ pointerEvents: "none" }}> {problem.comment_count || 0}</span>
                                         </div>
                                     </div>
                                 </div>

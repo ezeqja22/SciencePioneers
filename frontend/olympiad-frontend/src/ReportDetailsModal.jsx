@@ -732,7 +732,7 @@ ${currentUser?.username || 'Admin'}`;
                                         }
                                     }}
                                 >
-                                    🔒 Deactivate Account
+                                     Deactivate Account
                                 </button>
                                 {targetUser && targetUser.is_banned && (
                                     <button
@@ -786,7 +786,7 @@ ${currentUser?.username || 'Admin'}`;
                                     marginBottom: spacing.sm
                                 }}
                             >
-                                📧 Send Email
+                                 Send Email
                             </button>
                         )}
 
@@ -823,7 +823,7 @@ ${currentUser?.username || 'Admin'}`;
                                         }
                                     }}
                                 >
-                                    ❌ Dismiss Report
+                                     Dismiss Report
                                 </button>
                                 <button
                                     onClick={handleResolveReport}
@@ -856,7 +856,7 @@ ${currentUser?.username || 'Admin'}`;
                                         }
                                     }}
                                 >
-                                    ✅ Resolve Report
+                                     Resolve Report
                                 </button>
                             </>
                         )}
@@ -888,7 +888,7 @@ ${currentUser?.username || 'Admin'}`;
                                     marginTop: spacing.sm
                                 }}
                             >
-                                📝 Update Notes
+                                 Update Notes
                             </button>
                         </div>
                     )}
@@ -994,7 +994,7 @@ ${currentUser?.username || 'Admin'}`;
                                 disabled={actionLoading}
                                 className="admin-btn"
                             >
-                                📧 Send Email
+                                 Send Email
                             </button>
                         </div>
                     </div>

@@ -130,10 +130,10 @@ const AdminReports = () => {
   const getReportTypeIcon = (type) => {
     const icons = {
       user: '👤',
-      forum: '💬',
-      problem: '📝',
+      forum: '',
+      problem: '',
       comment: '💭',
-      message: '💬'
+      message: ''
     };
     return icons[type] || '📄';
   };

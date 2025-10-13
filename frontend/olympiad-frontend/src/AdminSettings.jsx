@@ -12,14 +12,14 @@ const AdminSettings = () => {
   // Settings categories
   const categories = {
     site: { name: 'Site Settings', icon: '🌐', color: '#3b82f6' },
-    email: { name: 'Email Settings', icon: '📧', color: '#10b981' },
-    security: { name: 'Security', icon: '🔒', color: '#ef4444' },
-    content: { name: 'Content', icon: '📝', color: '#8b5cf6' },
-    forum: { name: 'Forums', icon: '💬', color: '#f59e0b' },
-    notification: { name: 'Notifications', icon: '🔔', color: '#06b6d4' },
+    email: { name: 'Email Settings', icon: '', color: '#10b981' },
+    security: { name: 'Security', icon: '', color: '#ef4444' },
+    content: { name: 'Content', icon: '', color: '#8b5cf6' },
+    forum: { name: 'Forums', icon: '', color: '#f59e0b' },
+    notification: { name: 'Notifications', icon: '', color: '#06b6d4' },
     analytics: { name: 'Analytics', icon: '📊', color: '#84cc16' },
     maintenance: { name: 'Maintenance', icon: '🔧', color: '#6b7280' },
-    feature: { name: 'Features', icon: '⚙️', color: '#ec4899' },
+    feature: { name: 'Features', icon: '', color: '#ec4899' },
     privacy: { name: 'Privacy', icon: '🛡️', color: '#14b8a6' },
     integration: { name: 'Integrations', icon: '🔗', color: '#f97316' },
     advanced: { name: 'Advanced', icon: '⚡', color: '#6366f1' }
@@ -269,20 +269,20 @@ const AdminSettings = () => {
                 const message = `
 🧪 Settings Test Results:
 
-✅ Settings Loaded: ${results.settings_loaded ? 'Yes' : 'No'}
-📝 Site Name: ${results.site_name || 'Not Set'}
+ Settings Loaded: ${results.settings_loaded ? 'Yes' : 'No'}
+ Site Name: ${results.site_name || 'Not Set'}
 🔧 Maintenance Mode: ${results.maintenance_mode ? 'ON' : 'OFF'}
-💬 Forums Enabled: ${results.forums_enabled ? 'Yes' : 'No'}
+ Forums Enabled: ${results.forums_enabled ? 'Yes' : 'No'}
 👥 Registration Enabled: ${results.registration_enabled ? 'Yes' : 'No'}
 
-📧 EMAIL SETTINGS:
+ EMAIL SETTINGS:
 🌐 SMTP Server: ${results.smtp_server || 'Not Set'}
 🔌 SMTP Port: ${results.smtp_port || 'Not Set'}
 👤 SMTP Username: ${results.smtp_username || 'Not Set'}
-🔒 SMTP Password: ${results.smtp_password || 'Not Set'}
+ SMTP Password: ${results.smtp_password || 'Not Set'}
 🔐 Use TLS: ${results.smtp_use_tls ? 'Yes' : 'No'}
-📨 From Name: ${results.email_from_name || 'Not Set'}
-📧 From Address: ${results.email_from_address || 'Not Set'}
+ From Name: ${results.email_from_name || 'Not Set'}
+ From Address: ${results.email_from_address || 'Not Set'}
 
 📈 Total Settings: ${results.total_settings || 0}
 
@@ -478,7 +478,7 @@ All settings are working correctly! 🎉
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '24px', marginBottom: '16px' }}>⚙️</div>
+          <div style={{ fontSize: '24px', marginBottom: '16px' }}></div>
           <div>Loading settings...</div>
         </div>
       </div>
@@ -497,7 +497,7 @@ All settings are working correctly! 🎉
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent'
         }}>
-          ⚙️ System Settings
+           System Settings
         </h1>
         <p style={{ color: '#6b7280', margin: 0 }}>
           Configure system-wide settings and preferences
@@ -761,7 +761,7 @@ All settings are working correctly! 🎉
               borderRadius: '12px',
               border: '2px dashed #d1d5db'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚙️</div>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
               <div style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>
                 No settings available for this category
               </div>

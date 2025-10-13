@@ -340,7 +340,7 @@ const PublicUserProfile = () => {
                             fontWeight: '500'
                         }}
                     >
-                        🚨 Report User
+                        Report User
                     </Button>
                 </div>
             </div>
@@ -359,7 +359,7 @@ const PublicUserProfile = () => {
                         borderRadius: '12px',
                         border: '1px solid #e9ecef'
                     }}>
-                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
                         <div style={{ fontSize: '18px', fontWeight: '500', marginBottom: '8px' }}>
                             This user's problems are private
                         </div>
@@ -457,7 +457,7 @@ const PublicUserProfile = () => {
                                                 }
                                             }}
                                         >
-                                            👍 {voteData[problem.id]?.like_count || 0}
+                                             {voteData[problem.id]?.like_count || 0}
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -491,9 +491,9 @@ const PublicUserProfile = () => {
                                                 }
                                             }}
                                         >
-                                            👎 {voteData[problem.id]?.dislike_count || 0}
+                                             {voteData[problem.id]?.dislike_count || 0}
                                         </button>
-                                        <span>💬 {problem.comment_count}</span>
+                                        <span> {problem.comment_count}</span>
                                     </div>
                                     <button 
                                         onClick={() => navigate(`/problem/${problem.id}?from=user&username=${encodeURIComponent(username)}`)}

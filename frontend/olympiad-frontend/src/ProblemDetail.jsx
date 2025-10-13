@@ -86,7 +86,7 @@ const CommentThread = ({
                         fontWeight: "bold",
                         zIndex: 1
                     }}>
-                        ✅ SOLUTION
+                         SOLUTION
                     </div>
                 )}
                 
@@ -154,7 +154,7 @@ const CommentThread = ({
                                     e.target.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
                                 }}
                             >
-                                💬 Reply
+                                 Reply
                             </button>
                             
                             {/* Report Comment Button */}
@@ -179,7 +179,7 @@ const CommentThread = ({
                                     e.target.style.color = "#dc3545";
                                 }}
                             >
-                                🚨 Report
+                                 Report
                             </button>
                             
                             {currentUser && currentUser.id === comment.author_id && (
@@ -257,7 +257,7 @@ const CommentThread = ({
                                         e.target.style.boxShadow = comment.is_solution ? "0 4px 15px rgba(239, 68, 68, 0.4)" : "0 4px 15px rgba(16, 185, 129, 0.4)";
                                     }}
                                 >
-                                    {comment.is_solution ? "❌ Unmark Solution" : "✅ Mark as Solution"}
+                                    {comment.is_solution ? " Unmark Solution" : " Mark as Solution"}
                                 </button>
                             )}
                         </div>
@@ -1796,7 +1796,7 @@ function ProblemDetail() {
                                 gap: "5px"
                             }}
                         >
-                            👍 {voteStatus.like_count}
+                             {voteStatus.like_count}
                         </button>
                         <button
                             onClick={() => handleVote("dislike")}
@@ -1812,7 +1812,7 @@ function ProblemDetail() {
                                 gap: "5px"
                             }}
                         >
-                            👎 {voteStatus.dislike_count}
+                             {voteStatus.dislike_count}
                         </button>
                     </div>
                 </div>

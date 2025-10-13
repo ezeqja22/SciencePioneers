@@ -628,7 +628,7 @@ const ForumChat = () => {
                                     fontSize: "24px",
                                     marginBottom: spacing.xs
                                 }}>
-                                    📝
+                                    
                                 </div>
                                 <span style={{
                                     fontSize: typography.fontSize.sm,

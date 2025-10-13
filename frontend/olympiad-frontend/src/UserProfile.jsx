@@ -644,7 +644,7 @@ function UserProfile() {
                                         }
                                     }}
                                 >
-                                    {uploading ? "Removing..." : "🗑️ Remove Profile Picture"}
+                                    {uploading ? "Removing..." : " Remove Profile Picture"}
                                 </button>
                             </div>
                         )}
@@ -989,7 +989,7 @@ function UserProfile() {
                                                     }
                                                 }}
                                             >
-                                                👍 {voteData[problem.id]?.like_count || 0}
+                                                 {voteData[problem.id]?.like_count || 0}
                                             </button>
                                             <button
                                                 onClick={(e) => {
@@ -1023,7 +1023,7 @@ function UserProfile() {
                                                     }
                                                 }}
                                             >
-                                                👎 {voteData[problem.id]?.dislike_count || 0}
+                                                 {voteData[problem.id]?.dislike_count || 0}
                                             </button>
                                             <span style={{ fontSize: "12px", color: "#666" }}>
                                                 {new Date(problem.created_at).toLocaleDateString()}
@@ -1127,7 +1127,7 @@ function UserProfile() {
                                                     fontSize: "11px",
                                                     fontWeight: "bold"
                                                 }}>
-                                                    ✅ SOLUTION
+                                                     SOLUTION
                                                 </div>
                                             )}
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
@@ -1171,7 +1171,7 @@ function UserProfile() {
                                                 fontSize: "11px",
                                                 fontWeight: "bold"
                                             }}>
-                                                ✅ SOLUTION
+                                                 SOLUTION
                                             </div>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
                                                 <Link to={`/problem/${comment.problem.id}?from=/profile`} style={{ textDecoration: "none" }}>
@@ -1311,7 +1311,7 @@ function UserProfile() {
                                                     }
                                                 }}
                                             >
-                                                👍 {voteData[bookmark.problem.id]?.like_count || 0}
+                                                 {voteData[bookmark.problem.id]?.like_count || 0}
                                             </button>
                                             <button
                                                 onClick={(e) => {
@@ -1345,7 +1345,7 @@ function UserProfile() {
                                                     }
                                                 }}
                                             >
-                                                👎 {voteData[bookmark.problem.id]?.dislike_count || 0}
+                                                 {voteData[bookmark.problem.id]?.dislike_count || 0}
                                             </button>
                                             <span style={{ fontSize: "12px", color: "#666" }}>
                                                 Bookmarked {new Date(bookmark.created_at).toLocaleDateString()}

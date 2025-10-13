@@ -112,7 +112,7 @@ const EmailVerification = () => {
           maxWidth: '400px',
           width: '100%'
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}></div>
           <h2 style={{ color: '#28a745', marginBottom: '20px' }}>Email Verified!</h2>
           <p style={{ color: '#666', marginBottom: '20px' }}>
             Your email has been successfully verified. You are now automatically logged in!
@@ -142,7 +142,7 @@ const EmailVerification = () => {
         width: '100%'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>📧</div>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}></div>
           <h2 style={{ color: '#333', marginBottom: '10px' }}>Verify Your Email</h2>
           <p style={{ color: '#666', fontSize: '14px' }}>
             We've sent a 6-digit verification code to:

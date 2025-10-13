@@ -795,7 +795,7 @@ function Feed() {
                       }
                     }}
                   >
-                    👍 {voteData[problem.id]?.like_count || 0}
+                     {voteData[problem.id]?.like_count || 0}
                   </button>
                   <button
                     onClick={(e) => {
@@ -829,10 +829,10 @@ function Feed() {
                       }
                     }}
                   >
-                    👎 {voteData[problem.id]?.dislike_count || 0}
+                     {voteData[problem.id]?.dislike_count || 0}
                   </button>
                   <span style={{ fontSize: "12px", color: "#666", pointerEvents: "none" }}>
-                    💬 {problem.comment_count || 0}
+                     {problem.comment_count || 0}
                   </span>
                   <button
                     onClick={(e) => {

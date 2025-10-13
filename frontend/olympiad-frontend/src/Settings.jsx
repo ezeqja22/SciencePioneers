@@ -348,7 +348,7 @@ function Settings() {
                 }}>
                     <Card>
                         <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "48px", marginBottom: "20px" }}>✅</div>
+                            <div style={{ fontSize: "48px", marginBottom: "20px" }}></div>
                             <h2 style={{ color: colors.danger, marginBottom: "20px" }}>Account Deleted</h2>
                             <p style={{ color: colors.gray[600], marginBottom: "20px" }}>
                                 Your account has been successfully deleted. All your content will remain but will be attributed to "[deleted user]".
@@ -429,7 +429,7 @@ function Settings() {
                                 transition: "all 0.2s ease"
                             }}
                         >
-                            🔒 Change Password
+                             Change Password
                         </Button>
                     </div>
 
@@ -470,7 +470,7 @@ function Settings() {
                                 marginBottom: spacing.md,
                                 border: `1px solid ${colors.success}40`
                             }}>
-                                ✅ Notification preferences updated successfully!
+                                 Notification preferences updated successfully!
                             </div>
                         )}
 
@@ -484,7 +484,7 @@ function Settings() {
                                         color: colors.dark,
                                         marginBottom: spacing.md
                                     }}>
-                                        📧 Email Notifications
+                                         Email Notifications
                                     </h3>
                                     
                                     <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
@@ -684,7 +684,7 @@ function Settings() {
                                         color: colors.dark,
                                         marginBottom: spacing.md
                                     }}>
-                                        🔔 In-App Notifications
+                                         In-App Notifications
                                     </h3>
                                     
                                     <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
@@ -833,7 +833,7 @@ function Settings() {
                                 transition: "all 0.2s ease"
                             }}
                         >
-                            🗑️ Delete Account
+                             Delete Account
                         </Button>
                     </div>
                 </Card>
@@ -928,7 +928,7 @@ function Settings() {
                     }}>
                         <Card style={{ maxWidth: "500px", margin: spacing.lg }}>
                             <div style={{ textAlign: "center" }}>
-                                <div style={{ fontSize: "48px", marginBottom: "20px" }}>📧</div>
+                                <div style={{ fontSize: "48px", marginBottom: "20px" }}></div>
                                 <h2 style={{ 
                                     color: colors.danger, 
                                     marginBottom: "20px",
@@ -1049,7 +1049,7 @@ function Settings() {
                                     marginBottom: "24px",
                                     filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))"
                                 }}>
-                                    🔒
+                                    
                                 </div>
                                 
                                 <h2 style={{ 
@@ -1080,7 +1080,7 @@ function Settings() {
                                         fontSize: typography.fontSize.lg,
                                         fontWeight: typography.fontWeight.medium
                                     }}>
-                                        ✅ Password changed successfully!
+                                         Password changed successfully!
                                     </div>
                                 ) : forgotPasswordSuccess ? (
                                     <div style={{ 
@@ -1089,7 +1089,7 @@ function Settings() {
                                         fontSize: typography.fontSize.lg,
                                         fontWeight: typography.fontWeight.medium
                                     }}>
-                                        📧 Reset link sent to your email!
+                                         Reset link sent to your email!
                                     </div>
                                 ) : (
                                     <form onSubmit={(e) => { 

@@ -1397,7 +1397,7 @@ const ForumDetail = () => {
                                                         onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[50]}
                                                         onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                                     >
-                                                        🗑️ Delete Forum
+                                                         Delete Forum
                                                     </button>
                                                 </>
                                             ) : isMember ? (
@@ -2596,7 +2596,7 @@ const ForumDetail = () => {
                                                                             e.target.style.backgroundColor = 'transparent';
                                                                         }}
                                                                     >
-                                                                        💬 Reply
+                                                                         Reply
                                                                     </button>
                                                                     {hasPermission('pin') && (
                                                                         <button
@@ -2647,7 +2647,7 @@ const ForumDetail = () => {
                                                                                 e.target.style.backgroundColor = 'transparent';
                                                                             }}
                                                                         >
-                                                                            🗑️ Delete Message
+                                                                             Delete Message
                                                                         </button>
                                                                     )}
                                                                     {/* Report Option - Available to all users */}
@@ -2678,7 +2678,7 @@ const ForumDetail = () => {
                                                                             e.target.style.backgroundColor = 'transparent';
                                                                         }}
                                                                     >
-                                                                        🚨 Report Message
+                                                                         Report Message
                                                                     </button>
                                                                 </div>
                                                             )}
@@ -2736,7 +2736,7 @@ const ForumDetail = () => {
                                                             onMouseEnter={(e) => e.target.style.color = colors.primaryDark}
                                                             onMouseLeave={(e) => e.target.style.color = colors.primary}
                                                         >
-                                                            💬 {replyCounts[message.id]} {replyCounts[message.id] === 1 ? 'reply' : 'replies'}
+                                                             {replyCounts[message.id]} {replyCounts[message.id] === 1 ? 'reply' : 'replies'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2952,7 +2952,7 @@ const ForumDetail = () => {
                                             e.target.style.backgroundColor = 'transparent';
                                         }}
                                     >
-                                        <div style={{ fontSize: "24px", marginBottom: spacing.xs }}>📝</div>
+                                        <div style={{ fontSize: "24px", marginBottom: spacing.xs }}></div>
                                         <span style={{ 
                                             fontSize: typography.fontSize.sm,
                                             fontWeight: typography.fontWeight.medium

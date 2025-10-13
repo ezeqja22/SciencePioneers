@@ -722,7 +722,7 @@ const SearchResults = () => {
                                                 }
                                             }}
                                         >
-                                            👍 {voteData[problem.id]?.like_count || 0}
+                                             {voteData[problem.id]?.like_count || 0}
                                         </button>
                                         <button
                                             onClick={(e) => {
@@ -756,10 +756,10 @@ const SearchResults = () => {
                                                 }
                                             }}
                                         >
-                                            👎 {voteData[problem.id]?.dislike_count || 0}
+                                             {voteData[problem.id]?.dislike_count || 0}
                                         </button>
                                         <span style={{ color: "#666", fontSize: "12px" }}>
-                                            💬 {problem.comment_count} comments
+                                             {problem.comment_count} comments
                                         </span>
                                     </div>
                                 </div>

@@ -496,7 +496,7 @@ function Homepage() {
                                         onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
                                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                         >
-                                            ⚙️ Settings
+                                             Settings
                                         </button>
                                     </Link>
                                     {/* Admin Panel Link - Only show for admins and moderators */}
@@ -517,7 +517,7 @@ function Homepage() {
                                             onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
                                             onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                             >
-                                                🛠️ Admin Panel
+                                                 Admin Panel
                                             </button>
                                         </Link>
                                     )}

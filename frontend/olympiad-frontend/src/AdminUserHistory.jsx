@@ -61,11 +61,11 @@ const AdminUserHistory = () => {
     switch (actionType) {
       case 'warn': return '⚠️';
       case 'ban': return '🚫';
-      case 'unban': return '✅';
-      case 'deactivate': return '🔒';
+      case 'unban': return '';
+      case 'deactivate': return '';
       case 'activate': return '🔓';
       case 'time_ban': return '⏰';
-      default: return '📝';
+      default: return '';
     }
   };
 

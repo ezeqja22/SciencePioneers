@@ -72,13 +72,13 @@ const AdminLayout = () => {
     {
       path: '/admin/forums',
       label: 'Forums',
-      icon: '💬',
+      icon: '',
       adminOnly: false
     },
     {
       path: '/admin/reports',
       label: 'Reports',
-      icon: '🚨',
+      icon: '',
       adminOnly: false
     },
         {
@@ -90,13 +90,13 @@ const AdminLayout = () => {
         {
           path: '/admin/settings',
           label: 'Settings',
-          icon: '⚙️',
+          icon: '',
           adminOnly: true
         },
     {
       path: '/admin/email',
       label: 'Email',
-      icon: '📧',
+      icon: '',
       adminOnly: true
     },
     {
@@ -116,7 +116,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <div className={`admin-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="admin-sidebar-header">
-          <h2>🛠️ Admin Panel</h2>
+          <h2> Admin Panel</h2>
           <button 
             className="sidebar-toggle"
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -145,7 +145,7 @@ const AdminLayout = () => {
             className="back-to-site"
             onClick={() => navigate('/')}
           >
-            <span className="nav-icon">🏠</span>
+            <span className="nav-icon"></span>
             {sidebarOpen && <span className="nav-label">Back to Site</span>}
           </button>
         </div>

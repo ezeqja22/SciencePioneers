@@ -107,19 +107,19 @@ const AdminDashboard = () => {
             className="admin-btn"
             onClick={() => navigate('/admin/forums')}
           >
-            💬 Moderate Forums
+             Moderate Forums
           </button>
           <button 
             className="admin-btn"
             onClick={() => navigate('/admin/reports')}
           >
-            🚨 Review Reports
+             Review Reports
           </button>
           <button 
             className="admin-btn secondary"
             onClick={() => navigate('/admin/email')}
           >
-            📧 Send Email
+             Send Email
           </button>
           <button 
             className="admin-btn secondary"
