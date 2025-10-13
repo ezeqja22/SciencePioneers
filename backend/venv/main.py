@@ -40,7 +40,14 @@ load_dotenv()
 
 app = FastAPI()
 # Removed static files mount - will use Cloudinary in production
-models.Base.metadata.create_all(bind=engine)
+
+# Create database tables with error handling
+try:
+    models.Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully")
+except Exception as e:
+    print(f"Warning: Could not create database tables: {e}")
+    print("This is normal if the database is not available yet")
 
 app.add_middleware(
     CORSMiddleware,
