@@ -105,7 +105,7 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                 year: formData.year ? parseInt(formData.year) : null
             };
 
-            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/problems`, problemData, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/problems`, problemData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -117,7 +117,7 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
                         const formData = new FormData();
                         formData.append('file', file);
                         
-                        const uploadUrl = `http://127.0.0.1:8000/auth/problems/${response.data.id}/images`;
+                        const uploadUrl = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${response.data.id}/images`;
                         
                         await axios.post(
                             uploadUrl,
@@ -139,7 +139,7 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
             }
 
             // Send the problem as a message to the forum
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 content: `Posted a new problem: "${formData.title}"`,
                 message_type: "problem",
                 problem_id: response.data.id

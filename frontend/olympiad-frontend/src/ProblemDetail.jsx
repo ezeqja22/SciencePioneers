@@ -569,7 +569,7 @@ function ProblemDetail() {
         try {
             const token = localStorage.getItem("token");
             
-            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/id/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProblem(response.data);
@@ -577,7 +577,7 @@ function ProblemDetail() {
             // Increment view count
             try {
                 const token = localStorage.getItem("token");
-                await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/view`, {}, {
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/view`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (viewError) {
@@ -586,7 +586,7 @@ function ProblemDetail() {
             
             // Fetch problem images
             try {
-                const imagesResponse = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/images`, {
+                const imagesResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/images`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setProblemImages(imagesResponse.data.images || []);
@@ -610,7 +610,7 @@ function ProblemDetail() {
     const fetchComments = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/comments`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -629,7 +629,7 @@ function ProblemDetail() {
     const fetchVoteStatus = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get(`http://127.0.0.1:8000/auth/problems/${id}/vote-status`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/vote-status`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -643,7 +643,7 @@ function ProblemDetail() {
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -664,7 +664,7 @@ function ProblemDetail() {
         setVoteLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/vote`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/vote`,
                 { vote_type: voteType },
                 {
                     headers: {
@@ -692,7 +692,7 @@ function ProblemDetail() {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/comments`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments`,
                 { text: newComment },
                 {
                     headers: {
@@ -719,7 +719,7 @@ function ProblemDetail() {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${id}/comments`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments`,
                 { 
                     text: replyText,
                     parent_comment_id: parentCommentId
@@ -749,7 +749,7 @@ function ProblemDetail() {
 
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}`,
+            const response = await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments/${commentId}`,
                 { text: editText },
                 {
                     headers: {
@@ -779,7 +779,7 @@ function ProblemDetail() {
 
         try {
             const token = localStorage.getItem("token");
-            await axios.delete(`http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments/${commentId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -804,7 +804,7 @@ function ProblemDetail() {
         try {
             const token = localStorage.getItem("token");
             const response = await axios.put(
-                `http://127.0.0.1:8000/auth/problems/${id}/comments/${commentId}/solution`,
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/comments/${commentId}/solution`,
                 {},
                 {
                     headers: {
@@ -902,7 +902,7 @@ function ProblemDetail() {
             };
             
             
-            const response = await axios.put(`http://127.0.0.1:8000/auth/problems/${id}`,
+            const response = await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}`,
                 requestData,
                 {
                     headers: {
@@ -944,7 +944,7 @@ function ProblemDetail() {
 
         try {
             const token = localStorage.getItem("token");
-            await axios.delete(`http://127.0.0.1:8000/auth/problems/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -1247,7 +1247,7 @@ function ProblemDetail() {
                                             height: "100px"
                                         }}>
                                             <img 
-                                                src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
+                                                src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${image}`}
                                                 alt={`Problem image ${index + 1}`}
                                                 style={{
                                                     width: "100%",
@@ -1261,7 +1261,7 @@ function ProblemDetail() {
                                                     try {
                                                         const token = localStorage.getItem("token");
                                                         await axios.delete(
-                                                            `http://127.0.0.1:8000/auth/problems/${id}/images/${image}`,
+                                                            `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/images/${image}`,
                                                             {
                                                                 headers: {
                                                                     Authorization: `Bearer ${token}`
@@ -1327,7 +1327,7 @@ function ProblemDetail() {
                                                 
                                                 const token = localStorage.getItem("token");
                                                 const uploadResponse = await axios.post(
-                                                    `http://127.0.0.1:8000/auth/problems/${id}/images`,
+                                                    `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/images`,
                                                     formData,
                                                     {
                                                         headers: {
@@ -1503,7 +1503,7 @@ function ProblemDetail() {
                                         fontWeight: "bold",
                                         fontSize: "16px",
                                         backgroundImage: problem.author.profile_picture ? 
-                                            `url(http://127.0.0.1:8000/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : 
+                                            `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : 
                                             'none',
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
@@ -1729,7 +1729,7 @@ function ProblemDetail() {
                                 onClick={() => openImageModal(index)}
                                 >
                                     <img 
-                                        src={`http://127.0.0.1:8000/auth/serve-problem-image/${image}`}
+                                        src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${image}`}
                                         alt={`Problem image ${index + 1}`}
                                         style={{
                                             width: "100%",
@@ -2031,7 +2031,7 @@ function ProblemDetail() {
 
                     {/* Fullscreen image */}
                     <img
-                        src={`http://127.0.0.1:8000/auth/serve-problem-image/${problemImages[currentImageIndex]}`}
+                        src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${problemImages[currentImageIndex]}`}
                         alt={`Problem image ${currentImageIndex + 1}`}
                         style={{
                             maxWidth: "90vw",

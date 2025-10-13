@@ -39,7 +39,7 @@ const FollowersFollowing = ({ type }) => {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -55,10 +55,10 @@ const FollowersFollowing = ({ type }) => {
             
             // Fetch both followers and following
             const [followersResponse, followingResponse] = await Promise.all([
-                axios.get(`http://127.0.0.1:8000/auth/followers/${userId}`, {
+                axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/followers/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                axios.get(`http://127.0.0.1:8000/auth/following/${userId}`, {
+                axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/following/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -91,7 +91,7 @@ const FollowersFollowing = ({ type }) => {
         try {
             const token = localStorage.getItem("token");
             await axios.post(
-                `http://127.0.0.1:8000/auth/follow/${targetUserId}`,
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${targetUserId}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -110,7 +110,7 @@ const FollowersFollowing = ({ type }) => {
         try {
             const token = localStorage.getItem("token");
             await axios.delete(
-                `http://127.0.0.1:8000/auth/follow/${targetUserId}`,
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${targetUserId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -277,7 +277,7 @@ const FollowersFollowing = ({ type }) => {
                                                 fontWeight: typography.fontWeight.bold,
                                                 fontSize: typography.fontSize.lg,
                                                 backgroundImage: user.profile_picture ? 
-                                                    `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : 
+                                                    `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : 
                                                     'none',
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center"

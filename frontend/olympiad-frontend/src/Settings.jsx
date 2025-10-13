@@ -51,7 +51,7 @@ function Settings() {
                 return;
             }
 
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -66,7 +66,7 @@ function Settings() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get("http://127.0.0.1:8000/auth/notification-preferences", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notification-preferences", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNotificationPrefs(response.data);
@@ -83,7 +83,7 @@ function Settings() {
             setPrefsSuccess(false);
 
             const token = localStorage.getItem("token");
-            const response = await axios.put("http://127.0.0.1:8000/auth/notification-preferences", updatedPrefs, {
+            const response = await axios.put("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notification-preferences", updatedPrefs, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -138,7 +138,7 @@ function Settings() {
         try {
             const token = localStorage.getItem("token");
             await axios.post(
-                "http://127.0.0.1:8000/auth/verify-password",
+                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/verify-password",
                 {
                     old_password: oldPassword
                 },
@@ -170,7 +170,7 @@ function Settings() {
         setPasswordError("");
         
         try {
-            await axios.post("http://127.0.0.1:8000/auth/forgot-password", {
+            await axios.post("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forgot-password", {
                 email: currentUser?.email
             }, {
                 headers: {
@@ -220,7 +220,7 @@ function Settings() {
             const token = localStorage.getItem("token");
             
             await axios.post(
-                "http://127.0.0.1:8000/auth/change-password",
+                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/change-password",
                 {
                     old_password: passwordToUse,
                     new_password: newPassword
@@ -265,7 +265,7 @@ function Settings() {
         setError("");
         
         try {
-            const response = await axios.post("http://127.0.0.1:8000/auth/delete-account-request", {}, {
+            const response = await axios.post("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/delete-account-request", {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -303,7 +303,7 @@ function Settings() {
         setError("");
 
         try {
-            const response = await axios.post("http://127.0.0.1:8000/auth/delete-account", {
+            const response = await axios.post("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/delete-account", {
                 verification_code: verificationCode
             }, {
                 headers: { Authorization: `Bearer ${token}` }

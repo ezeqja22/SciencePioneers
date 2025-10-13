@@ -50,7 +50,7 @@ const ForumInfo = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -67,7 +67,7 @@ const ForumInfo = () => {
                 return;
             }
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setForum(response.data);
@@ -90,7 +90,7 @@ const ForumInfo = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/problems`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/problems`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProblems(response.data);
@@ -104,7 +104,7 @@ const ForumInfo = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/members`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMembers(response.data);
@@ -120,7 +120,7 @@ const ForumInfo = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/leave`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/leave`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

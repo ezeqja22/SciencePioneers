@@ -82,7 +82,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://127.0.0.1:8000/admin/reports/${reportId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReport(response.data);
@@ -104,7 +104,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
     const fetchUserHistory = async (userId) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://127.0.0.1:8000/admin/users/${userId}/moderation-history`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}/moderation-history`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUserHistory(response.data);
@@ -119,7 +119,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
-            await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/assign`, {}, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/assign`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('Report assigned successfully');
@@ -135,7 +135,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
     const handleUpdateNotes = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/investigation-notes`, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/investigation-notes`, {
                 notes: investigationNotes
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -155,7 +155,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
-            await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/resolve`, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/resolve`, {
                 resolution: resolution
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -179,7 +179,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
-            await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/dismiss`, {
                 reason: resolution
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -212,7 +212,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
                 ...additionalData
             };
 
-            await axios.post(`http://127.0.0.1:8000/admin/users/${report.target_id}/${action}`, data, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${report.target_id}/${action}`, data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -224,7 +224,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
             // If this is a user report, refresh the target user data
             if (report.report_type === 'user' && report.target_id) {
                 try {
-                    const userResponse = await axios.get(`http://127.0.0.1:8000/auth/users/${report.target_id}`, {
+                    const userResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/users/${report.target_id}`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setTargetUser(userResponse.data);
@@ -250,7 +250,7 @@ const ReportDetailsModal = ({ isOpen, onClose, reportId, currentUser, onReportUp
         try {
             setActionLoading(true);
             const token = localStorage.getItem('token');
-            await axios.post(`http://127.0.0.1:8000/admin/reports/${reportId}/send-email`, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/send-email`, {
                 email_content: emailContent
             }, {
                 headers: { Authorization: `Bearer ${token}` }

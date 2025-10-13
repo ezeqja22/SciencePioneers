@@ -21,14 +21,14 @@ const AdminUserHistory = () => {
       
       // First, find the user by username
       const token = localStorage.getItem('token');
-      const userResponse = await axios.get(`http://127.0.0.1:8000/auth/user/${searchQuery}`, {
+      const userResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/${searchQuery}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       const userId = userResponse.data.user.id;
       
       // Then get their moderation history
-      const historyResponse = await axios.get(`http://127.0.0.1:8000/admin/users/${userId}/moderation-history`, {
+      const historyResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}/moderation-history`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

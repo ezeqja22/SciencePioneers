@@ -83,7 +83,7 @@ const Forums = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -101,7 +101,7 @@ const Forums = () => {
                 return;
             }
 
-            const response = await axios.get("http://127.0.0.1:8000/auth/forums", {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -127,7 +127,7 @@ const Forums = () => {
 
             const onlineCountPromises = forums.map(async (forum) => {
                 try {
-                    const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forum.id}/online-count`, {
+                    const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forum.id}/online-count`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     return { forumId: forum.id, onlineCount: response.data.online_count };
@@ -164,7 +164,7 @@ const Forums = () => {
                 tags: processedTags
             };
 
-            await axios.post("http://127.0.0.1:8000/auth/forums", forumData, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums`, forumData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -182,7 +182,7 @@ const Forums = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/join`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/join`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -204,7 +204,7 @@ const Forums = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/request-join`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/request-join`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -225,7 +225,7 @@ const Forums = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/retract-request`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/retract-request`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

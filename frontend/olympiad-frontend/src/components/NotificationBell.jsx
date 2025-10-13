@@ -22,7 +22,7 @@ function NotificationBell({ onNotificationClick }) {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get("http://127.0.0.1:8000/auth/notification-preferences", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notification-preferences", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUserPreferences(response.data);
@@ -37,7 +37,7 @@ function NotificationBell({ onNotificationClick }) {
             if (!token) return;
 
             // Fetch all notifications and filter them
-            const response = await axios.get("http://127.0.0.1:8000/auth/notifications", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notifications", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const filteredNotifications = filterNotificationsByPreferences(response.data);
@@ -77,7 +77,7 @@ function NotificationBell({ onNotificationClick }) {
         try {
             setLoading(true);
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/notifications", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notifications", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const filteredNotifications = filterNotificationsByPreferences(response.data);
@@ -99,7 +99,7 @@ function NotificationBell({ onNotificationClick }) {
     const markAsRead = async (notificationId) => {
         try {
             const token = localStorage.getItem("token");
-            await axios.put(`http://127.0.0.1:8000/auth/notifications/${notificationId}/read`, {}, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notifications/${notificationId}/read`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -118,7 +118,7 @@ function NotificationBell({ onNotificationClick }) {
     const markAllAsRead = async () => {
         try {
             const token = localStorage.getItem("token");
-            await axios.put("http://127.0.0.1:8000/auth/notifications/mark-all-read", {}, {
+            await axios.put("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/notifications/mark-all-read", {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -159,7 +159,7 @@ function NotificationBell({ onNotificationClick }) {
                 }
             }
             
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/join-requests/${request_id}/accept`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forum_id}/join-requests/${request_id}/accept`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -194,7 +194,7 @@ function NotificationBell({ onNotificationClick }) {
             const token = localStorage.getItem("token");
             const { forum_id, request_id } = notification.data || {};
             
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/join-requests/${request_id}/decline`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forum_id}/join-requests/${request_id}/decline`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -229,7 +229,7 @@ function NotificationBell({ onNotificationClick }) {
                 return;
             }
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/invitations/${invitation_id}/accept`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forum_id}/invitations/${invitation_id}/accept`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -269,7 +269,7 @@ function NotificationBell({ onNotificationClick }) {
                 return;
             }
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forum_id}/invitations/${invitation_id}/decline`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forum_id}/invitations/${invitation_id}/decline`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

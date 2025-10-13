@@ -26,7 +26,7 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://127.0.0.1:8000/auth/forums/${forumId}/invite-users?search=${encodeURIComponent(searchQuery)}&tab=${activeTab}`,
+        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/invite-users?search=${encodeURIComponent(searchQuery)}&tab=${activeTab}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -62,7 +62,7 @@ const ForumInviteModal = ({ isOpen, onClose, forumId, onInvite }) => {
     try {
       const token = localStorage.getItem('token');
       const invitePromises = Array.from(selectedUsers).map(userId => 
-        fetch(`http://127.0.0.1:8000/auth/forums/${forumId}/invite`, {
+        fetch(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/invite`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -121,11 +121,11 @@ function Feed() {
   const fetchProblems = async (page = 1) => {
     setLoading(true);
     try {
-      let endpoint = `http://127.0.0.1:8000/auth/problems/?page=${page}&limit=10`;
+      let endpoint = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/?page=${page}&limit=10`;
       
       // Use trending endpoint for trending tab
       if (activeTab === "trending") {
-        endpoint = `http://127.0.0.1:8000/auth/problems/trending?page=${page}&limit=10`;
+        endpoint = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/trending?page=${page}&limit=10`;
       }
       
       const response = await axios.get(endpoint);
@@ -151,7 +151,7 @@ function Feed() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://127.0.0.1:8000/auth/feed/following", {
+      const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/feed/following", {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -180,7 +180,7 @@ function Feed() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://127.0.0.1:8000/auth/problems/trending?page=${page}&limit=10`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/trending?page=${page}&limit=10`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -213,7 +213,7 @@ function Feed() {
       const followPromises = problems.map(async (problem) => {
         if (!problem.author) return { authorId: null, isFollowing: false };
         try {
-          const response = await axios.get(`http://127.0.0.1:8000/auth/follow/status/${problem.author.id}`, {
+          const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/status/${problem.author.id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           return { authorId: problem.author.id, isFollowing: response.data.is_following };
@@ -239,7 +239,7 @@ function Feed() {
       const votePromises = problemIds.map(async (problemId) => {
         try {
           const response = await axios.get(
-            `http://127.0.0.1:8000/auth/problems/${problemId}/vote-status`,
+            `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/vote-status`,
             {
               headers: {
                 Authorization: `Bearer ${token}`
@@ -273,7 +273,7 @@ function Feed() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/bookmark`, {}, {
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -298,7 +298,7 @@ function Feed() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/vote`,
         { vote_type: voteType },
         {
           headers: {
@@ -339,12 +339,12 @@ function Feed() {
       const isFollowing = followStatus[authorId];
       
       if (isFollowing) {
-        await axios.delete(`http://127.0.0.1:8000/auth/follow/${authorId}`, {
+        await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${authorId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setFollowStatus(prev => ({ ...prev, [authorId]: false }));
       } else {
-        await axios.post(`http://127.0.0.1:8000/auth/follow/${authorId}`, {}, {
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${authorId}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setFollowStatus(prev => ({ ...prev, [authorId]: true }));
@@ -368,7 +368,7 @@ function Feed() {
         return;
       }
 
-      await axios.post(`http://127.0.0.1:8000/auth/follow/${authorId}`, {}, {
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${authorId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFollowStatus(prev => ({ ...prev, [authorId]: true }));
@@ -391,7 +391,7 @@ function Feed() {
         return;
       }
 
-      await axios.delete(`http://127.0.0.1:8000/auth/follow/${authorId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${authorId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFollowStatus(prev => ({ ...prev, [authorId]: false }));
@@ -409,7 +409,7 @@ function Feed() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://127.0.0.1:8000/auth/users/search?q=${encodeURIComponent(query)}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/users/search?q=${encodeURIComponent(query)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSearchResults(response.data.users);
@@ -435,7 +435,7 @@ function Feed() {
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+      const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(response.data);
@@ -610,7 +610,7 @@ function Feed() {
                     color: "white",
                     fontSize: "16px",
                     fontWeight: "bold",
-                    backgroundImage: problem.author.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
+                    backgroundImage: problem.author.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
                     backgroundSize: "cover",
                     backgroundPosition: "center"
                   }}>

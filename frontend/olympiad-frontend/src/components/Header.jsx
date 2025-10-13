@@ -86,7 +86,7 @@ function Header({ showHomeButton = false }) {
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -102,7 +102,7 @@ function Header({ showHomeButton = false }) {
         setLoadingForums(true);
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/forums/my-forums", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/my-forums", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMyForums(response.data);
@@ -464,7 +464,7 @@ function Header({ showHomeButton = false }) {
                         >
                             {currentUser.profile_picture ? (
                                 <img
-                                    src={`http://127.0.0.1:8000/auth/serve-image/${currentUser.profile_picture}`}
+                                    src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${currentUser.profile_picture}`}
                                     alt="Profile"
                                     style={{
                                         width: "32px",

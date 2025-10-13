@@ -24,7 +24,7 @@ const AdminReports = () => {
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/auth/me', {
+      const response = await axios.get('${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(response.data);
@@ -43,7 +43,7 @@ const AdminReports = () => {
       params.append('page', filters.page);
       params.append('limit', 20);
 
-      const response = await axios.get(`http://127.0.0.1:8000/admin/reports?${params}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -72,7 +72,7 @@ const AdminReports = () => {
   const handleResolveReport = async (reportId, resolution) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/resolve`, 
+      await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/resolve`, 
         { resolution }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -89,7 +89,7 @@ const AdminReports = () => {
   const handleDismissReport = async (reportId, reason) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, 
+      await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/reports/${reportId}/dismiss`, 
         { reason }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

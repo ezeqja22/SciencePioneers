@@ -28,7 +28,7 @@ const AdminForums = () => {
       params.append('page', filters.page);
       params.append('limit', 20);
 
-      const response = await axios.get(`http://127.0.0.1:8000/admin/forums?${params}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/forums?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -61,7 +61,7 @@ const AdminForums = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/admin/forums/${forumId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/forums/${forumId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

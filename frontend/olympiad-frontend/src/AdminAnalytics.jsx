@@ -16,7 +16,7 @@ const AdminAnalytics = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:8000/admin/analytics?range=${timeRange}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/analytics?range=${timeRange}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnalytics(response.data);

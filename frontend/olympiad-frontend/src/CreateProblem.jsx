@@ -47,7 +47,7 @@ function CreateProblem() {
         return;
       }
 
-      const response = await axios.get(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts/${draftId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -199,7 +199,7 @@ function CreateProblem() {
         tags: tags.filter(tag => tag.trim()).join(", ")
       };
 
-      await axios.post("http://127.0.0.1:8000/auth/drafts", draftData, {
+      await axios.post("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts", draftData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -240,7 +240,7 @@ function CreateProblem() {
       
       
       const response = await axios.post(
-        "http://127.0.0.1:8000/auth/problems/",
+        "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/",
         requestData,
         {
           headers: {
@@ -257,7 +257,7 @@ function CreateProblem() {
             const formData = new FormData();
             formData.append('file', file);
             
-            const uploadUrl = `http://127.0.0.1:8000/auth/problems/${response.data.id}/images`;
+            const uploadUrl = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${response.data.id}/images`;
             
             const uploadResponse = await axios.post(
               uploadUrl,
@@ -287,7 +287,7 @@ function CreateProblem() {
       const draftId = urlParams.get('draft');
       if (draftId) {
         try {
-          await axios.delete(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+          await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts/${draftId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
         } catch (error) {

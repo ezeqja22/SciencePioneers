@@ -100,7 +100,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -117,7 +117,7 @@ const ForumChat = () => {
                 return;
             }
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setForum(response.data);
@@ -138,7 +138,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const messages = response.data.reverse(); // Reverse to show oldest first
@@ -151,7 +151,7 @@ const ForumChat = () => {
 
             if (problemIds.length > 0) {
                 const problemPromises = problemIds.map(id => 
-                    axios.get(`http://127.0.0.1:8000/auth/problems/${id}`, {
+                    axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}`, {
                         headers: { Authorization: `Bearer ${token}` }
                     }).then(res => ({ id, data: res.data }))
                     .catch(err => {
@@ -198,7 +198,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {}, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } catch (error) {
@@ -211,7 +211,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
         } catch (error) {
@@ -224,7 +224,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/online-count`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online-count`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setOnlineCount(response.data.online_count);
@@ -241,7 +241,7 @@ const ForumChat = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 content: newMessage,
                 message_type: "text"
             }, {

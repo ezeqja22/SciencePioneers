@@ -36,7 +36,7 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -50,13 +50,13 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setForum(response.data);
             
             // Get user role in forum
-            const membersResponse = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/members`, {
+            const membersResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const userMembership = membersResponse.data.find(member => member.user_id === currentUser?.id);
@@ -74,7 +74,7 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -90,7 +90,7 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}/replies`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/${messageId}/replies`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReplies(response.data);
@@ -108,7 +108,7 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}/replies`, 
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/${messageId}/replies`, 
                 { content: newReply, parent_message_id: parseInt(messageId) },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -154,7 +154,7 @@ function ThreadPage() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/replies/${replyId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/replies/${replyId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             

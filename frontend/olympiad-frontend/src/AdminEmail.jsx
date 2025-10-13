@@ -24,7 +24,7 @@ const AdminEmail = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/admin/email/campaigns', {
+      const response = await axios.get('${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCampaigns(response.data);
@@ -41,7 +41,7 @@ const AdminEmail = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://127.0.0.1:8000/admin/email/campaigns', newCampaign, {
+      await axios.post('${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns', newCampaign, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -128,7 +128,7 @@ const AdminEmail = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}/send`, {}, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns/${campaignId}/send`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -143,7 +143,7 @@ const AdminEmail = () => {
   const handleViewCampaign = async (campaignId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns/${campaignId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -163,7 +163,7 @@ const AdminEmail = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://127.0.0.1:8000/admin/email/campaigns/${campaignId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns/${campaignId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

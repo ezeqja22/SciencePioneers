@@ -31,7 +31,7 @@ const AdminUsers = () => {
       params.append('page', filters.page);
       params.append('limit', 20);
 
-      const response = await axios.get(`http://127.0.0.1:8000/admin/users?${params}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -90,21 +90,21 @@ const AdminUsers = () => {
       const token = localStorage.getItem('token');
       
       if (action === 'update') {
-        await axios.put(`http://127.0.0.1:8000/admin/users/${userId}`, data, {
+        await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}`, data, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else if (action === 'delete') {
-        await axios.delete(`http://127.0.0.1:8000/admin/users/${userId}`, {
+        await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else if (action === 'unban') {
-        await axios.post(`http://127.0.0.1:8000/admin/users/${userId}/unban`, {
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}/unban`, {
           reason: 'Unbanned from admin panel'
         }, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else if (action === 'activate') {
-        await axios.post(`http://127.0.0.1:8000/admin/users/${userId}/activate`, {
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/users/${userId}/activate`, {
           reason: 'Activated from admin panel'
         }, {
           headers: { Authorization: `Bearer ${token}` }

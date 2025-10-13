@@ -162,7 +162,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}/pin`, {}, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/${messageId}/pin`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Refresh messages to get updated pinned status
@@ -179,7 +179,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/unpin`, {
+            const response = await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/unpin`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPinnedMessage(null);
@@ -196,7 +196,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${messageId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/${messageId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -213,7 +213,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members/${memberId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -230,7 +230,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/ban`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members/${memberId}/ban`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -257,7 +257,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.put(`http://127.0.0.1:8000/auth/forums/${forumId}`, editForumData, {
+            await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, editForumData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -275,7 +275,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/banned-members`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/banned-members`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBannedMembers(response.data);
@@ -290,7 +290,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/unban`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members/${memberId}/unban`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -308,7 +308,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/members/${memberId}/assign-role`, 
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members/${memberId}/assign-role`, 
                 { role: newRole }, 
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -329,7 +329,7 @@ const ForumDetail = () => {
             const counts = {};
             for (const message of messages) {
                 try {
-                    const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages/${message.id}/reply-count`, {
+                    const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages/${message.id}/reply-count`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     counts[message.id] = response.data.reply_count;
@@ -701,7 +701,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -715,7 +715,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setForum(response.data);
@@ -736,7 +736,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/problems`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/problems`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setProblems(response.data);
@@ -750,7 +750,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/members`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/members`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMembers(response.data);
@@ -764,7 +764,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const messages = response.data.reverse();
@@ -785,7 +785,7 @@ const ForumDetail = () => {
 
             if (problemIds.length > 0) {
                 const problemPromises = problemIds.map(id => 
-                    axios.get(`http://127.0.0.1:8000/auth/problems/id/${id}`, {
+                    axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/id/${id}`, {
                         headers: { Authorization: `Bearer ${token}` }
                     }).then(res => ({ id, data: res.data }))
                     .catch(err => {
@@ -818,7 +818,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {}, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -839,7 +839,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/online`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -856,7 +856,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/online-count`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/online-count`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -878,7 +878,7 @@ const ForumDetail = () => {
 
                 const formData = new FormData();
                 formData.append('is_typing', 'true');
-                await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, formData, {
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/typing`, formData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } catch (error) {
@@ -907,7 +907,7 @@ const ForumDetail = () => {
 
             const formData = new FormData();
             formData.append('is_typing', 'false');
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, formData, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/typing`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             } catch (error) {
@@ -926,7 +926,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const response = await axios.get(`http://127.0.0.1:8000/auth/forums/${forumId}/typing`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/typing`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -946,7 +946,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/messages`, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
                 content: messageContent,
                 message_type: messageType
             }, {
@@ -967,7 +967,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.post(`http://127.0.0.1:8000/auth/forums/${forumId}/join`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/join`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -986,7 +986,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}/leave`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/leave`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -1033,7 +1033,7 @@ const ForumDetail = () => {
             formData.append('forum_id', forumId);
 
             const response = await axios.post(
-                "http://127.0.0.1:8000/auth/forums/upload-image",
+                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/upload-image",
                 formData,
                 {
                     headers: {
@@ -1131,7 +1131,7 @@ const ForumDetail = () => {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            await axios.delete(`http://127.0.0.1:8000/auth/forums/${forumId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -2459,7 +2459,7 @@ const ForumDetail = () => {
                                                 ) : message.message_type === 'image' ? (
                                                     <div style={{ marginTop: spacing.sm }}>
                                                         <img 
-                                                            src={`http://127.0.0.1:8000/auth/serve-image/${message.content.split('/').pop()}`}
+                                                            src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${message.content.split('/').pop()}`}
                                                             alt="Forum image"
                                                             style={{
                                                                 maxWidth: '100%',
@@ -2469,7 +2469,7 @@ const ForumDetail = () => {
                                                                 cursor: 'pointer'
                                                             }}
                                                             onClick={() => {
-                                                                setSelectedImage(`http://127.0.0.1:8000/auth/serve-image/${message.content.split('/').pop()}`);
+                                                                setSelectedImage(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${message.content.split('/').pop()}`);
                                                                 setShowImageModal(true);
                                                             }}
                                                         />

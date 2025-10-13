@@ -65,7 +65,7 @@ function UserProfile() {
                 return;
             }
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/user/profile", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -92,7 +92,7 @@ function UserProfile() {
                 const problemId = problem.id;
                 try {
                     const response = await axios.get(
-                        `http://127.0.0.1:8000/auth/problems/${problemId}/votes`,
+                        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/votes`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`
@@ -122,7 +122,7 @@ function UserProfile() {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("http://127.0.0.1:8000/auth/drafts", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setDrafts(response.data);
@@ -134,7 +134,7 @@ function UserProfile() {
     const handleVote = async (problemId, voteType) => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/vote`,
                 { vote_type: voteType },
                 {
                     headers: {
@@ -164,7 +164,7 @@ function UserProfile() {
     const handleSaveProfile = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.put("http://127.0.0.1:8000/auth/user/profile", editFormData, {
+            const response = await axios.put("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile", editFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -199,13 +199,13 @@ function UserProfile() {
         try {
             const token = localStorage.getItem("token");
             if (isBookmarked) {
-                await axios.delete(`http://127.0.0.1:8000/auth/problems/${problemId}/bookmark`, {
+                await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
             } else {
-                await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/bookmark`, {}, {
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -226,7 +226,7 @@ function UserProfile() {
             
             const token = localStorage.getItem("token");
             const response = await axios.post(
-                "http://127.0.0.1:8000/auth/user/profile-picture",
+                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture",
                 formData,
                 {
                     headers: {
@@ -276,7 +276,7 @@ function UserProfile() {
         try {
             const token = localStorage.getItem("token");
             await axios.delete(
-                "http://127.0.0.1:8000/auth/user/profile-picture",
+                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture",
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -313,7 +313,7 @@ function UserProfile() {
                 return;
             }
 
-            await axios.delete(`http://127.0.0.1:8000/auth/drafts/${draftId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts/${draftId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -434,7 +434,7 @@ function UserProfile() {
                             color: "white",
                             fontSize: "32px",
                             fontWeight: "bold",
-                            backgroundImage: user.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                            backgroundImage: user.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                             cursor: "pointer",
@@ -1536,7 +1536,7 @@ function UserProfile() {
                             ×
                         </button>
                         <img
-                            src={`http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()}`}
+                            src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()}`}
                             alt="Profile Picture"
                             style={{
                                 maxWidth: "100%",

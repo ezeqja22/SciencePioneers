@@ -82,7 +82,7 @@ const SearchResults = () => {
     const fetchCurrentUser = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://127.0.0.1:8000/auth/me", {
+            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCurrentUser(response.data);
@@ -116,10 +116,10 @@ const SearchResults = () => {
                 params.append('page', currentPage);
                 params.append('limit', '10');
                 
-                endpoint = `http://127.0.0.1:8000/auth/search/advanced?${params.toString()}`;
+                endpoint = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/search/advanced?${params.toString()}`;
             } else {
                 // Use regular combined search
-                endpoint = `http://127.0.0.1:8000/auth/search/combined?q=${encodeURIComponent(query)}`;
+                endpoint = `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/search/combined?q=${encodeURIComponent(query)}`;
             }
 
             const response = await axios.get(endpoint, {
@@ -176,11 +176,11 @@ const SearchResults = () => {
             const isFollowing = followStatus[userId];
             
             if (isFollowing) {
-                await axios.delete(`http://127.0.0.1:8000/auth/follow/${userId}`, {
+                await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.post(`http://127.0.0.1:8000/auth/follow/${userId}`, {}, {
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userId}`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -202,7 +202,7 @@ const SearchResults = () => {
     const handleFollowUser = async (userId) => {
         try {
             const token = localStorage.getItem("token");
-            await axios.post(`http://127.0.0.1:8000/auth/follow/${userId}`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -221,7 +221,7 @@ const SearchResults = () => {
     const handleUnfollowUser = async (userId) => {
         try {
             const token = localStorage.getItem("token");
-            await axios.delete(`http://127.0.0.1:8000/auth/follow/${userId}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -244,7 +244,7 @@ const SearchResults = () => {
                 const problemId = problem.id;
                 try {
                     const response = await axios.get(
-                        `http://127.0.0.1:8000/auth/problems/${problemId}/votes`,
+                        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/votes`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`
@@ -272,7 +272,7 @@ const SearchResults = () => {
     const handleVote = async (problemId, voteType) => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.post(`http://127.0.0.1:8000/auth/problems/${problemId}/vote`,
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/vote`,
                 { vote_type: voteType },
                 {
                     headers: {
@@ -505,7 +505,7 @@ const SearchResults = () => {
                                         color: "white",
                                         fontSize: "20px",
                                         fontWeight: "bold",
-                                        backgroundImage: user.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                                        backgroundImage: user.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
@@ -585,7 +585,7 @@ const SearchResults = () => {
                                         color: "white",
                                         fontSize: "16px",
                                         fontWeight: "bold",
-                                        backgroundImage: problem.author.profile_picture ? `url(http://127.0.0.1:8000/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
+                                        backgroundImage: problem.author.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
