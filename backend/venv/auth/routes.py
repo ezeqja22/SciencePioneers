@@ -10,7 +10,11 @@ from auth.schemas import RegisterRequest, LoginRequest, TokenResponse, UserOut, 
 from auth.schemas import ProblemCreate, ProblemResponse, CommentCreate, CommentResponse, ThreadedCommentResponse, VoteCreate, VoteResponse, VoteStatusResponse, BookmarkResponse
 from auth.schemas import NotificationPreferencesCreate, NotificationPreferencesResponse, NotificationResponse, NotificationCreate
 from auth.schemas import ForumCreate, ForumUpdate, Forum as ForumSchema, ForumMembershipCreate, ForumMembership as ForumMembershipSchema, ForumMessageCreate, ForumMessage as ForumMessageSchema, ForumInvitationCreate, ForumInvitation as ForumInvitationSchema, ForumJoinRequestCreate, ForumJoinRequest as ForumJoinRequestSchema, DraftCreate, DraftUpdate, DraftResponse, UserOnlineStatusResponse, ForumReplyCreate, ForumReply as ForumReplySchema
-from notification_service import NotificationService
+# Import notification service with error handling
+try:
+    from notification_service import NotificationService
+except ImportError:
+    NotificationService = None
 from typing import List
 from datetime import datetime, timedelta
 
@@ -726,8 +730,9 @@ async def create_comment(
     
     # Send notification if not the author commenting on their own problem
     if problem.author_id != current_user.id:
-        notification_service = NotificationService(db)
-        await notification_service.send_comment_notification(
+        notification_service = NotificationService(db) if NotificationService else None
+        if notification_service:
+            await notification_service.send_comment_notification(
             user_id=problem.author_id,
             commenter_username=current_user.username,
             problem_title=problem.title
@@ -1029,8 +1034,9 @@ async def vote_problem(
         
         # Send notification if it's a like and not the author liking their own problem
         if vote_type == "like" and problem.author_id != current_user.id:
-            notification_service = NotificationService(db)
-            await notification_service.send_like_notification(
+            notification_service = NotificationService(db) if NotificationService else None
+            if notification_service:
+                await notification_service.send_like_notification(
                 user_id=problem.author_id,
                 liker_username=current_user.username,
                 problem_title=problem.title
@@ -1425,7 +1431,8 @@ async def follow_user(
     
     # Send notification to the user being followed
     notification_service = NotificationService(db)
-    await notification_service.send_follow_notification(
+    if notification_service:
+        await notification_service.send_follow_notification(
         user_id=user_id,
         follower_username=current_user.username
     )
@@ -3038,7 +3045,8 @@ async def invite_user_to_forum(
     
     # Send notification to invitee
     notification_service = NotificationService(db)
-    await notification_service.send_forum_invitation_notification(
+    if notification_service:
+        await notification_service.send_forum_invitation_notification(
         user_id=invitation.invitee_id,
         inviter_username=current_user.username,
         forum_title=forum.title,
@@ -3115,7 +3123,8 @@ async def accept_forum_invitation(
     
     # Send notification to inviter
     notification_service = NotificationService(db)
-    await notification_service.send_forum_invitation_accepted_notification(
+    if notification_service:
+        await notification_service.send_forum_invitation_accepted_notification(
         user_id=invitation.inviter_id,
         invitee_username=current_user.username,
         forum_title=forum.title
@@ -3208,7 +3217,8 @@ async def request_to_join_forum(
     
     # Send notification to forum creator
     notification_service = NotificationService(db)
-    await notification_service.send_forum_join_request_notification(
+    if notification_service:
+        await notification_service.send_forum_join_request_notification(
         user_id=forum.creator_id,
         requester_username=current_user.username,
         forum_title=forum.title,
@@ -3328,7 +3338,8 @@ async def accept_join_request(
     
     # Send notification to requester
     notification_service = NotificationService(db)
-    await notification_service.send_forum_join_request_accepted_notification(
+    if notification_service:
+        await notification_service.send_forum_join_request_accepted_notification(
         user_id=request.user_id,
         forum_title=forum.title
     )
@@ -3369,7 +3380,8 @@ async def decline_join_request(
     
     # Send notification to requester
     notification_service = NotificationService(db)
-    await notification_service.send_forum_join_request_declined_notification(
+    if notification_service:
+        await notification_service.send_forum_join_request_declined_notification(
         user_id=request.user_id,
         forum_title=forum.title
     )
@@ -3509,7 +3521,8 @@ async def delete_forum(
     notification_service = NotificationService(db)
     for member in members:
         if member.user_id != current_user.id:  # Don't notify the creator
-            notification = await notification_service.send_forum_deleted_notification(
+            if notification_service:
+                notification = await notification_service.send_forum_deleted_notification(
                 user_id=member.user_id,
                 forum_title=forum.title,
                 creator_username=current_user.username

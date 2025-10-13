@@ -6,8 +6,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import models
 from database import engine, get_db
-from auth.routes import router as auth_router
-from admin_routes import router as admin_router
+# Import routers with error handling for production
+try:
+    from auth.routes import router as auth_router
+except ImportError as e:
+    print(f"Warning: Could not import auth routes: {e}")
+    auth_router = None
+
+try:
+    from admin_routes import router as admin_router
+except ImportError as e:
+    print(f"Warning: Could not import admin routes: {e}")
+    admin_router = None
 # Removed notification admin routes
 from fastapi.staticfiles import StaticFiles
 import asyncio
@@ -30,7 +40,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # Allow all origins for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,8 +80,11 @@ async def settings_middleware(request: Request, call_next):
         response = await call_next(request)
         return response
 
-app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(admin_router, tags=["admin"])
+# Include routers only if they were imported successfully
+if auth_router:
+    app.include_router(auth_router, prefix="/auth", tags=["auth"])
+if admin_router:
+    app.include_router(admin_router, tags=["admin"])
 # Removed notification admin router
 
 # Public site info endpoint (no auth required)
