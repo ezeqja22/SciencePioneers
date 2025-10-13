@@ -18,6 +18,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      console.log('Environment variable:', process.env.REACT_APP_API_URL);
       const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/login`, {
         email,
         password,
