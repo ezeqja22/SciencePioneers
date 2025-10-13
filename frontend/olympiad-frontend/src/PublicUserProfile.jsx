@@ -61,7 +61,7 @@ const PublicUserProfile = () => {
         try {
             const token = localStorage.getItem('token');
             if (token) {
-                const response = await axios.get('http://127.0.0.1:8000/auth/me', {
+                const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCurrentUser(response.data);
@@ -75,7 +75,7 @@ const PublicUserProfile = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://127.0.0.1:8000/auth/user/${username}`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/${username}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUserProfile(response.data);
@@ -108,7 +108,7 @@ const PublicUserProfile = () => {
             
             if (following) {
                 // Unfollow
-                await axios.delete(`http://127.0.0.1:8000/auth/follow/${userProfile.user.id}`, {
+                await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userProfile.user.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setFollowing(false);
@@ -118,7 +118,7 @@ const PublicUserProfile = () => {
                 }));
             } else {
                 // Follow
-                await axios.post(`http://127.0.0.1:8000/auth/follow/${userProfile.user.id}`, {}, {
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/follow/${userProfile.user.id}`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setFollowing(true);

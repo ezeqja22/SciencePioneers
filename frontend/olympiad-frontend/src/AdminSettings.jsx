@@ -117,7 +117,7 @@ const AdminSettings = () => {
 
   const fetchSettings = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/get-settings');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/get-settings`);
       
       // Parse the nested settings structure
       const parsedSettings = {};
@@ -183,7 +183,7 @@ const AdminSettings = () => {
         }
       });
       
-      const saveResponse = await axios.post('http://127.0.0.1:8000/save-settings', {
+      const saveResponse = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/save-settings`, {
         settings: settingsToSave
       });
 
@@ -201,7 +201,7 @@ const AdminSettings = () => {
     if (confirmed) {
       try {
         const token = localStorage.getItem('token');
-        await axios.post('http://127.0.0.1:8000/admin/settings/initialize', {}, {
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/settings/initialize`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Default settings initialized!');
@@ -218,7 +218,7 @@ const AdminSettings = () => {
     if (confirmed) {
       try {
         const token = localStorage.getItem('token');
-        await axios.post('http://127.0.0.1:8000/admin/settings/reset', {}, {
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/settings/reset`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         alert('Settings reset to defaults!');
@@ -233,7 +233,7 @@ const AdminSettings = () => {
   const exportSettings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://127.0.0.1:8000/admin/settings/export', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/settings/export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -256,7 +256,7 @@ const AdminSettings = () => {
                 const token = localStorage.getItem('token');
                 // Testing settings
                 
-                const response = await axios.get('http://127.0.0.1:8000/test-settings');
+                const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/test-settings`);
                 
                 // Test completed
                 
