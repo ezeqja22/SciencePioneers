@@ -205,7 +205,7 @@ const AdminEmail = () => {
             className="admin-btn"
             onClick={() => setShowCreateForm(true)}
           >
-            📧 Create Campaign
+            Create Campaign
           </button>
         </div>
       </div>
@@ -349,7 +349,7 @@ const AdminEmail = () => {
                             fontWeight: '500'
                           }}
                         >
-                          📧 Send
+                          Send
                         </button>
                       )}
                       <button
@@ -360,7 +360,7 @@ const AdminEmail = () => {
                           fontSize: '0.8rem'
                         }}
                       >
-                        👁️ View
+                        View
                       </button>
                       {campaign.status === 'draft' && (
                         <button
@@ -371,7 +371,7 @@ const AdminEmail = () => {
                             fontSize: '0.8rem'
                           }}
                         >
-                          🗑️ Delete
+                          Delete
                         </button>
                       )}
                     </div>
@@ -453,7 +453,7 @@ const AdminEmail = () => {
                 onMouseEnter={(e) => e.target.style.backgroundColor = '#f3f4f6'}
                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
               >
-                ×
+                X
               </button>
             </div>
             

@@ -290,7 +290,7 @@ function Header({ showHomeButton = false }) {
                     onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                     >
-                        🏠 Home
+                        Home
                     </Link>
                 )}
 
@@ -532,7 +532,7 @@ function Header({ showHomeButton = false }) {
                                     onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
                                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                     >
-                                    ⚙️ Settings
+                                    Settings
                                     </div>
                                 </Link>
                                 {(currentUser.role === 'admin' || currentUser.role === 'moderator') && (
@@ -548,7 +548,7 @@ function Header({ showHomeButton = false }) {
                                         onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
                                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                         >
-                                        🛠️ Admin Panel
+                                        Admin Panel
                                         </div>
                                     </Link>
                                 )}

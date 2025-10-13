@@ -296,17 +296,17 @@ function NotificationBell({ onNotificationClick }) {
 
     const getNotificationIcon = (type) => {
         switch (type) {
-            case 'like': return '👍';
-            case 'comment': return '💬';
-            case 'follow': return '👥';
-            case 'forum_join_request': return '📝';
-            case 'forum_request_accepted': return '✅';
-            case 'forum_request_declined': return '❌';
-            case 'forum_invitation': return '📨';
-            case 'forum_invitation_accepted': return '✅';
-            case 'forum_invitation_declined': return '❌';
-            case 'forum_deleted': return '🗑️';
-            default: return '🔔';
+            case 'like': return 'Like';
+            case 'comment': return 'Comment';
+            case 'follow': return 'Follow';
+            case 'forum_join_request': return 'Join Request';
+            case 'forum_request_accepted': return 'Accepted';
+            case 'forum_request_declined': return 'Declined';
+            case 'forum_invitation': return 'Invitation';
+            case 'forum_invitation_accepted': return 'Accepted';
+            case 'forum_invitation_declined': return 'Declined';
+            case 'forum_deleted': return 'Deleted';
+            default: return 'Notification';
         }
     };
 
@@ -344,7 +344,7 @@ function NotificationBell({ onNotificationClick }) {
                 onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
                 onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
             >
-                🔔
+                Notifications
                 {unreadCount > 0 && (
                     <div style={{
                         position: "absolute",
