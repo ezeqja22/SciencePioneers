@@ -66,7 +66,7 @@ const EmailVerification = () => {
     setError('');
 
     try {
-      const response = await axios.post('${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/send-verification', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/send-verification`, {
         email: email
       });
 

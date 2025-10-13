@@ -41,7 +41,7 @@ const AdminEmail = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.post('${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns', newCampaign, {
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/admin/email/campaigns`, newCampaign, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
