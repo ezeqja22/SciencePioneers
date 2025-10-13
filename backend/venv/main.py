@@ -26,7 +26,11 @@ from sqlalchemy.orm import Session
 from models import User
 from dotenv import load_dotenv
 import os
-from settings_service import get_settings_service
+# Import settings service with error handling
+try:
+    from settings_service import get_settings_service
+except ImportError:
+    get_settings_service = None
 # Removed push notification service
 import jwt
 from auth.dependencies import SECRET_KEY
@@ -57,17 +61,17 @@ async def settings_middleware(request: Request, call_next):
             return response
             
         db = next(get_db())
-        settings_service = get_settings_service(db)
+        settings_service = get_settings_service(db) if get_settings_service else None
         
         
         # Check feature toggles
-        if request.url.path.startswith("/forums") and not settings_service.is_feature_enabled("forums"):
+        if settings_service and request.url.path.startswith("/forums") and not settings_service.is_feature_enabled("forums"):
             return JSONResponse(
                 status_code=404,
                 content={"message": "Forums are currently disabled"}
             )
         
-        if request.url.path.startswith("/problems") and not settings_service.is_feature_enabled("problems"):
+        if settings_service and request.url.path.startswith("/problems") and not settings_service.is_feature_enabled("problems"):
             return JSONResponse(
                 status_code=404,
                 content={"message": "Problems are currently disabled"}
@@ -92,15 +96,19 @@ if admin_router:
 async def get_site_info():
     """Get public site information (no auth required)"""
     try:
-        from settings_service import get_settings_service
+        # Import settings service with error handling
+try:
+    from settings_service import get_settings_service
+except ImportError:
+    get_settings_service = None
         db = next(get_db())
-        settings_service = get_settings_service(db)
-        site_settings = settings_service.get_site_settings()
+        settings_service = get_settings_service(db) if get_settings_service else None
+        site_settings = settings_service.get_site_settings() if settings_service else {}
         
         # Site settings loaded
         
         # Get feature settings
-        feature_settings = settings_service.get_feature_settings()
+        feature_settings = settings_service.get_feature_settings() if settings_service else {}
         
         result = {
             "site_name": site_settings.get('name', 'Science Pioneers'),
