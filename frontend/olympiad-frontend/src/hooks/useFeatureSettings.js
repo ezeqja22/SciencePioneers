@@ -12,7 +12,7 @@ export const useFeatureSettings = () => {
 
   const fetchFeatureSettings = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/site-info');
+      const response = await axios.get('https://olimpiada-backend.onrender.com/site-info');
       setFeatureSettings(response.data);
     } catch (err) {
       setError(err);
