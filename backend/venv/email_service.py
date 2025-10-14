@@ -67,7 +67,7 @@ class EmailService:
         """Load email settings from environment variables"""
         self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
         self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
-        self.sender_email = os.getenv('SMTP_USERNAME', '')
+        self.sender_email = os.getenv('SMTP_FROM_EMAIL', '')
         self.sender_password = os.getenv('SMTP_PASSWORD', '')
         self.smtp_use_tls = True
         self.email_from_name = os.getenv('SMTP_FROM_NAME', 'Science Pioneers')
