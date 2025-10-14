@@ -140,7 +140,7 @@ const ForumProblemModal = ({ isOpen, onClose, forumId, onProblemCreated }) => {
 
             // Send the problem as a message to the forum
             await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/${forumId}/messages`, {
-                content: `Posted a new problem: "${formData.title}"`,
+                content: `Posted a new problem: `${formData.title}``,
                 message_type: "problem",
                 problem_id: response.data.id
             }, {

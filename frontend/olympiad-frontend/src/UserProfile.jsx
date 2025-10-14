@@ -65,7 +65,7 @@ function UserProfile() {
                 return;
             }
             
-            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile", {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -122,7 +122,7 @@ function UserProfile() {
             const token = localStorage.getItem("token");
             if (!token) return;
             
-            const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts", {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setDrafts(response.data);
@@ -164,7 +164,7 @@ function UserProfile() {
     const handleSaveProfile = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.put("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile", editFormData, {
+            const response = await axios.put(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile`, editFormData, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -226,7 +226,7 @@ function UserProfile() {
             
             const token = localStorage.getItem("token");
             const response = await axios.post(
-                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture",
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture`,
                 formData,
                 {
                     headers: {
@@ -276,7 +276,7 @@ function UserProfile() {
         try {
             const token = localStorage.getItem("token");
             await axios.delete(
-                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture",
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/user/profile-picture`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
