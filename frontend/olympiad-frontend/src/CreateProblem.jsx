@@ -199,7 +199,7 @@ function CreateProblem() {
         tags: tags.filter(tag => tag.trim()).join(", ")
       };
 
-      await axios.post("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts", draftData, {
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/drafts`, draftData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -240,7 +240,7 @@ function CreateProblem() {
       
       
       const response = await axios.post(
-        "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/",
+        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/`,
         requestData,
         {
           headers: {

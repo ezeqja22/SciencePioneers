@@ -151,7 +151,7 @@ function Feed() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/feed/following", {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/feed/following`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
