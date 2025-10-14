@@ -22,7 +22,7 @@ class EmailService:
         self._load_settings()
     
     def _load_settings(self):
-        """Load email settings from database"""
+        """Load email settings from database, fallback to environment variables"""
         try:
             db = next(get_db())
             settings = db.query(SystemSettings).filter(
@@ -35,9 +35,9 @@ class EmailService:
             settings_dict = {setting.key: setting.value for setting in settings}
             
             # Set SMTP configuration from database
-            self.smtp_server = settings_dict.get('smtp_server', 'smtp.gmail.com')
-            self.smtp_port = int(settings_dict.get('smtp_port', '587'))
-            self.sender_email = settings_dict.get('smtp_username', '')
+            self.smtp_server = settings_dict.get('smtp_server')
+            self.smtp_port = settings_dict.get('smtp_port')
+            self.sender_email = settings_dict.get('smtp_username')
             
             # Decrypt password if it's encrypted
             encrypted_password = settings_dict.get('smtp_password', '')
@@ -53,16 +53,23 @@ class EmailService:
             self.smtp_use_tls = settings_dict.get('smtp_use_tls', 'true') == 'true'
             self.email_from_name = settings_dict.get('email_from_name', 'Science Pioneers')
             
-            # Settings loaded successfully
+            # Check if database settings are complete
+            if not self.smtp_server or not self.sender_email or not self.sender_password:
+                # Fallback to environment variables
+                self._load_from_env()
             
         except Exception as e:
-            # Fallback to .env values
-            self.smtp_server = "smtp.gmail.com"
-            self.smtp_port = 587
-            self.sender_email = os.getenv("SMTP_EMAIL", "your-email@gmail.com")
-            self.sender_password = os.getenv("SMTP_PASSWORD", "your-app-password")
-            self.smtp_use_tls = True
-            self.email_from_name = "Science Pioneers"
+            # Fallback to environment variables
+            self._load_from_env()
+    
+    def _load_from_env(self):
+        """Load email settings from environment variables"""
+        self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        self.sender_email = os.getenv('SMTP_USERNAME', '')
+        self.sender_password = os.getenv('SMTP_PASSWORD', '')
+        self.smtp_use_tls = True
+        self.email_from_name = os.getenv('SMTP_FROM_NAME', 'Science Pioneers')
         
         
     def generate_verification_code(self) -> str:
@@ -201,6 +208,11 @@ class EmailService:
     async def send_verification_email(self, to_email: str, username: str, verification_code: str) -> bool:
         """Send verification email to user"""
         try:
+            # Validate SMTP settings before attempting connection
+            if not self.sender_email or not self.sender_password or not self.smtp_server:
+                print(f"Email service not configured: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
+                return False
+            
             # Create message
             msg = MIMEMultipart('alternative')
             msg['Subject'] = "🔬 Science Pioneers - Email Verification"
@@ -214,21 +226,37 @@ class EmailService:
             html_part = MIMEText(html_content, 'html')
             msg.attach(html_part)
             
-            # Connect to SMTP server and send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            # Connect to SMTP server with timeout (10 seconds max)
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
+            print(f"Email sent successfully to {to_email}")
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"SMTP Authentication failed: {e}")
+            return False
+        except smtplib.SMTPConnectError as e:
+            print(f"SMTP Connection failed: {e}")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"SMTP Error: {e}")
+            return False
         except Exception as e:
+            print(f"Email sending failed: {e}")
             return False
     
     async def send_account_deletion_email(self, to_email: str, username: str, verification_code: str) -> bool:
         """Send account deletion verification email to user"""
         try:
+            # Validate SMTP settings before attempting connection
+            if not self.sender_email or not self.sender_password or not self.smtp_server:
+                print(f"Email service not configured: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
+                return False
+            
             # Create message
             msg = MIMEMultipart('alternative')
             msg['Subject'] = "🔬 Science Pioneers - Account Deletion Verification"
@@ -242,16 +270,27 @@ class EmailService:
             html_part = MIMEText(html_content, 'html')
             msg.attach(html_part)
             
-            # Connect to SMTP server and send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            # Connect to SMTP server with timeout (10 seconds max)
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
+            print(f"Account deletion email sent successfully to {to_email}")
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"SMTP Authentication failed: {e}")
+            return False
+        except smtplib.SMTPConnectError as e:
+            print(f"SMTP Connection failed: {e}")
+            return False
+        except smtplib.SMTPException as e:
+            print(f"SMTP Error: {e}")
+            return False
         except Exception as e:
+            print(f"Email sending failed: {e}")
             return False
     
     def refresh_settings(self):
