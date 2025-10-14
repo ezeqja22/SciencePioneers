@@ -216,7 +216,7 @@ function SubjectPage() {
                         marginBottom: "1rem"
                     }}>
                         {problems.length} problems found in {subjectName}
-                        {searchQuery && ` (filtered by `${searchQuery}`)`}
+                        {searchQuery && ` (filtered by ${searchQuery})`}
                     </p>
 
                     {/* Search Bar */}

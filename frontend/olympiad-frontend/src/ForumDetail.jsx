@@ -465,13 +465,13 @@ const ForumDetail = () => {
         if (targetMessageId) {
             // Scroll to specific message
             setTimeout(() => {
-                const targetElement = document.querySelector(`[data-message-id=`${targetMessageId}`]`);
+                const targetElement = document.querySelector(`[data-message-id=${targetMessageId}]`);
                 if (targetElement) {
                     targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 } else {
                     // If element not found, try again after a longer delay
                     setTimeout(() => {
-                        const retryElement = document.querySelector(`[data-message-id=`${targetMessageId}`]`);
+                        const retryElement = document.querySelector(`[data-message-id=${targetMessageId}]`);
                         if (retryElement) {
                             retryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }

@@ -55,7 +55,7 @@ const AdminForums = () => {
   };
 
   const handleDeleteForum = async (forumId, forumTitle) => {
-    if (!window.confirm(`Are you sure you want to delete the forum `${forumTitle}`? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete the forum ${forumTitle}? This action cannot be undone.`)) {
       return;
     }
 
