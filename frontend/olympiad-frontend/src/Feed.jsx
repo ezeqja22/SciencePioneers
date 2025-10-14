@@ -435,7 +435,7 @@ function Feed() {
   const fetchCurrentUser = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me", {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentUser(response.data);
