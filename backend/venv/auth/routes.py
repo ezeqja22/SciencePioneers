@@ -2446,6 +2446,9 @@ def create_forum(
     db.add(membership)
     db.commit()
     
+    # Check if forums require approval based on admin settings
+    requires_approval = settings_dict.get('forum_requires_approval', False)
+    
     # Return appropriate message based on approval status
     if requires_approval:
         return {
