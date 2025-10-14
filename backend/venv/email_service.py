@@ -1,6 +1,7 @@
 import smtplib
 import os
 import base64
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -70,6 +71,16 @@ class EmailService:
         self.sender_password = os.getenv('SMTP_PASSWORD', '')
         self.smtp_use_tls = True
         self.email_from_name = os.getenv('SMTP_FROM_NAME', 'Science Pioneers')
+        self.smtp_username = os.getenv('SMTP_USERNAME', '')
+        
+        # Debug logging
+        print(f"Email service loaded from environment:")
+        print(f"  SMTP Server: {self.smtp_server}")
+        print(f"  SMTP Port: {self.smtp_port}")
+        print(f"  SMTP Username: {self.smtp_username}")
+        print(f"  Sender Email: {self.sender_email}")
+        print(f"  Password set: {bool(self.sender_password)}")
+        print(f"  Use TLS: {self.smtp_use_tls}")
         
         
     def generate_verification_code(self) -> str:
@@ -208,9 +219,37 @@ class EmailService:
     async def send_verification_email(self, to_email: str, username: str, verification_code: str) -> bool:
         """Send verification email to user"""
         try:
+            print(f"DEBUG: Attempting to send verification email to {to_email}")
+            
+            # Create HTML content
+            html_content = self.create_verification_email(username, verification_code)
+            
+            # Try SendGrid API first (more reliable)
+            print("DEBUG: Trying SendGrid REST API...")
+            success = await self.send_email_via_sendgrid_api(
+                to_email=to_email,
+                subject="🔬 Science Pioneers - Email Verification",
+                html_content=html_content
+            )
+            
+            if success:
+                print(f"SUCCESS: Verification email sent via SendGrid API to {to_email}")
+                return True
+            
+            # Fallback to SMTP if API fails
+            print("DEBUG: SendGrid API failed, trying SMTP fallback...")
+            return await self._send_verification_email_smtp(to_email, username, verification_code, html_content)
+            
+        except Exception as e:
+            print(f"ERROR: Email sending failed: {e}")
+            return False
+    
+    async def _send_verification_email_smtp(self, to_email: str, username: str, verification_code: str, html_content: str) -> bool:
+        """Fallback SMTP method for sending verification email"""
+        try:
             # Validate SMTP settings before attempting connection
             if not self.sender_email or not self.sender_password or not self.smtp_server:
-                print(f"Email service not configured: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
+                print(f"SMTP not configured: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
                 return False
             
             # Create message
@@ -219,21 +258,21 @@ class EmailService:
             msg['From'] = self.sender_email
             msg['To'] = to_email
             
-            # Create HTML content
-            html_content = self.create_verification_email(username, verification_code)
-            
             # Attach HTML content
             html_part = MIMEText(html_content, 'html')
             msg.attach(html_part)
             
             # Connect to SMTP server with timeout (10 seconds max)
             with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
-                if self.smtp_use_tls:
-                    server.starttls()  # Enable TLS encryption
-                server.login(self.sender_email, self.sender_password)
+                server.starttls()  # Enable TLS encryption
+                # Use SendGrid's authentication method
+                if self.smtp_username == 'apikey':
+                    server.login(self.smtp_username, self.sender_password)  # SendGrid: username='apikey', password=API_key
+                else:
+                    server.login(self.sender_email, self.sender_password)  # Regular SMTP
                 server.send_message(msg)
             
-            print(f"Email sent successfully to {to_email}")
+            print(f"SUCCESS: Email sent via SMTP to {to_email}")
             return True
             
         except smtplib.SMTPAuthenticationError as e:
@@ -246,7 +285,7 @@ class EmailService:
             print(f"SMTP Error: {e}")
             return False
         except Exception as e:
-            print(f"Email sending failed: {e}")
+            print(f"SMTP Email sending failed: {e}")
             return False
     
     async def send_account_deletion_email(self, to_email: str, username: str, verification_code: str) -> bool:
@@ -296,6 +335,69 @@ class EmailService:
     def refresh_settings(self):
         """Refresh email settings from database"""
         self._load_settings()
+    
+    async def send_email_via_sendgrid_api(self, to_email: str, subject: str, html_content: str) -> bool:
+        """Send email using SendGrid REST API (more reliable than SMTP)"""
+        try:
+            # Get SendGrid API key from environment
+            api_key = os.getenv('SENDGRID_API_KEY', self.sender_password)
+            if not api_key:
+                print("ERROR: SendGrid API key not found")
+                return False
+            
+            # SendGrid API endpoint
+            url = "https://api.sendgrid.com/v3/mail/send"
+            
+            # Headers
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json'
+            }
+            
+            # Email data
+            data = {
+                "personalizations": [
+                    {
+                        "to": [{"email": to_email}],
+                        "subject": subject
+                    }
+                ],
+                "from": {
+                    "email": self.sender_email or "noreply@sciencepioneers.com",
+                    "name": self.email_from_name or "Science Pioneers"
+                },
+                "content": [
+                    {
+                        "type": "text/html",
+                        "value": html_content
+                    }
+                ]
+            }
+            
+            print(f"DEBUG: Sending email via SendGrid API to {to_email}")
+            print(f"DEBUG: Using API key: {api_key[:10]}...")
+            print(f"DEBUG: From email: {self.sender_email}")
+            
+            # Send request
+            response = requests.post(url, headers=headers, json=data, timeout=10)
+            
+            if response.status_code == 202:
+                print(f"SUCCESS: Email sent via SendGrid API to {to_email}")
+                return True
+            else:
+                print(f"ERROR: SendGrid API failed with status {response.status_code}")
+                print(f"ERROR: Response: {response.text}")
+                return False
+                
+        except requests.exceptions.Timeout:
+            print("ERROR: SendGrid API request timed out")
+            return False
+        except requests.exceptions.RequestException as e:
+            print(f"ERROR: SendGrid API request failed: {e}")
+            return False
+        except Exception as e:
+            print(f"ERROR: SendGrid API error: {e}")
+            return False
     
     def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
