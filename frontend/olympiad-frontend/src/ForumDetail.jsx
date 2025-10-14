@@ -1033,7 +1033,7 @@ const ForumDetail = () => {
             formData.append('forum_id', forumId);
 
             const response = await axios.post(
-                "${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/upload-image",
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/forums/upload-image`,
                 formData,
                 {
                     headers: {
