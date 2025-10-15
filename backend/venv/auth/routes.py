@@ -3523,19 +3523,6 @@ async def delete_forum(
     # Commit the draft creations before deleting the forum
     db.commit()
     
-    # Send notifications to all members
-    notification_service = NotificationService(db) if NotificationService else None if NotificationService else None
-    for member in members:
-        if member.user_id != current_user.id:  # Don't notify the creator
-            if notification_service:
-                notification = await notification_service.send_forum_deleted_notification(
-                user_id=member.user_id,
-                forum_title=forum.title,
-                creator_username=current_user.username
-            )
-                if notification:
-                    pass  # Notification was sent successfully
-    
     # Explicitly delete related records to avoid foreign key constraint issues
     # Delete user online status records
     db.query(UserOnlineStatus).filter(UserOnlineStatus.forum_id == forum_id).delete()
@@ -3555,6 +3542,25 @@ async def delete_forum(
     # Finally delete the forum
     db.delete(forum)
     db.commit()
+    
+    # Send email notifications in background (non-blocking)
+    import asyncio
+    async def send_notifications_background():
+        try:
+            notification_service = NotificationService(db) if NotificationService else None
+            if notification_service:
+                for member in members:
+                    if member.user_id != current_user.id:  # Don't notify the creator
+                        await notification_service.send_forum_deleted_notification(
+                            user_id=member.user_id,
+                            forum_title=forum.title,
+                            creator_username=current_user.username
+                        )
+        except Exception as e:
+            print(f"Background email sending failed: {e}")
+    
+    # Start background task without waiting for it
+    asyncio.create_task(send_notifications_background())
     
     return {"message": "Forum deleted successfully"}
 
