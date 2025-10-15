@@ -206,7 +206,7 @@ class EmailService:
             msg.attach(html_part)
             
             # Connect to SMTP server with timeout (10 seconds max)
-            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
                 server.starttls()  # Enable TLS encryption
                 # Use SendGrid's authentication method
                 if self.smtp_username == 'apikey':
@@ -253,7 +253,7 @@ class EmailService:
             msg.attach(html_part)
             
             # Connect to SMTP server with timeout (10 seconds max)
-            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
@@ -320,7 +320,7 @@ class EmailService:
             print(f"DEBUG: From email: {self.sender_email}")
             
             # Send request
-            response = requests.post(url, headers=headers, json=data, timeout=10)
+            response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 202:
                 print(f"SUCCESS: Email sent via SendGrid API to {to_email}")
@@ -378,7 +378,7 @@ class EmailService:
             msg.attach(html_part)
             
             # Connect to SMTP server with timeout (10 seconds max)
-            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
@@ -389,6 +389,7 @@ class EmailService:
             
         except Exception as e:
             print(f"ERROR: Notification email failed: {e}")
+            print(f"DEBUG: SMTP settings - server: {self.smtp_server}, port: {self.smtp_port}, user: {self.sender_email}")
             return False
 
 # Create global email service instance
