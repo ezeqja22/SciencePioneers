@@ -3533,8 +3533,8 @@ async def delete_forum(
                 forum_title=forum.title,
                 creator_username=current_user.username
             )
-            if notification:
-                pass  # Notification was sent successfully
+                if notification:
+                    pass  # Notification was sent successfully
     
     # Explicitly delete related records to avoid foreign key constraint issues
     # Delete forum invitations
