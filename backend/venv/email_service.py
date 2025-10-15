@@ -8,79 +8,22 @@ from datetime import datetime, timedelta
 import random
 import string
 from typing import Optional
-from database import get_db
-from models import SystemSettings
+# Removed database imports to fix circular import issue
 
 class EmailService:
     def __init__(self):
-        # Email configuration will be loaded from database
-        self.smtp_server = None
-        self.smtp_port = None
-        self.sender_email = None
-        self.sender_password = None
-        self.smtp_use_tls = True
-        self.email_from_name = None
-        self._load_settings()
-    
-    def _load_settings(self):
-        """Load email settings from database, fallback to environment variables"""
-        try:
-            db = next(get_db())
-            settings = db.query(SystemSettings).filter(
-                SystemSettings.key.in_([
-                    'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password', 
-                    'smtp_use_tls', 'email_from_name', 'email_from_address'
-                ])
-            ).all()
-            
-            settings_dict = {setting.key: setting.value for setting in settings}
-            
-            # Set SMTP configuration from database
-            self.smtp_server = settings_dict.get('smtp_server')
-            self.smtp_port = settings_dict.get('smtp_port')
-            self.sender_email = settings_dict.get('smtp_username')
-            
-            # Decrypt password if it's encrypted
-            encrypted_password = settings_dict.get('smtp_password', '')
-            if encrypted_password:
-                try:
-                    self.sender_password = base64.b64decode(encrypted_password).decode('utf-8')
-                except:
-                    # If decryption fails, use as plain text (for backward compatibility)
-                    self.sender_password = encrypted_password
-            else:
-                self.sender_password = ''
-                
-            self.smtp_use_tls = settings_dict.get('smtp_use_tls', 'true') == 'true'
-            self.email_from_name = settings_dict.get('email_from_name', 'Science Pioneers')
-            
-            # Check if database settings are complete
-            if not self.smtp_server or not self.sender_email or not self.sender_password:
-                # Fallback to environment variables
-                self._load_from_env()
-            
-        except Exception as e:
-            # Fallback to environment variables
-            self._load_from_env()
-    
-    def _load_from_env(self):
-        """Load email settings from environment variables"""
-        self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        # Email configuration loaded from environment variables
+        self.smtp_server = os.getenv('SMTP_SERVER')
         self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
-        self.sender_email = os.getenv('SMTP_FROM_EMAIL', '')
-        self.sender_password = os.getenv('SMTP_PASSWORD', '')
-        self.smtp_use_tls = True
-        self.email_from_name = os.getenv('SMTP_FROM_NAME', 'Science Pioneers')
-        self.smtp_username = os.getenv('SMTP_USERNAME', '')
-        
-        # Debug logging
-        print(f"Email service loaded from environment:")
-        print(f"  SMTP Server: {self.smtp_server}")
-        print(f"  SMTP Port: {self.smtp_port}")
-        print(f"  SMTP Username: {self.smtp_username}")
-        print(f"  Sender Email: {self.sender_email}")
-        print(f"  Password set: {bool(self.sender_password)}")
-        print(f"  Use TLS: {self.smtp_use_tls}")
+        self.sender_email = os.getenv('SMTP_USERNAME')
+        self.sender_password = os.getenv('SMTP_PASSWORD')
+        self.smtp_use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
+        self.email_from_name = os.getenv('EMAIL_FROM_NAME', 'Science Pioneers')
+        self.email_from_address = os.getenv('EMAIL_FROM_ADDRESS', self.sender_email)
+    
+    def is_configured(self):
+        """Check if email service is properly configured"""
+        return bool(self.smtp_server and self.sender_email and self.sender_password)
         
         
     def generate_verification_code(self) -> str:

@@ -733,7 +733,7 @@ async def create_comment(
     
     # Send notification if not the author commenting on their own problem
     if problem.author_id != current_user.id:
-        notification_service = NotificationService(db) if NotificationService else None
+        notification_service = NotificationService(db) if NotificationService else None if NotificationService else None
         if notification_service:
             await notification_service.send_comment_notification(
             user_id=problem.author_id,
@@ -1037,7 +1037,7 @@ async def vote_problem(
         
         # Send notification if it's a like and not the author liking their own problem
         if vote_type == "like" and problem.author_id != current_user.id:
-            notification_service = NotificationService(db) if NotificationService else None
+            notification_service = NotificationService(db) if NotificationService else None if NotificationService else None
             if notification_service:
                 await notification_service.send_like_notification(
                 user_id=problem.author_id,
@@ -1433,7 +1433,7 @@ async def follow_user(
     db.commit()
     
     # Send notification to the user being followed
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_follow_notification(
         user_id=user_id,
@@ -3050,7 +3050,7 @@ async def invite_user_to_forum(
     db.refresh(db_invitation)
     
     # Send notification to invitee
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_forum_invitation_notification(
         user_id=invitation.invitee_id,
@@ -3128,7 +3128,7 @@ async def accept_forum_invitation(
     db.commit()
     
     # Send notification to inviter
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_forum_invitation_accepted_notification(
         user_id=invitation.inviter_id,
@@ -3222,7 +3222,7 @@ async def request_to_join_forum(
     db.refresh(db_request)
     
     # Send notification to forum creator
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_forum_join_request_notification(
         user_id=forum.creator_id,
@@ -3343,7 +3343,7 @@ async def accept_join_request(
     db.commit()
     
     # Send notification to requester
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_forum_join_request_accepted_notification(
         user_id=request.user_id,
@@ -3385,7 +3385,7 @@ async def decline_join_request(
     db.commit()
     
     # Send notification to requester
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None
     if notification_service:
         await notification_service.send_forum_join_request_declined_notification(
         user_id=request.user_id,
@@ -3524,7 +3524,7 @@ async def delete_forum(
     db.commit()
     
     # Send notifications to all members
-    notification_service = NotificationService(db)
+    notification_service = NotificationService(db) if NotificationService else None if NotificationService else None
     for member in members:
         if member.user_id != current_user.id:  # Don't notify the creator
             if notification_service:
