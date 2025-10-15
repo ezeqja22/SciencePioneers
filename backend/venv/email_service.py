@@ -343,8 +343,9 @@ class EmailService:
     def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
         try:
-            # Check if we have valid settings
-            if not self.sender_email or not self.sender_password:
+            # Validate SMTP settings before attempting connection
+            if not self.sender_email or not self.sender_password or not self.smtp_server:
+                print(f"SMTP not configured for notification: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
                 return False
             
             # Create message
@@ -376,16 +377,18 @@ class EmailService:
             html_part = MIMEText(html_content, 'html')
             msg.attach(html_part)
             
-            # Connect to SMTP server and send email
-            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            # Connect to SMTP server with timeout (10 seconds max)
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
+            print(f"DEBUG: Notification email sent successfully to {to_email}")
             return True
             
         except Exception as e:
+            print(f"ERROR: Notification email failed: {e}")
             return False
 
 # Create global email service instance
