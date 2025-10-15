@@ -3537,6 +3537,9 @@ async def delete_forum(
                     pass  # Notification was sent successfully
     
     # Explicitly delete related records to avoid foreign key constraint issues
+    # Delete user online status records
+    db.query(UserOnlineStatus).filter(UserOnlineStatus.forum_id == forum_id).delete()
+    
     # Delete forum invitations
     db.query(ForumInvitation).filter(ForumInvitation.forum_id == forum_id).delete()
     
