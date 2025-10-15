@@ -13,7 +13,7 @@ from typing import Optional
 class EmailService:
     def __init__(self):
         # Email configuration loaded from environment variables
-        self.smtp_server = os.getenv('SMTP_SERVER')
+        self.smtp_server = os.getenv('SMTP_SERVER') or os.getenv('SMTP_HOST')
         self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
         self.sender_email = os.getenv('SMTP_USERNAME')
         self.sender_password = os.getenv('SMTP_PASSWORD')
