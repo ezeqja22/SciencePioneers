@@ -275,9 +275,7 @@ class EmailService:
             print(f"Email sending failed: {e}")
             return False
     
-    def refresh_settings(self):
-        """Refresh email settings from database"""
-        self._load_settings()
+    # Removed refresh_settings method - using environment variables now
     
     async def send_email_via_sendgrid_api(self, to_email: str, subject: str, html_content: str) -> bool:
         """Send email using SendGrid REST API (more reliable than SMTP)"""
@@ -345,9 +343,6 @@ class EmailService:
     def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
         try:
-            # Refresh settings before sending
-            self.refresh_settings()
-
             # Check if we have valid settings
             if not self.sender_email or not self.sender_password:
                 return False
