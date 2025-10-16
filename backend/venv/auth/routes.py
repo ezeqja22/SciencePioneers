@@ -2125,11 +2125,10 @@ async def upload_problem_image(
 # Removed: /serve-problem-image/{filename} - Images now served directly from Cloudinary
 
 @router.post("/create-first-admin")
-async def create_first_admin_endpoint():
+async def create_first_admin_endpoint(db: Session = Depends(get_db)):
     """Temporary endpoint to create first admin - REMOVE AFTER USE!"""
     from auth.utils import hash_password
     
-    db = SessionLocal()
     try:
         # Check if any admin exists
         existing_admin = db.query(User).filter(User.role == 'admin').first()
@@ -2160,8 +2159,6 @@ async def create_first_admin_endpoint():
     except Exception as e:
         db.rollback()
         return {"error": f"Failed to create admin: {e}"}
-    finally:
-        db.close()
 
 @router.delete("/problems/{problem_id}/images/{filename}")
 async def delete_problem_image(
