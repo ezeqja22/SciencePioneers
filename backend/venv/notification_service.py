@@ -139,7 +139,7 @@ class NotificationService:
             SciencePioneers Team
             """
             
-            result = self.email_service.send_notification_email(user.email, subject, body)
+            result = await self.email_service.send_notification_email(user.email, subject, body)
             print(f"DEBUG: Email notification result: {result}")
             
         except Exception as e:

@@ -340,55 +340,49 @@ class EmailService:
             print(f"ERROR: SendGrid API error: {e}")
             return False
     
-    def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
+    async def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
-        import asyncio
-        
-        async def _send_async():
-            try:
-                print(f"DEBUG: Attempting to send notification email to {to_email}")
-                
-                # Create HTML content
-                html_content = f"""
-                <html>
-                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                        <div style="background: #2d7a5f; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                            <h1>🔬 Science Pioneers</h1>
-                        </div>
-                        <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
-                            <h2>Notification</h2>
-                            <p>{body}</p>
-                            <p>Visit <a href="http://localhost:3000">SciencePioneers</a> to see more!</p>
-                            <p>Best regards,<br>SciencePioneers Team</p>
-                        </div>
+        try:
+            print(f"DEBUG: Attempting to send notification email to {to_email}")
+            
+            # Create HTML content
+            html_content = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: #2d7a5f; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                        <h1>🔬 Science Pioneers</h1>
                     </div>
-                </body>
-                </html>
-                """
-                
-                # Try SendGrid API first (more reliable)
-                print("DEBUG: Trying SendGrid REST API for notification...")
-                success = await self.send_email_via_sendgrid_api(
-                    to_email=to_email,
-                    subject=subject,
-                    html_content=html_content
-                )
-                
-                if success:
-                    print(f"SUCCESS: Notification email sent via SendGrid API to {to_email}")
-                    return True
-                
-                # Fallback to SMTP if API fails
-                print("DEBUG: SendGrid API failed, trying SMTP fallback for notification...")
-                return self._send_notification_email_smtp(to_email, subject, html_content)
-                
-            except Exception as e:
-                print(f"ERROR: Notification email failed: {e}")
-                return False
-        
-        # Run the async function
-        return asyncio.run(_send_async())
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <h2>Notification</h2>
+                        <p>{body}</p>
+                        <p>Visit <a href="http://localhost:3000">SciencePioneers</a> to see more!</p>
+                        <p>Best regards,<br>SciencePioneers Team</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Try SendGrid API first (more reliable)
+            print("DEBUG: Trying SendGrid REST API for notification...")
+            success = await self.send_email_via_sendgrid_api(
+                to_email=to_email,
+                subject=subject,
+                html_content=html_content
+            )
+            
+            if success:
+                print(f"SUCCESS: Notification email sent via SendGrid API to {to_email}")
+                return True
+            
+            # Fallback to SMTP if API fails
+            print("DEBUG: SendGrid API failed, trying SMTP fallback for notification...")
+            return self._send_notification_email_smtp(to_email, subject, html_content)
+            
+        except Exception as e:
+            print(f"ERROR: Notification email failed: {e}")
+            return False
     
     def _send_notification_email_smtp(self, to_email: str, subject: str, html_content: str) -> bool:
         """Fallback SMTP method for sending notification email"""
