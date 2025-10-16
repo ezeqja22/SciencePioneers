@@ -2509,8 +2509,8 @@ const ForumDetail = () => {
                                                 }}>
                                                     <span>{new Date(message.created_at).toLocaleTimeString()}</span>
                                                     
-                                                {/* Message Actions Dropdown - Based on permissions */}
-                                                {hasPermission('pin') && (
+                                                {/* Message Actions Dropdown - Available to all members */}
+                                                {(
                                                         <div 
                                                             data-message-dropdown 
                                                             style={{ 
@@ -2596,8 +2596,69 @@ const ForumDetail = () => {
                                                                             e.target.style.backgroundColor = 'transparent';
                                                                         }}
                                                                     >
-                                                                         Reply
+                                                                        💬 Reply
                                                                     </button>
+                                                                    
+                                                                    {/* Report Option - Available to all users */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setReportTarget({
+                                                                                type: 'message',
+                                                                                id: message.id,
+                                                                                user: message.author
+                                                                            });
+                                                                            setShowReportModal(true);
+                                                                            setShowMessageDropdown(null);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: spacing.sm,
+                                                                            border: 'none',
+                                                                            backgroundColor: 'transparent',
+                                                                            textAlign: 'left',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.8rem',
+                                                                            color: colors.gray[700]
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.target.style.backgroundColor = colors.gray[50];
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.target.style.backgroundColor = 'transparent';
+                                                                        }}
+                                                                    >
+                                                                        🚨 Report
+                                                                    </button>
+                                                                    
+                                                                    {/* Delete Option - Only for own messages */}
+                                                                    {isOwnMessage && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                deleteMessage(message.id);
+                                                                                setShowMessageDropdown(null);
+                                                                            }}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                padding: spacing.sm,
+                                                                                border: 'none',
+                                                                                backgroundColor: 'transparent',
+                                                                                textAlign: 'left',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.8rem',
+                                                                                color: colors.error || '#ef4444'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.backgroundColor = colors.gray[50];
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.backgroundColor = 'transparent';
+                                                                            }}
+                                                                        >
+                                                                            🗑️ Delete
+                                                                        </button>
+                                                                    )}
+                                                                    
+                                                                    {/* Pin Option - Only for moderators/creators */}
                                                                     {hasPermission('pin') && (
                                                                         <button
                                                                             onClick={() => {
@@ -2624,62 +2685,6 @@ const ForumDetail = () => {
                                                                             📍 Pin Message
                                                                         </button>
                                                                     )}
-                                                                    {hasPermission('moderate') && (
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                deleteMessage(message.id);
-                                                                                setShowMessageDropdown(null);
-                                                                            }}
-                                                                            style={{
-                                                                                width: '100%',
-                                                                                padding: spacing.sm,
-                                                                                border: 'none',
-                                                                                backgroundColor: 'transparent',
-                                                                                textAlign: 'left',
-                                                                                cursor: 'pointer',
-                                                                                fontSize: '0.8rem',
-                                                                                color: colors.error || '#ef4444'
-                                                                            }}
-                                                                            onMouseEnter={(e) => {
-                                                                                e.target.style.backgroundColor = colors.gray[50];
-                                                                            }}
-                                                                            onMouseLeave={(e) => {
-                                                                                e.target.style.backgroundColor = 'transparent';
-                                                                            }}
-                                                                        >
-                                                                             Delete Message
-                                                                        </button>
-                                                                    )}
-                                                                    {/* Report Option - Available to all users */}
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            setReportTarget({
-                                                                                type: 'message',
-                                                                                id: message.id,
-                                                                                user: message.author
-                                                                            });
-                                                                            setShowReportModal(true);
-                                                                            setShowMessageDropdown(null);
-                                                                        }}
-                                                                        style={{
-                                                                            width: '100%',
-                                                                            padding: spacing.sm,
-                                                                            border: 'none',
-                                                                            backgroundColor: 'transparent',
-                                                                            textAlign: 'left',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.8rem',
-                                                                            color: colors.error || '#ef4444'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.target.style.backgroundColor = colors.gray[50];
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.target.style.backgroundColor = 'transparent';
-                                                                        }}
-                                                                    >
-                                                                         Report Message
-                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -2693,8 +2698,7 @@ const ForumDetail = () => {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     marginTop: spacing.sm,
-                                                    marginLeft: isOwnMessage ? 'auto' : '0',
-                                                    marginRight: isOwnMessage ? '0' : 'auto',
+                                                    justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
                                                     maxWidth: 'fit-content'
                                                 }}>
                                                     <div style={{
