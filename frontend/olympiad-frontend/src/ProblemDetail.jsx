@@ -1261,7 +1261,7 @@ function ProblemDetail() {
                                                     try {
                                                         const token = localStorage.getItem("token");
                                                         await axios.delete(
-                                                            `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/images/${image}`,
+                                                            `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${id}/images/${encodeURIComponent(image)}`,
                                                             {
                                                                 headers: {
                                                                     Authorization: `Bearer ${token}`
