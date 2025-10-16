@@ -56,7 +56,7 @@ class NotificationService:
                         'message': message,
                         'type': notification_type
                     })()
-                    self._send_email_notification(user, email_notification)
+                    await self._send_email_notification(user, email_notification)
                 else:
                     print(f"DEBUG: User not verified or not found, skipping email")
             else:
@@ -123,7 +123,7 @@ class NotificationService:
             return preferences.in_app_forum_deleted
         return False
     
-    def _send_email_notification(self, user: User, notification: Notification):
+    async def _send_email_notification(self, user: User, notification: Notification):
         """Send email notification to user"""
         try:
             print(f"DEBUG: Attempting to send email notification to {user.email}")
