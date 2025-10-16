@@ -28,8 +28,8 @@ def create_first_admin():
         # Create first admin
         admin_user = User(
             username="admin",
-            email="admin@sciencepioneers.com",
-            password_hash=hash_password("admin123"),  # CHANGE THIS PASSWORD!
+            email="admin@olimpiada.com",  # CHANGE TO YOUR EMAIL
+            password_hash=hash_password("albytemilioner!"),  # CHANGE TO YOUR SECURE PASSWORD
             role="admin",
             is_active=True,
             is_verified=True,
@@ -43,8 +43,8 @@ def create_first_admin():
         print("=" * 50)
         print("🔐 ADMIN CREDENTIALS:")
         print(f"   Username: admin")
-        print(f"   Email: admin@sciencepioneers.com")
-        print(f"   Password: admin123")
+        print(f"   Email: admin@olimpiada.com")
+        print(f"   Password: albytemilioner!")
         print("=" * 50)
         print("⚠️  IMPORTANT SECURITY NOTES:")
         print("   1. CHANGE THE PASSWORD IMMEDIATELY!")
