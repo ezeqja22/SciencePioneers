@@ -19,7 +19,7 @@ class EmailService:
         self.sender_password = os.getenv('SMTP_PASSWORD')
         self.smtp_use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() == 'true'
         self.email_from_name = os.getenv('EMAIL_FROM_NAME', 'Science Pioneers')
-        self.email_from_address = os.getenv('EMAIL_FROM_ADDRESS', self.sender_email)
+        self.email_from_address = os.getenv('EMAIL_FROM_ADDRESS', 'albyte.dev@gmail.com')
     
     def is_configured(self):
         """Check if email service is properly configured"""
@@ -304,7 +304,7 @@ class EmailService:
                     }
                 ],
                 "from": {
-                    "email": self.sender_email or "noreply@sciencepioneers.com",
+                    "email": self.email_from_address or "albyte.dev@gmail.com",
                     "name": self.email_from_name or "Science Pioneers"
                 },
                 "content": [
