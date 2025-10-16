@@ -340,19 +340,10 @@ class EmailService:
             print(f"ERROR: SendGrid API error: {e}")
             return False
     
-    def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
+    async def send_notification_email(self, to_email: str, subject: str, body: str) -> bool:
         """Send notification email to user"""
         try:
-            # Validate SMTP settings before attempting connection
-            if not self.sender_email or not self.sender_password or not self.smtp_server:
-                print(f"SMTP not configured for notification: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
-                return False
-            
-            # Create message
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{self.email_from_name} <{self.sender_email}>" if self.email_from_name else self.sender_email
-            msg['To'] = to_email
+            print(f"DEBUG: Attempting to send notification email to {to_email}")
             
             # Create HTML content
             html_content = f"""
@@ -373,22 +364,56 @@ class EmailService:
             </html>
             """
             
+            # Try SendGrid API first (more reliable)
+            print("DEBUG: Trying SendGrid REST API for notification...")
+            success = await self.send_email_via_sendgrid_api(
+                to_email=to_email,
+                subject=subject,
+                html_content=html_content
+            )
+            
+            if success:
+                print(f"SUCCESS: Notification email sent via SendGrid API to {to_email}")
+                return True
+            
+            # Fallback to SMTP if API fails
+            print("DEBUG: SendGrid API failed, trying SMTP fallback for notification...")
+            return await self._send_notification_email_smtp(to_email, subject, html_content)
+            
+        except Exception as e:
+            print(f"ERROR: Notification email failed: {e}")
+            return False
+    
+    async def _send_notification_email_smtp(self, to_email: str, subject: str, html_content: str) -> bool:
+        """Fallback SMTP method for sending notification email"""
+        try:
+            # Validate SMTP settings before attempting connection
+            if not self.sender_email or not self.sender_password or not self.smtp_server:
+                print(f"SMTP not configured for notification: email={bool(self.sender_email)}, password={bool(self.sender_password)}, server={self.smtp_server}")
+                return False
+            
+            # Create message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = f"{self.email_from_name} <{self.sender_email}>" if self.email_from_name else self.sender_email
+            msg['To'] = to_email
+            
             # Attach HTML content
             html_part = MIMEText(html_content, 'html')
             msg.attach(html_part)
             
-            # Connect to SMTP server with timeout (10 seconds max)
+            # Connect to SMTP server with timeout
             with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=30) as server:
                 if self.smtp_use_tls:
                     server.starttls()  # Enable TLS encryption
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(msg)
             
-            print(f"DEBUG: Notification email sent successfully to {to_email}")
+            print(f"DEBUG: Notification email sent successfully via SMTP to {to_email}")
             return True
             
         except Exception as e:
-            print(f"ERROR: Notification email failed: {e}")
+            print(f"ERROR: Notification SMTP email failed: {e}")
             print(f"DEBUG: SMTP settings - server: {self.smtp_server}, port: {self.smtp_port}, user: {self.sender_email}")
             return False
 
