@@ -277,7 +277,7 @@ const FollowersFollowing = ({ type }) => {
                                                 fontWeight: typography.fontWeight.bold,
                                                 fontSize: typography.fontSize.lg,
                                                 backgroundImage: user.profile_picture ? 
-                                                    `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : 
+                                                    `url(${user.profile_picture})` : 
                                                     'none',
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center"

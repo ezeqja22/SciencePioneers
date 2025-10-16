@@ -464,7 +464,7 @@ function Header({ showHomeButton = false }) {
                         >
                             {currentUser.profile_picture ? (
                                 <img
-                                    src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${currentUser.profile_picture}`}
+                                    src={currentUser.profile_picture}
                                     alt="Profile"
                                     style={{
                                         width: "32px",

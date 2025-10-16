@@ -1247,7 +1247,7 @@ function ProblemDetail() {
                                             height: "100px"
                                         }}>
                                             <img 
-                                                src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${image}`}
+                                                src={image}
                                                 alt={`Problem image ${index + 1}`}
                                                 style={{
                                                     width: "100%",
@@ -1503,7 +1503,7 @@ function ProblemDetail() {
                                         fontWeight: "bold",
                                         fontSize: "16px",
                                         backgroundImage: problem.author.profile_picture ? 
-                                            `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : 
+                                            `url(${problem.author.profile_picture})` : 
                                             'none',
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
@@ -1729,7 +1729,7 @@ function ProblemDetail() {
                                 onClick={() => openImageModal(index)}
                                 >
                                     <img 
-                                        src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${image}`}
+                                        src={image}
                                         alt={`Problem image ${index + 1}`}
                                         style={{
                                             width: "100%",
@@ -2031,7 +2031,7 @@ function ProblemDetail() {
 
                     {/* Fullscreen image */}
                     <img
-                        src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-problem-image/${problemImages[currentImageIndex]}`}
+                        src={problemImages[currentImageIndex]}
                         alt={`Problem image ${currentImageIndex + 1}`}
                         style={{
                             maxWidth: "90vw",

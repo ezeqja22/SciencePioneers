@@ -360,7 +360,7 @@ function SubjectPage() {
                                                 fontSize: "12px",
                                                 fontWeight: "bold",
                                                 backgroundImage: problem.author.profile_picture ? 
-                                                    `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
+                                                    `url(${problem.author.profile_picture})` : "none",
                                                 backgroundSize: "cover",
                                                 backgroundPosition: "center"
                                             }}>

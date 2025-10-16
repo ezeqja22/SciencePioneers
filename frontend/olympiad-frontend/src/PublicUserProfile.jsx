@@ -258,7 +258,7 @@ const PublicUserProfile = () => {
                     fontWeight: 'bold',
                     marginRight: '20px',
                     backgroundImage: userProfile.user.profile_picture ? 
-                        `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${userProfile.user.profile_picture.split('/').pop()})` : 
+                        `url(${userProfile.user.profile_picture})` : 
                         'none',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center'

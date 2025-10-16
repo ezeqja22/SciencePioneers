@@ -505,7 +505,7 @@ const SearchResults = () => {
                                         color: "white",
                                         fontSize: "20px",
                                         fontWeight: "bold",
-                                        backgroundImage: user.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                                        backgroundImage: user.profile_picture ? `url(${user.profile_picture})` : "none",
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>
@@ -585,7 +585,7 @@ const SearchResults = () => {
                                         color: "white",
                                         fontSize: "16px",
                                         fontWeight: "bold",
-                                        backgroundImage: problem.author.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${problem.author.profile_picture.split('/').pop()})` : "none",
+                                        backgroundImage: problem.author.profile_picture ? `url(${problem.author.profile_picture})` : "none",
                                         backgroundSize: "cover",
                                         backgroundPosition: "center"
                                     }}>

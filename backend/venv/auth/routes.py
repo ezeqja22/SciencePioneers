@@ -1266,36 +1266,40 @@ async def upload_profile_picture(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Read file content first
-    content = await file.read()
+    from cloudinary_service import cloudinary_service
+    
+    # Check if Cloudinary is configured
+    if not cloudinary_service.is_configured():
+        raise HTTPException(status_code=500, detail="Image service not configured")
     
     # Check file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File is not an image")
 
     # Check file size
+    content = await file.read()
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File is too large. Maximum size is 5MB")
 
-    # Generate unique filename
-    file_extension = file.filename.split(".")[-1]
-    unique_filename = f"user_{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
-    file_path = f"../../uploads/profile_pictures/{unique_filename}"
-    stored_path = f"profile_pictures/{unique_filename}"
-
-    # Create directory if it doesn't exist
-    os.makedirs("../../uploads/profile_pictures", exist_ok=True)
+    # Reset file pointer for Cloudinary upload
+    await file.seek(0)
     
-    # Save the file
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
-        
-    # Update database
-    current_user.profile_picture = stored_path
+    # Upload to Cloudinary
+    cloudinary_url = cloudinary_service.upload_profile_picture(file, current_user.id)
+    
+    if not cloudinary_url:
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+    
+    # Delete old profile picture if exists
+    if current_user.profile_picture and current_user.profile_picture.startswith("http"):
+        cloudinary_service.delete_image(current_user.profile_picture)
+    
+    # Update database with Cloudinary URL
+    current_user.profile_picture = cloudinary_url
     db.commit()
     db.refresh(current_user)
     
-    return {"message": "Profile picture uploaded successfully", "file_path": stored_path}
+    return {"message": "Profile picture uploaded successfully", "file_path": cloudinary_url}
 
 
 @router.delete("/user/profile-picture")
@@ -1307,14 +1311,10 @@ def remove_profile_picture(
     if not current_user.profile_picture:
         raise HTTPException(status_code=400, detail="No profile picture to remove")
     
-    # Delete the file from filesystem if it exists
-    try:
-        file_path = f"../../uploads/{current_user.profile_picture}"
-        if os.path.exists(file_path):
-            os.remove(file_path)
-    except Exception as e:
-        # Log the error but don't fail the request
-        pass  # File deletion is optional
+    # Delete from Cloudinary if it's a Cloudinary URL
+    if current_user.profile_picture.startswith("http"):
+        from cloudinary_service import cloudinary_service
+        cloudinary_service.delete_image(current_user.profile_picture)
     
     # Update database to remove profile picture
     current_user.profile_picture = None
@@ -1332,6 +1332,12 @@ async def upload_forum_image(
     current_user: User = Depends(get_current_user)
 ):
     """Upload image for forum messages"""
+    from cloudinary_service import cloudinary_service
+    
+    # Check if Cloudinary is configured
+    if not cloudinary_service.is_configured():
+        raise HTTPException(status_code=500, detail="Image service not configured")
+    
     # Check if user is member of the forum
     membership = db.query(ForumMembership).filter(
         ForumMembership.forum_id == forum_id,
@@ -1344,31 +1350,25 @@ async def upload_forum_image(
     if not membership and not is_creator:
         raise HTTPException(status_code=403, detail="Access denied: Not a member of this forum")
     
-    # Read file content first
-    content = await file.read()
-    
     # Check file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File is not an image")
 
     # Check file size (5MB limit)
+    content = await file.read()
     if len(content) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File is too large. Maximum size is 5MB")
 
-    # Generate unique filename
-    file_extension = file.filename.split(".")[-1]
-    unique_filename = f"forum_{forum_id}_{current_user.id}_{uuid.uuid4().hex}.{file_extension}"
-    file_path = f"../../uploads/forum_images/{unique_filename}"
-    stored_path = f"forum_images/{unique_filename}"
-
-    # Create directory if it doesn't exist
-    os.makedirs("../../uploads/forum_images", exist_ok=True)
+    # Reset file pointer for Cloudinary upload
+    await file.seek(0)
     
-    # Save the file
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
+    # Upload to Cloudinary
+    cloudinary_url = cloudinary_service.upload_forum_image(file, forum_id)
+    
+    if not cloudinary_url:
+        raise HTTPException(status_code=500, detail="Failed to upload image")
         
-    return {"message": "Image uploaded successfully", "file_path": stored_path}
+    return {"message": "Image uploaded successfully", "file_path": cloudinary_url}
 
 
 @router.get("/serve-image/{filename}")
@@ -2084,6 +2084,12 @@ async def upload_problem_image(
     current_user: User = Depends(get_verified_user)
 ):
     """Upload an image for a problem"""
+    from cloudinary_service import cloudinary_service
+    
+    # Check if Cloudinary is configured
+    if not cloudinary_service.is_configured():
+        raise HTTPException(status_code=500, detail="Image service not configured")
+    
     # Check if problem exists and user owns it
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -2096,51 +2102,27 @@ async def upload_problem_image(
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
     
-    # Create uploads directory if it doesn't exist
-    os.makedirs("../../uploads/problem_images", exist_ok=True)
+    # Upload to Cloudinary
+    cloudinary_url = cloudinary_service.upload_problem_image(file, problem_id)
     
-    # Generate unique filename
-    file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    unique_filename = f"{uuid.uuid4()}.{file_extension}"
-    file_path = f"../../uploads/problem_images/{unique_filename}"
+    if not cloudinary_url:
+        raise HTTPException(status_code=500, detail="Failed to upload image")
     
-    # Read and save file
-    content = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(content)
-    
-    # Resize image if too large (optional)
-    try:
-        with Image.open(file_path) as img:
-            if img.width > 1920 or img.height > 1920:
-                img.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
-                img.save(file_path, optimize=True, quality=85)
-    except Exception as e:
-        pass  # Image processing failed, but continue
-    
-    # Store the image association in the database
+    # Store the image association in the database with Cloudinary URL
     problem_image = ProblemImage(
         problem_id=problem_id,
-        filename=unique_filename
+        filename=cloudinary_url  # Store Cloudinary URL instead of filename
     )
     db.add(problem_image)
     db.commit()
     
     return {
         "message": "Image uploaded successfully",
-        "filename": unique_filename,
-        "file_path": file_path
+        "filename": cloudinary_url,
+        "file_path": cloudinary_url
     }
 
-@router.get("/serve-problem-image/{filename}")
-async def serve_problem_image(filename: str):
-    """Serve problem images"""
-    file_path = f"../../uploads/problem_images/{filename}"
-    
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Image not found")
-    
-    return FileResponse(file_path)
+# Removed: /serve-problem-image/{filename} - Images now served directly from Cloudinary
 
 @router.delete("/problems/{problem_id}/images/{filename}")
 async def delete_problem_image(
@@ -2150,6 +2132,8 @@ async def delete_problem_image(
     current_user: User = Depends(get_verified_user)
 ):
     """Delete a problem image"""
+    from cloudinary_service import cloudinary_service
+    
     # Check if problem exists and user owns it
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
     if not problem:
@@ -2167,16 +2151,14 @@ async def delete_problem_image(
     if not problem_image:
         raise HTTPException(status_code=404, detail="Image not found in database")
     
+    # Delete from Cloudinary if it's a Cloudinary URL
+    if filename.startswith("http"):
+        cloudinary_service.delete_image(filename)
+    
     db.delete(problem_image)
     db.commit()
     
-    # Delete file
-    file_path = f"../../uploads/problem_images/{filename}"
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        return {"message": "Image deleted successfully"}
-    else:
-        return {"message": "Image deleted from database but file not found"}
+    return {"message": "Image deleted successfully"}
 
 
 @router.post("/problems/{problem_id}/view")

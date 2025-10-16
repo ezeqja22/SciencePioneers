@@ -438,7 +438,7 @@ function Homepage() {
                                     fontSize: "14px",
                                     fontWeight: "bold",
                                     backgroundImage: currentUser.profile_picture ? 
-                                        `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${currentUser.profile_picture.split('/').pop()})` : "none",
+                                        `url(${currentUser.profile_picture})` : "none",
                                     backgroundSize: "cover",
                                     backgroundPosition: "center"
                                 }}>

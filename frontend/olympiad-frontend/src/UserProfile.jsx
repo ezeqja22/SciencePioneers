@@ -434,7 +434,7 @@ function UserProfile() {
                             color: "white",
                             fontSize: "32px",
                             fontWeight: "bold",
-                            backgroundImage: user.profile_picture ? `url(${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()})` : "none",
+                            backgroundImage: user.profile_picture ? `url(${user.profile_picture})` : "none",
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                             cursor: "pointer",
@@ -1536,7 +1536,7 @@ function UserProfile() {
                             ×
                         </button>
                         <img
-                            src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${user.profile_picture.split('/').pop()}`}
+                            src={user.profile_picture}
                             alt="Profile Picture"
                             style={{
                                 maxWidth: "100%",

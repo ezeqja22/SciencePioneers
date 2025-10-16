@@ -16,3 +16,4 @@ uvicorn[standard]
 websockets
 requests
 sendgrid
+cloudinary

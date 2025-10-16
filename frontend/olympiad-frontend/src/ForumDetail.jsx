@@ -2459,7 +2459,7 @@ const ForumDetail = () => {
                                                 ) : message.message_type === 'image' ? (
                                                     <div style={{ marginTop: spacing.sm }}>
                                                         <img 
-                                                            src={`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${message.content.split('/').pop()}`}
+                                                            src={message.content}
                                                             alt="Forum image"
                                                             style={{
                                                                 maxWidth: '100%',
@@ -2469,7 +2469,7 @@ const ForumDetail = () => {
                                                                 cursor: 'pointer'
                                                             }}
                                                             onClick={() => {
-                                                                setSelectedImage(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/serve-image/${message.content.split('/').pop()}`);
+                                                                setSelectedImage(message.content);
                                                                 setShowImageModal(true);
                                                             }}
                                                         />
