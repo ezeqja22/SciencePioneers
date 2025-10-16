@@ -77,8 +77,7 @@ class CloudinaryService:
             "height": 300,
             "crop": "fill",
             "gravity": "face",
-            "quality": "auto",
-            "format": "auto"
+            "quality": "auto"
         }
         
         return self.upload_image(file, f"profile_pictures/user_{user_id}", transformations)
@@ -98,8 +97,7 @@ class CloudinaryService:
             "width": 800,
             "height": 600,
             "crop": "limit",
-            "quality": "auto",
-            "format": "auto"
+            "quality": "auto"
         }
         
         return self.upload_image(file, f"problem_images/problem_{problem_id}", transformations)
@@ -119,8 +117,7 @@ class CloudinaryService:
             "width": 1000,
             "height": 800,
             "crop": "limit",
-            "quality": "auto",
-            "format": "auto"
+            "quality": "auto"
         }
         
         return self.upload_image(file, f"forum_images/forum_{forum_id}", transformations)
