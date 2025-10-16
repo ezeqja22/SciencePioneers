@@ -2124,6 +2124,45 @@ async def upload_problem_image(
 
 # Removed: /serve-problem-image/{filename} - Images now served directly from Cloudinary
 
+@router.post("/create-first-admin")
+async def create_first_admin_endpoint():
+    """Temporary endpoint to create first admin - REMOVE AFTER USE!"""
+    from auth.utils import hash_password
+    
+    db = SessionLocal()
+    try:
+        # Check if any admin exists
+        existing_admin = db.query(User).filter(User.role == 'admin').first()
+        if existing_admin:
+            return {"message": "Admin already exists!", "username": existing_admin.username}
+        
+        # Create first admin
+        admin_user = User(
+            username="admin",
+            email="admin@olimpiada.com",
+            password_hash=hash_password("albytemilioner!"),
+            role="admin",
+            is_active=True,
+            is_verified=True,
+            is_superuser=True
+        )
+        
+        db.add(admin_user)
+        db.commit()
+        
+        return {
+            "message": "First admin created successfully!",
+            "username": "admin",
+            "email": "admin@olimpiada.com",
+            "warning": "REMOVE THIS ENDPOINT AFTER USE!"
+        }
+        
+    except Exception as e:
+        db.rollback()
+        return {"error": f"Failed to create admin: {e}"}
+    finally:
+        db.close()
+
 @router.delete("/problems/{problem_id}/images/{filename}")
 async def delete_problem_image(
     problem_id: int,
