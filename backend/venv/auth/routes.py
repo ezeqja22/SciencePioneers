@@ -3494,6 +3494,11 @@ async def delete_forum(
         ForumMembership.is_active == True
     ).all()
     
+    # Store member data before deletion (to avoid stale object errors)
+    member_user_ids = [member.user_id for member in members]
+    forum_title = forum.title
+    creator_username = current_user.username
+    
     # Move ALL problems from this forum to drafts for their respective authors
     forum_problems = db.query(Problem).filter(
         Problem.forum_id == forum_id
@@ -3549,12 +3554,12 @@ async def delete_forum(
         try:
             notification_service = NotificationService(db) if NotificationService else None
             if notification_service:
-                for member in members:
-                    if member.user_id != current_user.id:  # Don't notify the creator
+                for user_id in member_user_ids:
+                    if user_id != current_user.id:  # Don't notify the creator
                         await notification_service.send_forum_deleted_notification(
-                            user_id=member.user_id,
-                            forum_title=forum.title,
-                            creator_username=current_user.username
+                            user_id=user_id,
+                            forum_title=forum_title,
+                            creator_username=creator_username
                         )
         except Exception as e:
             print(f"Background email sending failed: {e}")
