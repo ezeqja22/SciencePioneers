@@ -576,7 +576,7 @@ function Homepage() {
                         <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
                             <Link to="/feed">
                                 <button style={{
-                                    backgroundColor: "#28a745",
+                                    backgroundColor: "rgba(118, 75, 162)",
                                     color: "white",
                                     border: "none",
                                     padding: "12px 24px",
