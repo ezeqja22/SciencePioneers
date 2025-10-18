@@ -578,13 +578,15 @@ function Homepage() {
                                 <button style={{
                                     backgroundColor: "rgba(118, 75, 162)",
                                     color: "white",
-                                    border: "none",
+                                    border: "2px solid rgba(118, 75, 162)",
                                     padding: "12px 24px",
                                     borderRadius: "8px",
                                     fontSize: "16px",
                                     fontWeight: "600",
                                     cursor: "pointer",
-                                    transition: "all 0.2s"
+                                    transition: "all 0.2s",
+                                    minWidth: "140px",
+                                    height: "48px"
                                 }}
                                 onMouseEnter={(e) => {
                                     e.target.style.backgroundColor = "rgba(118, 75, 162)";
@@ -608,7 +610,9 @@ function Homepage() {
                                     fontSize: "16px",
                                     fontWeight: "600",
                                     cursor: "pointer",
-                                    transition: "all 0.2s"
+                                    transition: "all 0.2s",
+                                    minWidth: "140px",
+                                    height: "48px"
                                 }}
                                 onMouseEnter={(e) => {
                                     e.target.style.backgroundColor = "white";
