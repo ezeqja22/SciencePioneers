@@ -336,7 +336,8 @@ function Feed() {
       
     } catch (error) {
       console.error("Error toggling bookmark:", error);
-      alert("Error updating bookmark");
+      console.error("Error details:", error.response?.data);
+      alert(`Error updating bookmark: ${error.response?.data?.detail || error.message}`);
     }
   };
 

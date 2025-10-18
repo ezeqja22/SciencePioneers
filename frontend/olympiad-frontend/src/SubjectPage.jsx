@@ -177,14 +177,14 @@ function SubjectPage() {
             const isCurrentlyBookmarked = bookmarkData[problemId]?.isBookmarked;
             
             if (isCurrentlyBookmarked) {
-                // Remove bookmark
+                // Remove bookmark - same as UserProfile.jsx
                 await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
                 });
             } else {
-                // Add bookmark
+                // Add bookmark - same as UserProfile.jsx
                 await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -202,7 +202,8 @@ function SubjectPage() {
             
         } catch (error) {
             console.error("Error toggling bookmark:", error);
-            alert("Error updating bookmark");
+            console.error("Error details:", error.response?.data);
+            alert(`Error updating bookmark: ${error.response?.data?.detail || error.message}`);
         }
     };
 
