@@ -578,7 +578,7 @@ function Homepage() {
                                 <button style={{
                                     backgroundColor: "rgba(118, 75, 162)",
                                     color: "white",
-                                    border: "2px solid rgba(118, 75, 162)",
+                                    border: "2px solid white",
                                     padding: "12px 24px",
                                     borderRadius: "8px",
                                     fontSize: "16px",
