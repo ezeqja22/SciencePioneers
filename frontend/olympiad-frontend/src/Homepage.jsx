@@ -584,18 +584,15 @@ function Homepage() {
                                     fontSize: "16px",
                                     fontWeight: "600",
                                     cursor: "pointer",
-                                    transition: "all 0.2s",
-                                    boxShadow: "0 4px 15px rgba(118, 75, 162)"
+                                    transition: "all 0.2s"
                                 }}
                                 onMouseEnter={(e) => {
                                     e.target.style.backgroundColor = "rgba(118, 75, 162)";
                                     e.target.style.transform = "translateY(-2px)";
-                                    e.target.style.boxShadow = "0 6px 20px rgba(118, 75, 162)";
                                 }}
                                 onMouseLeave={(e) => {
                                     e.target.style.backgroundColor = "rgba(118, 75, 162)";
                                     e.target.style.transform = "translateY(0)";
-                                    e.target.style.boxShadow = "0 4px 15px rgba(118, 75, 162)";
                                 }}
                                 >
                                     Explore Problems
