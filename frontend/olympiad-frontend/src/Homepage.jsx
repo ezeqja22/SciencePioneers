@@ -585,7 +585,7 @@ function Homepage() {
                                     fontWeight: "600",
                                     cursor: "pointer",
                                     transition: "all 0.2s",
-                                    boxShadow: "0 4px 15px rgba(40, 167, 69, 0.3)"
+                                    boxShadow: "0 4px 15px rgba(118, 75, 162)"
                                 }}
                                 onMouseEnter={(e) => {
                                     e.target.style.backgroundColor = "#218838";
