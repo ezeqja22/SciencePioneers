@@ -615,12 +615,10 @@ function Homepage() {
                                     height: "48px"
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.backgroundColor = "white";
-                                    e.target.style.color = "#1a4d3a";
+                                    e.target.style.transform = "translateY(-2px)";
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.backgroundColor = "transparent";
-                                    e.target.style.color = "white";
+                                    e.target.style.transform = "translateY(0)";
                                 }}
                                 >
                                     Create Problem
