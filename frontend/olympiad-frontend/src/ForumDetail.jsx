@@ -2698,12 +2698,8 @@ const ForumDetail = () => {
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     marginTop: spacing.sm,
-                                                    justifyContent: 'flex-start',
-                                                    maxWidth: 'fit-content',
-                                                    position: 'absolute',
-                                                    left: isOwnMessage ? '0' : 'auto',
-                                                    right: isOwnMessage ? 'auto' : '0',
-                                                    bottom: '-30px'
+                                                    justifyContent: isOwnMessage ? 'flex-start' : 'flex-start',
+                                                    maxWidth: 'fit-content'
                                                 }}>
                                                     <div style={{
                                                         display: 'flex',
