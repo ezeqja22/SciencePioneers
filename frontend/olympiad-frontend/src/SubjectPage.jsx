@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { colors, spacing, typography } from "./designSystem";
 import { getUserInitial, getDisplayName } from "./utils";
+import { useFeatureSettings } from "./hooks/useFeatureSettings";
 import BackButton from "./components/BackButton";
 import AnimatedLoader from "./components/AnimatedLoader";
 import Layout from "./components/Layout";
@@ -38,6 +39,9 @@ function SubjectPage() {
     const [bookmarkData, setBookmarkData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
+    
+    // Feature settings
+    const { checkFeatureEnabled, showFeatureDisabledAlert } = useFeatureSettings();
 
     // Convert URL parameter back to proper case
     const subjectName = subject.split('-').map(word => 
