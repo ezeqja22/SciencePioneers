@@ -223,34 +223,6 @@ function Header({ showHomeButton = false }) {
                 )}
                 
                 <Link to="/homepage" style={{ textDecoration: "none", color: "inherit" }}>
-                    <div style={{
-                        width: "40px",
-                        height: "40px",
-                        backgroundColor: colors.secondary,
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: typography.fontWeight.bold,
-                        fontSize: typography.fontSize.lg,
-                        cursor: "pointer",
-                        transition: "transform 0.2s"
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
-                    onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
-                    >
-                        <img 
-                            src={siteSettings.site_logo} 
-                            alt="Logo"
-                            style={{
-                                height: "24px",
-                                width: "24px",
-                                objectFit: "contain"
-                            }}
-                        />
-                    </div>
-                </Link>
-                <Link to="/homepage" style={{ textDecoration: "none", color: "inherit" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
                         {/* Site Logo */}
                         {siteSettings.site_logo && (
