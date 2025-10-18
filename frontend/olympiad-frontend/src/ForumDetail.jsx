@@ -2696,11 +2696,12 @@ const ForumDetail = () => {
                                             {replyCounts[message.id] > 0 && (
                                                 <div style={{
                                                     display: 'flex',
-                                                    alignItems: 'flex-end',
+                                                    alignItems: 'center',
                                                     marginTop: spacing.sm,
                                                     justifyContent: 'flex-start',
                                                     maxWidth: 'fit-content',
-                                                    alignSelf: isOwnMessage ? 'flex-end' : 'flex-start'
+                                                    alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
+                                                    marginTop: '0'
                                                 }}>
                                                     <div style={{
                                                         display: 'flex',
