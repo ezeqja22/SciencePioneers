@@ -2690,19 +2690,17 @@ const ForumDetail = () => {
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
-                                            
-                                            {/* Reply Indicators - Outside message bubble */}
-                                            {replyCounts[message.id] > 0 && (
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    marginTop: spacing.sm,
-                                                    justifyContent: 'flex-start',
-                                                    maxWidth: 'fit-content',
-                                                    alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
-                                                    marginTop: '0'
-                                                }}>
+                                                
+                                                {/* Reply Indicators - Inside message bubble container */}
+                                                {replyCounts[message.id] > 0 && (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        marginTop: spacing.sm,
+                                                        justifyContent: 'flex-start',
+                                                        maxWidth: 'fit-content',
+                                                        alignSelf: isOwnMessage ? 'flex-end' : 'flex-start'
+                                                    }}>
                                                     <div style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -2747,6 +2745,7 @@ const ForumDetail = () => {
                                                     </div>
                                                 </div>
                                             )}
+                                            </div>
                                         </div>
                                     );
                                 })
