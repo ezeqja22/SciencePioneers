@@ -706,7 +706,7 @@ function Homepage() {
                                 justifyContent: "center"
                             }}>
                                 <img 
-                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811308/Comunity_lejla_gktahz.svg"
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760812222/Comunity_lejla_1_kpxiv0.svg"
                                     style={{
                                         height: "3rem",
                                         width: "3rem",
@@ -747,7 +747,7 @@ function Homepage() {
                                 justifyContent: "center"
                             }}>
                                 <img 
-                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760812222/Comunity_lejla_1_kpxiv0.svg"
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811741/trofeu_px38ap.svg"
                                     style={{
                                         height: "3rem",
                                         width: "3rem",
