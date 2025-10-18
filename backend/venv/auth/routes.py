@@ -1128,6 +1128,31 @@ def unbookmark_problem(
     
     return {"message": "Bookmark removed successfully"}
 
+@router.post("/problems/bookmark-status")
+def get_bookmark_status(
+    problem_ids: list[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get bookmark status for multiple problems"""
+    # Get all bookmarks for the current user and the specified problems
+    bookmarks = db.query(Bookmark).filter(
+        Bookmark.user_id == current_user.id,
+        Bookmark.problem_id.in_(problem_ids)
+    ).all()
+    
+    # Create a set of bookmarked problem IDs for quick lookup
+    bookmarked_problem_ids = {bookmark.problem_id for bookmark in bookmarks}
+    
+    # Return bookmark status for each problem
+    bookmark_status = {}
+    for problem_id in problem_ids:
+        bookmark_status[problem_id] = {
+            "isBookmarked": problem_id in bookmarked_problem_ids
+        }
+    
+    return bookmark_status
+
 @router.get("/user/profile", response_model=dict)
 def get_user_profile(
     db: Session = Depends(get_db),

@@ -67,6 +67,7 @@ function SubjectPage() {
             
             // Fetch vote data for all problems
             await fetchVoteData(response.data);
+            await fetchBookmarkData(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
             console.error("Subject name being used:", subjectName);
@@ -109,6 +110,31 @@ function SubjectPage() {
         }
     };
 
+    const fetchBookmarkData = async (problemsList) => {
+        try {
+            const token = localStorage.getItem("token");
+            const problemIds = problemsList.map(problem => problem.id);
+            const response = await axios.post(
+                `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/bookmark-status`,
+                problemIds,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            setBookmarkData(response.data);
+        } catch (error) {
+            console.error("Error fetching bookmark data:", error);
+            // Initialize with all false if fetch fails
+            const bookmarkDataMap = {};
+            problemsList.forEach(problem => {
+                bookmarkDataMap[problem.id] = { isBookmarked: false };
+            });
+            setBookmarkData(bookmarkDataMap);
+        }
+    };
 
     const handleVote = async (problemId, voteType) => {
         try {

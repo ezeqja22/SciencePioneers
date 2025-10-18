@@ -138,6 +138,7 @@ function Feed() {
       // Fetch vote data for all problems
       const problemIds = (response.data.problems || response.data).map(problem => problem.id);
       await fetchVoteData(problemIds);
+      await fetchBookmarkData(problemIds);
       
       // Fetch follow status for all authors
       await fetchFollowStatus(response.data.problems || response.data);
@@ -166,6 +167,7 @@ function Feed() {
       if (problemsData.length > 0) {
         const problemIds = problemsData.map(problem => problem.id);
         await fetchVoteData(problemIds);
+        await fetchBookmarkData(problemIds);
         await fetchFollowStatus(problemsData);
       }
     } catch (error) {
@@ -195,6 +197,7 @@ function Feed() {
       if (response.data.problems && response.data.problems.length > 0) {
         const problemIds = response.data.problems.map(problem => problem.id);
         await fetchVoteData(problemIds);
+        await fetchBookmarkData(problemIds);
         await fetchFollowStatus(response.data.problems);
       }
     } catch (error) {
@@ -265,6 +268,30 @@ function Feed() {
     }
   };
 
+  const fetchBookmarkData = async (problemIds) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/bookmark-status`,
+        problemIds,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setBookmarkData(response.data);
+    } catch (error) {
+      console.error("Error fetching bookmark data:", error);
+      // Initialize with all false if fetch fails
+      const bookmarkDataMap = {};
+      problemIds.forEach(problemId => {
+        bookmarkDataMap[problemId] = { isBookmarked: false };
+      });
+      setBookmarkData(bookmarkDataMap);
+    }
+  };
 
   const handleBookmark = async (problemId) => {
     // Check if bookmarks are enabled
