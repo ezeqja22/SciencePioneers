@@ -1807,7 +1807,10 @@ function ProblemDetail() {
                             }}
                         >
                             <img 
-                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795079/Like_Icon_hf3gef.svg" 
+                                src={voteStatus.user_vote === "like" 
+                                    ? "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797464/Like_Icon_white_i64jbg.svg"
+                                    : "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795079/Like_Icon_hf3gef.svg"
+                                } 
                                 alt="Like"
                                 style={{
                                     height: "16px",
@@ -1832,7 +1835,10 @@ function ProblemDetail() {
                             }}
                         >
                             <img 
-                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795077/Dislike_icon_vdy4ss.svg" 
+                                src={voteStatus.user_vote === "dislike" 
+                                    ? "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797471/Dislike_icon_white_c7yjjg.svg"
+                                    : "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795077/Dislike_icon_vdy4ss.svg"
+                                } 
                                 alt="Dislike"
                                 style={{
                                     height: "16px",
