@@ -240,7 +240,7 @@ function Header({ showHomeButton = false }) {
                     onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
                     >
                         <img 
-                            src="/logo.svg" 
+                            src={siteSettings.site_logo} 
                             alt="Logo"
                             style={{
                                 height: "24px",
