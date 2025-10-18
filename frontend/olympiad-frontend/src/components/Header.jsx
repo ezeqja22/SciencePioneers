@@ -270,6 +270,16 @@ function Header({ showHomeButton = false }) {
                     onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                     >
+                        <img 
+                            src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795078/Home_icon_gezrca.svg" 
+                            alt="Home"
+                            style={{
+                                height: "16px",
+                                width: "16px",
+                                objectFit: "contain",
+                                marginRight: "6px"
+                            }}
+                        />
                         Home
                     </Link>
                 )}
