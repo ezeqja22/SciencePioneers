@@ -35,9 +35,6 @@ const AnimatedLoader = ({
                         width: logoSize,
                         objectFit: "contain",
                         display: "inline-block",
-                        transform: `scale(${1 + (animationStep % 2) * 0.1})`,
-                        opacity: 1 - (animationStep % 2) * 0.2,
-                        transition: "all 0.5s ease",
                         backgroundColor: "transparent",
                         border: "none"
                     }}
