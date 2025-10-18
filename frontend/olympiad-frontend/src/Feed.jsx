@@ -769,11 +769,11 @@ function Feed() {
                       handleVote(problem.id, "like");
                     }}
                     style={{
-                      backgroundColor: voteData[problem.id]?.user_vote === "like" ? "#e8f5e8" : "#f8f9fa",
-                      border: `1px solid ${voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#dee2e6"}`,
+                      backgroundColor: voteData[problem.id]?.user_vote === "like" ? "rgba(26, 77, 58, 0.1)" : "#f8f9fa",
+                      border: `1px solid ${voteData[problem.id]?.user_vote === "like" ? "rgb(26, 77, 58)" : "#dee2e6"}`,
                       cursor: "pointer",
                       fontSize: "14px",
-                      color: voteData[problem.id]?.user_vote === "like" ? "#4CAF50" : "#666",
+                      color: voteData[problem.id]?.user_vote === "like" ? "rgb(26, 77, 58)" : "#666",
                       fontWeight: voteData[problem.id]?.user_vote === "like" ? "bold" : "500",
                       padding: "6px 12px",
                       borderRadius: "6px",
@@ -812,11 +812,11 @@ function Feed() {
                       handleVote(problem.id, "dislike");
                     }}
                     style={{
-                      backgroundColor: voteData[problem.id]?.user_vote === "dislike" ? "#ffebee" : "#f8f9fa",
-                      border: `1px solid ${voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#dee2e6"}`,
+                      backgroundColor: voteData[problem.id]?.user_vote === "dislike" ? "rgba(118, 75, 162, 0.1)" : "#f8f9fa",
+                      border: `1px solid ${voteData[problem.id]?.user_vote === "dislike" ? "rgb(118, 75, 162)" : "#dee2e6"}`,
                       cursor: "pointer",
                       fontSize: "14px",
-                      color: voteData[problem.id]?.user_vote === "dislike" ? "#f44336" : "#666",
+                      color: voteData[problem.id]?.user_vote === "dislike" ? "rgb(118, 75, 162)" : "#666",
                       fontWeight: voteData[problem.id]?.user_vote === "dislike" ? "bold" : "500",
                       padding: "6px 12px",
                       borderRadius: "6px",

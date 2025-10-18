@@ -1798,7 +1798,7 @@ function ProblemDetail() {
                             style={{
                                 padding: "10px 20px",
                                 border: "none",
-                                backgroundColor: voteStatus.user_vote === "like" ? "#4CAF50" : "#f0f0f0",
+                                backgroundColor: voteStatus.user_vote === "like" ? "rgb(26, 77, 58)" : "#f0f0f0",
                                 color: voteStatus.user_vote === "like" ? "white" : "#333",
                                 cursor: voteLoading ? "not-allowed" : "pointer",
                                 display: "flex",
@@ -1823,7 +1823,7 @@ function ProblemDetail() {
                             style={{
                                 padding: "10px 20px",
                                 border: "none",
-                                backgroundColor: voteStatus.user_vote === "dislike" ? "#f44336" : "#f0f0f0",
+                                backgroundColor: voteStatus.user_vote === "dislike" ? "rgb(118, 75, 162)" : "#f0f0f0",
                                 color: voteStatus.user_vote === "dislike" ? "white" : "#333",
                                 cursor: voteLoading ? "not-allowed" : "pointer",
                                 display: "flex",
