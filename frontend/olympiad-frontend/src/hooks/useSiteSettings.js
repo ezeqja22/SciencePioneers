@@ -5,8 +5,8 @@ export const useSiteSettings = () => {
   const [siteSettings, setSiteSettings] = useState({
     site_name: 'Olimpiada',
     site_description: 'Master the art of problem-solving through challenging olympiad problems. Join a community of passionate learners and sharpen your analytical skills.',
-    site_logo: 'https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809847/Olimpiada_Logo_green_1_n9agy9.png',
-    site_favicon: 'https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809847/Olimpiada_Logo_green_1_n9agy9.png',
+    site_logo: 'https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809158/Olimpiada_Logo_hosmuj.png',
+    site_favicon: 'https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809158/Olimpiada_Logo_hosmuj.png',
     site_theme: 'light',
     maintenance_mode: false,
     maintenance_message: 'Site under maintenance'

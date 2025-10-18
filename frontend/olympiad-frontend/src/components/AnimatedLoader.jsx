@@ -28,7 +28,7 @@ const AnimatedLoader = ({
                 minHeight: logoSize
             }}>
                 <img 
-                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809847/Olimpiada_Logo_green_1_n9agy9.png"
+                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809158/Olimpiada_Logo_hosmuj.png"
                     alt="Loading"
                     style={{
                         height: logoSize,
