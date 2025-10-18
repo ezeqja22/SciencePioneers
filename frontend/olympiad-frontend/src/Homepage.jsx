@@ -643,7 +643,7 @@ function Homepage() {
                         marginBottom: "3rem",
                         color: "#1a4d3a"
                     }}>
-                        Why Choose {siteSettings.site_name || 'SciencePioneers'}?
+                        Why Choose {siteSettings.site_name || 'Olimpiada'}?
                     </h2>
                     <div style={{ 
                         display: "grid", 
@@ -659,8 +659,20 @@ function Homepage() {
                         }}>
                             <div style={{
                                 fontSize: "3rem",
-                                marginBottom: "1rem"
-                            }}>🧮</div>
+                                marginBottom: "1rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                            }}>
+                                <img 
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811441/numratore_xpudpv.svg"
+                                    style={{
+                                        height: "3rem",
+                                        width: "3rem",
+                                        objectFit: "contain"
+                                    }}
+                                />
+                            </div>
                             <h3 style={{ 
                                 fontSize: "1.5rem", 
                                 fontWeight: "600", 
@@ -688,8 +700,20 @@ function Homepage() {
                         }}>
                             <div style={{
                                 fontSize: "3rem",
-                                marginBottom: "1rem"
-                            }}>👥</div>
+                                marginBottom: "1rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                            }}>
+                                <img 
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811308/Comunity_lejla_gktahz.svg"
+                                    style={{
+                                        height: "3rem",
+                                        width: "3rem",
+                                        objectFit: "contain"
+                                    }}
+                                />
+                            </div>
                             <h3 style={{ 
                                 fontSize: "1.5rem", 
                                 fontWeight: "600", 
@@ -717,8 +741,20 @@ function Homepage() {
                         }}>
                             <div style={{
                                 fontSize: "3rem",
-                                marginBottom: "1rem"
-                            }}>🏆</div>
+                                marginBottom: "1rem",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                            }}>
+                                <img 
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811741/trofeu_px38ap.svg"
+                                    style={{
+                                        height: "3rem",
+                                        width: "3rem",
+                                        objectFit: "contain"
+                                    }}
+                                />
+                            </div>
                             <h3 style={{ 
                                 fontSize: "1.5rem", 
                                 fontWeight: "600", 
