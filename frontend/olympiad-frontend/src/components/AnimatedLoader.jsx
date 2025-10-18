@@ -17,153 +17,30 @@ const AnimatedLoader = ({
     }, []);
 
     const getAnimation = () => {
-        const fontSize = size === "large" ? "4rem" : "2rem";
+        const logoSize = size === "large" ? "80px" : "40px";
         
-        switch (type) {
-            case "problems":
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.2em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateY(${animationStep % 2 === 0 ? '0px' : '-10px'})`,
-                            transition: "transform 0.5s ease"
-                        }}>📚</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateX(${['0px', '5px', '0px', '-5px'][animationStep]}) rotate(${[0, -5, 0, 5][animationStep]}deg)`,
-                            transition: "transform 0.5s ease"
-                        }}>✏️</span>
-                    </div>
-                );
-            
-            case "profile":
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.1em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `scale(${1 + (animationStep % 2) * 0.1})`,
-                            opacity: 1 - (animationStep % 2) * 0.2,
-                            transition: "all 0.5s ease"
-                        }}>👤</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateX(${animationStep % 2 === 0 ? '0px' : '10px'}) scale(${1 + (animationStep % 2) * 0.2})`,
-                            transition: "transform 0.5s ease"
-                        }}>
-                            <img 
-                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795126/Search_Icon_White_wj1ka1.svg" 
-                                alt="Loading"
-                                style={{
-                                    height: "20px",
-                                    width: "20px",
-                                    objectFit: "contain"
-                                }}
-                            />
-                        </span>
-                    </div>
-                );
-            
-            case "verify":
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.1em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateX(${[-2, 2, -1, 1][animationStep]}px)`,
-                            transition: "transform 0.2s ease"
-                        }}>🔐</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateX(${animationStep % 2 === 0 ? '0px' : '-8px'}) rotate(${animationStep % 2 === 0 ? '0deg' : '-15deg'})`,
-                            transition: "transform 0.5s ease"
-                        }}>🔑</span>
-                    </div>
-                );
-            
-            case "upload":
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.1em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateY(${animationStep % 2 === 0 ? '0px' : '-15px'})`,
-                            transition: "transform 0.5s ease"
-                        }}>📤</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `translateY(${animationStep % 2 === 0 ? '0px' : '-20px'}) scale(${1 + (animationStep % 2) * 0.3})`,
-                            transition: "transform 0.5s ease"
-                        }}>⬆️</span>
-                    </div>
-                );
-            
-            case "subject":
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.2em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `rotate(${animationStep * 90}deg)`,
-                            transition: "transform 0.5s ease"
-                        }}>🔬</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `rotateY(${animationStep % 2 === 0 ? '0deg' : '180deg'})`,
-                            transition: "transform 0.5s ease"
-                        }}>📖</span>
-                    </div>
-                );
-            
-            default:
-                return (
-                    <div style={{ 
-                        fontSize,
-                        marginBottom: spacing.lg,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.2em"
-                    }}>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `rotate(${animationStep * 90}deg)`,
-                            transition: "transform 0.5s ease"
-                        }}>⏳</span>
-                        <span style={{ 
-                            display: "inline-block",
-                            transform: `scale(${1 + (animationStep % 2) * 0.5}) rotate(${animationStep * 45}deg)`,
-                            opacity: 1 - (animationStep % 2) * 0.4,
-                            transition: "all 0.5s ease"
-                        }}>💫</span>
-                    </div>
-                );
-        }
+        return (
+            <div style={{ 
+                marginBottom: spacing.lg,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            }}>
+                <img 
+                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760786648/Logo_Olimpiada_csdp71.svg"
+                    alt="Loading"
+                    style={{
+                        height: logoSize,
+                        width: logoSize,
+                        objectFit: "contain",
+                        display: "inline-block",
+                        transform: `scale(${1 + (animationStep % 2) * 0.1})`,
+                        opacity: 1 - (animationStep % 2) * 0.2,
+                        transition: "all 0.5s ease"
+                    }}
+                />
+            </div>
+        );
     };
 
     return (
