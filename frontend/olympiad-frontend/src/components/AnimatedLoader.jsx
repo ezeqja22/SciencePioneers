@@ -24,7 +24,8 @@ const AnimatedLoader = ({
                 marginBottom: spacing.lg,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
+                justifyContent: "center",
+                minHeight: logoSize
             }}>
                 <img 
                     src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760786648/Logo_Olimpiada_csdp71.svg"
@@ -36,7 +37,30 @@ const AnimatedLoader = ({
                         display: "inline-block",
                         transform: `scale(${1 + (animationStep % 2) * 0.1})`,
                         opacity: 1 - (animationStep % 2) * 0.2,
-                        transition: "all 0.5s ease"
+                        transition: "all 0.5s ease",
+                        backgroundColor: "transparent",
+                        border: "none"
+                    }}
+                    onError={(e) => {
+                        console.error("Logo failed to load:", e);
+                        // Show fallback text
+                        e.target.style.display = "none";
+                        const fallback = document.createElement('div');
+                        fallback.textContent = 'π';
+                        fallback.style.cssText = `
+                            font-size: ${logoSize};
+                            color: #2d7a5f;
+                            font-weight: bold;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            height: ${logoSize};
+                            width: ${logoSize};
+                        `;
+                        e.target.parentNode.appendChild(fallback);
+                    }}
+                    onLoad={() => {
+                        console.log("Logo loaded successfully");
                     }}
                 />
             </div>
