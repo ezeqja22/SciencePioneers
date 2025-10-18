@@ -1,4 +1,4 @@
-// Design System - SciencePioneers
+// Design System - Olimpiada
 export const colors = {
   primary: "#1a4d3a",        // Dark green
   secondary: "#2d7a5f",      // Green (matching homepage)

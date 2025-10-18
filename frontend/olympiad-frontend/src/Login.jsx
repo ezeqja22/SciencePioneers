@@ -90,7 +90,7 @@ function Login() {
               fontSize: typography.fontSize.base,
               margin: 0
             }}>
-              Sign in to your SciencePioneers account
+              Sign in to your Olimpiada account
             </p>
           </div>
 

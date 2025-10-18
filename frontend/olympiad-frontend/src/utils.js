@@ -1,4 +1,4 @@
-// Utility functions for SciencePioneers
+// Utility functions for Olimpiada
 
 /**
  * Get the display initial for a user's profile picture

@@ -77,7 +77,7 @@ function Signup() {
               color: colors.primary,
               marginBottom: spacing.sm
             }}>
-              Join SciencePioneers
+              Join Olimpiada
             </h1>
             <p style={{
               color: colors.gray[600],

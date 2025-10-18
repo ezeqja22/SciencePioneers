@@ -249,7 +249,7 @@ function Header({ showHomeButton = false }) {
                             fontWeight: typography.fontWeight.bold,
                             cursor: "pointer"
                         }}>
-                            {siteSettings.site_name || 'SciencePioneers'}
+                            {siteSettings.site_name || 'Olimpiada'}
                         </h1>
                     </div>
                 </Link>
