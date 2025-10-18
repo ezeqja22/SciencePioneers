@@ -67,7 +67,6 @@ function SubjectPage() {
             
             // Fetch vote data for all problems
             await fetchVoteData(response.data);
-            await fetchBookmarkData(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
             console.error("Subject name being used:", subjectName);
@@ -110,37 +109,6 @@ function SubjectPage() {
         }
     };
 
-    const fetchBookmarkData = async (problemsList) => {
-        try {
-            const token = localStorage.getItem("token");
-            const bookmarkPromises = problemsList.map(async (problem) => {
-                const problemId = problem.id;
-                try {
-                    const response = await axios.get(
-                        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark-status`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`
-                            }
-                        }
-                    );
-                    return { problemId, bookmarkData: response.data };
-                } catch (error) {
-                    console.error(`Error fetching bookmark data for problem ${problemId}:`, error);
-                    return { problemId, bookmarkData: { isBookmarked: false } };
-                }
-            });
-            
-            const bookmarkResults = await Promise.all(bookmarkPromises);
-            const bookmarkDataMap = {};
-            bookmarkResults.forEach(({ problemId, bookmarkData }) => {
-                bookmarkDataMap[problemId] = bookmarkData;
-            });
-            setBookmarkData(bookmarkDataMap);
-        } catch (error) {
-            console.error("Error fetching bookmark data:", error);
-        }
-    };
 
     const handleVote = async (problemId, voteType) => {
         try {
@@ -183,6 +151,12 @@ function SubjectPage() {
                         Authorization: `Bearer ${token}`
                     }
                 });
+                
+                // Update state to unbookmarked
+                setBookmarkData(prev => ({
+                    ...prev,
+                    [problemId]: { isBookmarked: false }
+                }));
             } else {
                 // Add bookmark - same as UserProfile.jsx
                 await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
@@ -190,15 +164,13 @@ function SubjectPage() {
                         Authorization: `Bearer ${token}`
                     }
                 });
+                
+                // Update state to bookmarked
+                setBookmarkData(prev => ({
+                    ...prev,
+                    [problemId]: { isBookmarked: true }
+                }));
             }
-            
-            // Toggle bookmark state
-            setBookmarkData(prev => ({
-                ...prev,
-                [problemId]: {
-                    isBookmarked: !prev[problemId]?.isBookmarked
-                }
-            }));
             
         } catch (error) {
             console.error("Error toggling bookmark:", error);
