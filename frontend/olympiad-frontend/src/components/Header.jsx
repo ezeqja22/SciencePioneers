@@ -900,7 +900,15 @@ function Header({ showHomeButton = false }) {
                                             }}
                                             title="Unpin forum"
                                         >
-                                            📌
+                                            <img 
+                                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811441/Pin_Icon_Green_ly3fxo.svg" 
+                                                alt="Pin"
+                                                style={{
+                                                    height: "14px",
+                                                    width: "14px",
+                                                    objectFit: "contain"
+                                                }}
+                                            />
                                         </button>
                                     ) : (
                                         // Unpinned: Show "Pin" button

@@ -251,7 +251,7 @@ function Homepage() {
                         
                         {/* Site Name */}
                         <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                            {siteSettings.site_name || 'SciencePioneers'}
+                            {siteSettings.site_name || 'Olimpiada'}
                         </h1>
                     </div>
                 </div>
@@ -563,7 +563,7 @@ function Homepage() {
                             marginBottom: "1.5rem",
                             lineHeight: "1.2"
                         }}>
-                            Welcome to {siteSettings.site_name || 'SciencePioneers'}
+                            Welcome to {siteSettings.site_name || 'Olimpiada'}
                         </h1>
                         <p style={{ 
                             fontSize: "1.25rem", 
