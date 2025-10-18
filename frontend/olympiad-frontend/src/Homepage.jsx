@@ -708,7 +708,7 @@ function Homepage() {
                                 <img 
                                     src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811308/Comunity_lejla_gktahz.svg"
                                     style={{
-                                        height: "3rem",
+                                        height: "3.5rem",
                                         width: "3rem",
                                         objectFit: "contain"
                                     }}
