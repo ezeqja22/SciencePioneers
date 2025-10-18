@@ -519,11 +519,23 @@ function Homepage() {
                                             textAlign: "left",
                                             cursor: "pointer",
                                             fontSize: "14px",
-                                            transition: "background-color 0.2s"
+                                            transition: "background-color 0.2s",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px"
                                         }}
                                         onMouseEnter={(e) => e.target.style.backgroundColor = "#f8f9fa"}
                                         onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                     >
+                                        <img
+                                            src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760802149/LOG_OUT_RED_d1wwc3.svg"
+                                            alt="Logout"
+                                            style={{
+                                                height: "16px",
+                                                width: "16px",
+                                                objectFit: "contain"
+                                            }}
+                                        />
                                         Logout
                                     </button>
                                 </div>

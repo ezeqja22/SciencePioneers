@@ -552,11 +552,23 @@ function Header({ showHomeButton = false }) {
                                         color: colors.danger,
                                         cursor: "pointer",
                                         fontSize: typography.fontSize.base,
-                                        transition: "background-color 0.2s"
+                                        transition: "background-color 0.2s",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: spacing.sm
                                     }}
                                     onMouseEnter={(e) => e.target.style.backgroundColor = colors.gray[100]}
                                     onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
                                 >
+                                    <img
+                                        src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760802149/LOG_OUT_RED_d1wwc3.svg"
+                                        alt="Logout"
+                                        style={{
+                                            height: "16px",
+                                            width: "16px",
+                                            objectFit: "contain"
+                                        }}
+                                    />
                                     Logout
                                 </button>
                             </div>
