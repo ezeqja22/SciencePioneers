@@ -174,11 +174,23 @@ function SubjectPage() {
 
         try {
             const token = localStorage.getItem("token");
-            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const isCurrentlyBookmarked = bookmarkData[problemId]?.isBookmarked;
+            
+            if (isCurrentlyBookmarked) {
+                // Remove bookmark
+                await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            } else {
+                // Add bookmark
+                await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            }
             
             // Toggle bookmark state
             setBookmarkData(prev => ({
@@ -189,12 +201,8 @@ function SubjectPage() {
             }));
             
         } catch (error) {
-            if (error.response?.status === 400) {
-                alert("Problem already bookmarked!");
-            } else {
-                console.error("Error bookmarking problem:", error);
-                alert("Error bookmarking problem");
-            }
+            console.error("Error toggling bookmark:", error);
+            alert("Error updating bookmark");
         }
     };
 
