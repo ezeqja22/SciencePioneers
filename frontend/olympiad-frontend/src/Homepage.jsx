@@ -230,19 +230,6 @@ function Homepage() {
                             }} />
                         </button>
                     )}
-                    <div style={{
-                        width: "40px",
-                        height: "40px",
-                        backgroundColor: "#2d7a5f", // Lighter green
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "20px",
-                        fontWeight: "bold"
-                    }}>
-                        SP
-                    </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         {/* Site Logo */}
                         {siteSettings.site_logo && (
