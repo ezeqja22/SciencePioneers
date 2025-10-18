@@ -1106,7 +1106,17 @@ function Homepage() {
                                             e.target.style.color = pinnedForums.includes(forum.id) ? "#1a4d3a" : "#9ca3af";
                                         }}
                                     >
-                                        {pinnedForums.includes(forum.id) ? "📌" : "Pin"}
+                                        {pinnedForums.includes(forum.id) ? (
+                                            <img 
+                                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811441/Pin_Icon_Green_ly3fxo.svg" 
+                                                alt="Pin"
+                                                style={{
+                                                    height: "14px",
+                                                    width: "14px",
+                                                    objectFit: "contain"
+                                                }}
+                                            />
+                                        ) : "Pin"}
                                     </button>
                                 </button>
                             );
