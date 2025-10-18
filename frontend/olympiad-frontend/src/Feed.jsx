@@ -795,7 +795,16 @@ function Feed() {
                       }
                     }}
                   >
-                     {voteData[problem.id]?.like_count || 0}
+                    <img 
+                      src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795079/Like_Icon_hf3gef.svg" 
+                      alt="Like"
+                      style={{
+                        height: "14px",
+                        width: "14px",
+                        objectFit: "contain"
+                      }}
+                    />
+                    {voteData[problem.id]?.like_count || 0}
                   </button>
                   <button
                     onClick={(e) => {
@@ -829,7 +838,16 @@ function Feed() {
                       }
                     }}
                   >
-                     {voteData[problem.id]?.dislike_count || 0}
+                    <img 
+                      src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795077/Dislike_icon_vdy4ss.svg" 
+                      alt="Dislike"
+                      style={{
+                        height: "14px",
+                        width: "14px",
+                        objectFit: "contain"
+                      }}
+                    />
+                    {voteData[problem.id]?.dislike_count || 0}
                   </button>
                   <span style={{ fontSize: "12px", color: "#666", pointerEvents: "none" }}>
                      {problem.comment_count || 0}

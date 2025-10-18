@@ -1806,7 +1806,16 @@ function ProblemDetail() {
                                 gap: "5px"
                             }}
                         >
-                             {voteStatus.like_count}
+                            <img 
+                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795079/Like_Icon_hf3gef.svg" 
+                                alt="Like"
+                                style={{
+                                    height: "16px",
+                                    width: "16px",
+                                    objectFit: "contain"
+                                }}
+                            />
+                            {voteStatus.like_count}
                         </button>
                         <button
                             onClick={() => handleVote("dislike")}
@@ -1822,7 +1831,16 @@ function ProblemDetail() {
                                 gap: "5px"
                             }}
                         >
-                             {voteStatus.dislike_count}
+                            <img 
+                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795077/Dislike_icon_vdy4ss.svg" 
+                                alt="Dislike"
+                                style={{
+                                    height: "16px",
+                                    width: "16px",
+                                    objectFit: "contain"
+                                }}
+                            />
+                            {voteStatus.dislike_count}
                         </button>
                     </div>
                 </div>
