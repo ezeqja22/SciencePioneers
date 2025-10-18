@@ -344,7 +344,15 @@ function NotificationBell({ onNotificationClick }) {
                 onMouseEnter={(e) => e.target.style.backgroundColor = colors.secondary}
                 onMouseLeave={(e) => e.target.style.backgroundColor = "transparent"}
             >
-                Notifications
+                <img 
+                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760789591/Notification_Icon_fm5zqx.svg" 
+                    alt="Notifications"
+                    style={{
+                        height: "20px",
+                        width: "20px",
+                        objectFit: "contain"
+                    }}
+                />
                 {unreadCount > 0 && (
                     <div style={{
                         position: "absolute",
@@ -396,7 +404,15 @@ function NotificationBell({ onNotificationClick }) {
                             fontWeight: typography.fontWeight.semibold,
                             color: colors.dark
                         }}>
-                            Notifications
+                            <img 
+                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760789591/Notification_Icon_fm5zqx.svg" 
+                                alt="Notifications"
+                                style={{
+                                    height: "24px",
+                                    width: "24px",
+                                    objectFit: "contain"
+                                }}
+                            />
                         </h3>
                         {unreadCount > 0 && (
                             <button
