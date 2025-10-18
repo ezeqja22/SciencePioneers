@@ -588,12 +588,12 @@ function Homepage() {
                                     boxShadow: "0 4px 15px rgba(118, 75, 162)"
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.target.style.backgroundColor = "#218838";
+                                    e.target.style.backgroundColor = "rgba(118, 75, 162)";
                                     e.target.style.transform = "translateY(-2px)";
                                     e.target.style.boxShadow = "0 6px 20px rgba(118, 75, 162)";
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.backgroundColor = "#28a745";
+                                    e.target.style.backgroundColor = "rgba(118, 75, 162)";
                                     e.target.style.transform = "translateY(0)";
                                     e.target.style.boxShadow = "0 4px 15px rgba(118, 75, 162)";
                                 }}
