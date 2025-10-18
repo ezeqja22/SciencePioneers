@@ -708,7 +708,7 @@ function Homepage() {
                                 <img 
                                     src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811308/Comunity_lejla_gktahz.svg"
                                     style={{
-                                        height: "4.5rem",
+                                        height: "3rem",
                                         width: "3rem",
                                         objectFit: "contain"
                                     }}
@@ -747,7 +747,7 @@ function Homepage() {
                                 justifyContent: "center"
                             }}>
                                 <img 
-                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811741/trofeu_px38ap.svg"
+                                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760812222/Comunity_lejla_1_kpxiv0.svg"
                                     style={{
                                         height: "3rem",
                                         width: "3rem",
