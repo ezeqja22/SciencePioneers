@@ -2696,7 +2696,7 @@ const ForumDetail = () => {
                                             {replyCounts[message.id] > 0 && (
                                                 <div style={{
                                                     display: 'flex',
-                                                    alignItems: 'center',
+                                                    alignItems: 'flex-end',
                                                     marginTop: spacing.sm,
                                                     justifyContent: 'flex-start',
                                                     maxWidth: 'fit-content',
