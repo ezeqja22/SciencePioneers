@@ -482,7 +482,14 @@ function UserProfile() {
                                 e.target.style.transform = "translateY(0)";
                             }}
                         >
-                            📷
+                            <img 
+                      src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760811026/Camera_Icon_My_Profile_cmmlrm.svg" 
+                      style={{
+                        height: "14px",
+                        width: "14px",
+                        objectFit: "contain"
+                      }}
+                    />
                         </div>
                     </div>
                     
