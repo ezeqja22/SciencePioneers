@@ -1757,7 +1757,17 @@ function ProblemDetail() {
                                             gap: "4px"
                                         }}
                                     >
-                                        🔍 Fullscreen
+                                        <img 
+                                            src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795126/Search_Icon_White_wj1ka1.svg" 
+                                            alt="Fullscreen"
+                                            style={{
+                                                height: "16px",
+                                                width: "16px",
+                                                objectFit: "contain",
+                                                marginRight: "4px"
+                                            }}
+                                        />
+                                        Fullscreen
                                     </div>
                                 </div>
                             );

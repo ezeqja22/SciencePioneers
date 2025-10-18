@@ -61,7 +61,17 @@ const AnimatedLoader = ({
                             display: "inline-block",
                             transform: `translateX(${animationStep % 2 === 0 ? '0px' : '10px'}) scale(${1 + (animationStep % 2) * 0.2})`,
                             transition: "transform 0.5s ease"
-                        }}>🔍</span>
+                        }}>
+                            <img 
+                                src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795126/Search_Icon_White_wj1ka1.svg" 
+                                alt="Loading"
+                                style={{
+                                    height: "20px",
+                                    width: "20px",
+                                    objectFit: "contain"
+                                }}
+                            />
+                        </span>
                     </div>
                 );
             

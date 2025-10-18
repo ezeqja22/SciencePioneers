@@ -90,7 +90,17 @@ function SearchBar({ placeholder = "Search...", showAdvanced = true, initialQuer
             e.target.style.backgroundColor = '#1a4d3a';
           }}
         >
-          🔍 Search
+          <img 
+            src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760795126/Search_Icon_White_wj1ka1.svg" 
+            alt="Search"
+            style={{
+              height: "16px",
+              width: "16px",
+              objectFit: "contain",
+              marginRight: "4px"
+            }}
+          />
+          Search
         </button>
 
         {/* Advanced Search Button */}
