@@ -35,6 +35,7 @@ function SubjectPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [voteData, setVoteData] = useState({});
+    const [bookmarkData, setBookmarkData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const navigate = useNavigate();
 
@@ -124,6 +125,39 @@ function SubjectPage() {
         } catch (error) {
             console.error("Error voting:", error);
             alert("Error voting on problem");
+        }
+    };
+
+    const handleBookmark = async (problemId) => {
+        // Check if bookmarks are enabled
+        if (!checkFeatureEnabled('bookmarks_enabled')) {
+            showFeatureDisabledAlert('Bookmarks');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            // Toggle bookmark state
+            setBookmarkData(prev => ({
+                ...prev,
+                [problemId]: {
+                    isBookmarked: !prev[problemId]?.isBookmarked
+                }
+            }));
+            
+        } catch (error) {
+            if (error.response?.status === 400) {
+                alert("Problem already bookmarked!");
+            } else {
+                console.error("Error bookmarking problem:", error);
+                alert("Error bookmarking problem");
+            }
         }
     };
 
@@ -581,6 +615,34 @@ function SubjectPage() {
                                                 {voteData[problem.id]?.dislike_count || 0}
                                             </button>
                                             <span style={{ pointerEvents: "none" }}> {problem.comment_count || 0}</span>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleBookmark(problem.id);
+                                                }}
+                                                style={{
+                                                    padding: "4px 8px",
+                                                    backgroundColor: "transparent",
+                                                    border: "none",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "4px"
+                                                }}
+                                            >
+                                                <img 
+                                                    src={bookmarkData[problem.id]?.isBookmarked 
+                                                        ? "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797449/Save_FULL_Icon_Green_fdrxbj.svg"
+                                                        : "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797443/Save_UNFULL_Icon_Green_wvn6qk.svg"
+                                                    } 
+                                                    alt="Bookmark"
+                                                    style={{
+                                                        height: "16px",
+                                                        width: "16px",
+                                                        objectFit: "contain"
+                                                    }}
+                                                />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

@@ -42,6 +42,7 @@ function Feed() {
   const [showLoading, setShowLoading] = useState(false);
   const [voteData, setVoteData] = useState({});
   const [followStatus, setFollowStatus] = useState({});
+  const [bookmarkData, setBookmarkData] = useState({});
   const [activeTab, setActiveTab] = useState("all"); // "all", "following", "trending"
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -278,7 +279,14 @@ function Feed() {
           Authorization: `Bearer ${token}`
         }
       });
-      alert("Problem bookmarked successfully!");
+      // Toggle bookmark state
+      setBookmarkData(prev => ({
+        ...prev,
+        [problemId]: {
+          isBookmarked: !prev[problemId]?.isBookmarked
+        }
+      }));
+      
     } catch (error) {
       if (error.response?.status === 400) {
         alert("Problem already bookmarked!");
@@ -859,15 +867,26 @@ function Feed() {
                     }}
                     style={{
                       padding: "4px 8px",
-                      backgroundColor: "#f57c00",
-                      color: "white",
+                      backgroundColor: "transparent",
                       border: "none",
-                      borderRadius: "3px",
                       cursor: "pointer",
-                      fontSize: "11px"
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
                     }}
                   >
-                    🔖 Bookmark
+                    <img 
+                      src={bookmarkData[problem.id]?.isBookmarked 
+                        ? "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797449/Save_FULL_Icon_Green_fdrxbj.svg"
+                        : "https://res.cloudinary.com/dqmmgk88b/image/upload/v1760797443/Save_UNFULL_Icon_Green_wvn6qk.svg"
+                      } 
+                      alt="Bookmark"
+                      style={{
+                        height: "16px",
+                        width: "16px",
+                        objectFit: "contain"
+                      }}
+                    />
                   </button>
                 </div>
               </div>
