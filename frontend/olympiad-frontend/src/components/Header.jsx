@@ -239,7 +239,15 @@ function Header({ showHomeButton = false }) {
                     onMouseEnter={(e) => e.target.style.transform = "scale(1.05)"}
                     onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
                     >
-                        SP
+                        <img 
+                            src="/logo.svg" 
+                            alt="Logo"
+                            style={{
+                                height: "24px",
+                                width: "24px",
+                                objectFit: "contain"
+                            }}
+                        />
                     </div>
                 </Link>
                 <Link to="/homepage" style={{ textDecoration: "none", color: "inherit" }}>
