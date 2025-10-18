@@ -138,6 +138,7 @@ function Feed() {
       // Fetch vote data for all problems
       const problemIds = (response.data.problems || response.data).map(problem => problem.id);
       await fetchVoteData(problemIds);
+      await fetchBookmarkData(problemIds);
       
       // Fetch follow status for all authors
       await fetchFollowStatus(response.data.problems || response.data);
@@ -166,6 +167,7 @@ function Feed() {
       if (problemsData.length > 0) {
         const problemIds = problemsData.map(problem => problem.id);
         await fetchVoteData(problemIds);
+        await fetchBookmarkData(problemIds);
         await fetchFollowStatus(problemsData);
       }
     } catch (error) {
@@ -195,6 +197,7 @@ function Feed() {
       if (response.data.problems && response.data.problems.length > 0) {
         const problemIds = response.data.problems.map(problem => problem.id);
         await fetchVoteData(problemIds);
+        await fetchBookmarkData(problemIds);
         await fetchFollowStatus(response.data.problems);
       }
     } catch (error) {
@@ -262,6 +265,37 @@ function Feed() {
       setVoteData(voteDataMap);
     } catch (error) {
       console.error("Error fetching vote data:", error);
+    }
+  };
+
+  const fetchBookmarkData = async (problemIds) => {
+    try {
+      const token = localStorage.getItem("token");
+      const bookmarkPromises = problemIds.map(async (problemId) => {
+        try {
+          const response = await axios.get(
+            `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark-status`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+          return { problemId, bookmarkData: response.data };
+        } catch (error) {
+          console.error(`Error fetching bookmark data for problem ${problemId}:`, error);
+          return { problemId, bookmarkData: { isBookmarked: false } };
+        }
+      });
+      
+      const bookmarkResults = await Promise.all(bookmarkPromises);
+      const bookmarkDataMap = {};
+      bookmarkResults.forEach(({ problemId, bookmarkData }) => {
+        bookmarkDataMap[problemId] = bookmarkData;
+      });
+      setBookmarkData(bookmarkDataMap);
+    } catch (error) {
+      console.error("Error fetching bookmark data:", error);
     }
   };
 

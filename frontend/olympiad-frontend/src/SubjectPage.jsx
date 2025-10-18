@@ -67,6 +67,7 @@ function SubjectPage() {
             
             // Fetch vote data for all problems
             await fetchVoteData(response.data);
+            await fetchBookmarkData(response.data);
         } catch (error) {
             console.error("Error fetching problems:", error);
             console.error("Subject name being used:", subjectName);
@@ -106,6 +107,38 @@ function SubjectPage() {
             setVoteData(voteDataMap);
         } catch (error) {
             console.error("Error fetching vote data:", error);
+        }
+    };
+
+    const fetchBookmarkData = async (problemsList) => {
+        try {
+            const token = localStorage.getItem("token");
+            const bookmarkPromises = problemsList.map(async (problem) => {
+                const problemId = problem.id;
+                try {
+                    const response = await axios.get(
+                        `${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark-status`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    );
+                    return { problemId, bookmarkData: response.data };
+                } catch (error) {
+                    console.error(`Error fetching bookmark data for problem ${problemId}:`, error);
+                    return { problemId, bookmarkData: { isBookmarked: false } };
+                }
+            });
+            
+            const bookmarkResults = await Promise.all(bookmarkPromises);
+            const bookmarkDataMap = {};
+            bookmarkResults.forEach(({ problemId, bookmarkData }) => {
+                bookmarkDataMap[problemId] = bookmarkData;
+            });
+            setBookmarkData(bookmarkDataMap);
+        } catch (error) {
+            console.error("Error fetching bookmark data:", error);
         }
     };
 
@@ -621,8 +654,12 @@ function SubjectPage() {
                                             <span style={{ pointerEvents: "none" }}> {problem.comment_count || 0}</span>
                                             <button
                                                 onClick={(e) => {
+                                                    e.preventDefault();
                                                     e.stopPropagation();
                                                     handleBookmark(problem.id);
+                                                }}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
                                                 }}
                                                 style={{
                                                     padding: "4px 8px",
@@ -631,7 +668,8 @@ function SubjectPage() {
                                                     cursor: "pointer",
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: "4px"
+                                                    gap: "4px",
+                                                    pointerEvents: "auto"
                                                 }}
                                             >
                                                 <img 
