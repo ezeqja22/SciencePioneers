@@ -28,7 +28,7 @@ const AnimatedLoader = ({
                 minHeight: logoSize
             }}>
                 <img 
-                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760786648/Logo_Olimpiada_csdp71.svg"
+                    src="https://res.cloudinary.com/dqmmgk88b/image/upload/v1760809243/Olimpiada_Logo_green_zsijfo.png"
                     alt="Loading"
                     style={{
                         height: logoSize,
@@ -43,6 +43,7 @@ const AnimatedLoader = ({
                     }}
                     onError={(e) => {
                         console.error("Logo failed to load:", e);
+                        console.error("Error details:", e.target.src);
                         // Show fallback text
                         e.target.style.display = "none";
                         const fallback = document.createElement('div');
@@ -56,11 +57,14 @@ const AnimatedLoader = ({
                             justify-content: center;
                             height: ${logoSize};
                             width: ${logoSize};
+                            background-color: yellow;
+                            border: 2px solid orange;
                         `;
                         e.target.parentNode.appendChild(fallback);
                     }}
-                    onLoad={() => {
+                    onLoad={(e) => {
                         console.log("Logo loaded successfully");
+                        console.log("Image dimensions:", e.target.naturalWidth, "x", e.target.naturalHeight);
                     }}
                 />
             </div>
