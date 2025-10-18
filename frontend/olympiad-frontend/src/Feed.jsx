@@ -278,31 +278,69 @@ function Feed() {
       const isCurrentlyBookmarked = bookmarkData[problemId]?.isBookmarked;
       
       if (isCurrentlyBookmarked) {
-        // Remove bookmark
-        await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        // Try to remove bookmark
+        try {
+          await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          // Update state to unbookmarked
+          setBookmarkData(prev => ({
+            ...prev,
+            [problemId]: { isBookmarked: false }
+          }));
+        } catch (deleteError) {
+          // If delete fails (404), it means it wasn't bookmarked, so try to add it
+          if (deleteError.response?.status === 404) {
+            await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            
+            // Update state to bookmarked
+            setBookmarkData(prev => ({
+              ...prev,
+              [problemId]: { isBookmarked: true }
+            }));
+          } else {
+            throw deleteError;
           }
-        });
-        
-        // Update state to unbookmarked
-        setBookmarkData(prev => ({
-          ...prev,
-          [problemId]: { isBookmarked: false }
-        }));
+        }
       } else {
-        // Add bookmark
-        await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        // Try to add bookmark
+        try {
+          await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {}, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          // Update state to bookmarked
+          setBookmarkData(prev => ({
+            ...prev,
+            [problemId]: { isBookmarked: true }
+          }));
+        } catch (postError) {
+          // If post fails (400), it means it was already bookmarked, so try to remove it
+          if (postError.response?.status === 400) {
+            await axios.delete(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/auth/problems/${problemId}/bookmark`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            
+            // Update state to unbookmarked
+            setBookmarkData(prev => ({
+              ...prev,
+              [problemId]: { isBookmarked: false }
+            }));
+          } else {
+            throw postError;
           }
-        });
-        
-        // Update state to bookmarked
-        setBookmarkData(prev => ({
-          ...prev,
-          [problemId]: { isBookmarked: true }
-        }));
+        }
       }
       
     } catch (error) {
