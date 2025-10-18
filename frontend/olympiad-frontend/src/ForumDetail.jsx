@@ -2701,8 +2701,8 @@ const ForumDetail = () => {
                                                     justifyContent: isOwnMessage ? 'flex-start' : 'flex-start',
                                                     maxWidth: 'fit-content',
                                                     position: 'absolute',
-                                                    left: isOwnMessage ? '0' : 'auto',
-                                                    right: isOwnMessage ? 'auto' : '0',
+                                                    left: isOwnMessage ? 'auto' : '0',
+                                                    right: isOwnMessage ? '0' : 'auto',
                                                     bottom: '-25px'
                                                 }}>
                                                     <div style={{
